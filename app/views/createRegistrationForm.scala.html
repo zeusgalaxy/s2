@@ -1,0 +1,33 @@
+@(registrationForm: Form[Registration])
+
+@import helper._
+
+@main("Registration test setup", 'testRegistration) {
+
+<h1>Enter a Registration</h1>
+
+@form(routes.ApiWrapper.register) {
+
+<fieldset>
+
+    @inputText(registrationForm("machine_id"), 'label -> "Machine id")
+    @inputText(registrationForm("id"), 'label -> "User login id")
+    @inputText(registrationForm("membership_id"), 'label -> "Membership id")
+    @inputText(registrationForm("email"), 'label -> "Email")
+    @inputText(registrationForm("pic"), 'label -> "Password picture number")
+    @inputText(registrationForm("DOB"), 'label -> "Date of birth")
+    @inputText(registrationForm("gender"), 'label -> "Gender")
+    @inputText(registrationForm("enableMail"), 'label -> "Enable Mail")
+    @inputText(registrationForm("weight"), 'label -> "Weight")
+    @inputText(registrationForm("oem_tos"), 'label -> "OEM terms of service")
+
+</fieldset>
+
+<div class="actions">
+    <input type="submit" value="Test this registration" class="btn primary">&nbsp;&nbsp;or&nbsp;&nbsp;
+    <a href="@routes.Application.index()" class="btn">Cancel</a>
+</div>
+
+}
+
+}

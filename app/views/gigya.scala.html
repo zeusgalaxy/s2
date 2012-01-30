@@ -1,0 +1,24 @@
+@(request: play.api.mvc.Request[AnyContent])(implicit flash: play.api.mvc.Flash)
+
+@main("Gigya Test", 'testLogin) {
+
+<p>@request.toString</p>
+<p>@request.body.toString</p>
+
+<script>
+    function onAuthorizeFacebook(response)
+    {if (response.errorCode == 0) {
+        // handle normal behavior (depends on the original API method call)
+        // ...
+        alert(response);
+    } else {
+        // handle errors
+        alert("An error has occurred!" + '\n' +
+                "Error details: " + response.errorMessage + '\n' +
+                "Error code: " + response.errorCode + '\n' +
+                "In method: " + response.operation);
+    }}
+</script>
+
+}
+

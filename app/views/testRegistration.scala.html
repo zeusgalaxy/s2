@@ -1,0 +1,13 @@
+@()(implicit flash: play.api.mvc.Flash)
+
+@main("Test Registration", 'testRegistration) {
+
+@flash.get("success").map { message =>
+<div class="alert-message warning">
+    <strong>Done!</strong> @message
+</div>
+
+}
+}
+
+            

@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="play-cache">
+    <CLASSES>
+      <root url="jar://$PLAY$/repository/cache/net.liftweb/lift-json_2.9.1/jars/lift-json_2.9.1-2.4-M5.jar!/" />
+      <root url="jar://$PLAY$/repository/cache/com.ning/async-http-client/jars/async-http-client-1.7.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

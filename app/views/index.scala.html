@@ -1,0 +1,45 @@
+@(message: String)(implicit flash: play.api.mvc.Flash)
+
+@main("Welcome to our main page", 'home) {
+
+@flash.get("success").map { message =>
+<div class="alert-message warning">
+    <strong>Done!</strong> @message
+</div>
+}
+
+<div class="container">
+
+    <!-- Main hero unit for a primary marketing message or call to action -->
+    <div class="hero-unit">
+        <h1>Hello, world!</h1>
+        <p>Vestibulum id ligula porta felis euismod semper. Integer posuere erat a ante venenatis dapibus posuere velit aliquet. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit.</p>
+        <p><a class="btn primary large">Learn more &raquo;</a></p>
+    </div>
+
+    <!-- Example row of columns -->
+    <div class="row">
+        <div class="span-one-third">
+            <h2>List Users</h2>
+            <p>Man, you're not gonna believe this -- click here and you'll see a listing of users found in my local database! Wow!</p>
+            <p><a class="btn" href="@routes.Application.listUsers()">List Users &raquo;</a></p>
+        </div>
+        <div class="span-one-third">
+            <h2>Test Registration</h2>
+            <p>Holy Kamoly! You mean we can really test registration here?? Man, that's fantastic!</p>
+            <p><a class="btn" href="@routes.Application.createRegistration()">Test Registration &raquo;</a></p>
+        </div>
+        <div class="span-one-third">
+            <h2>Heading</h2>
+            <p>No, don't tell me -- there's more??? The API even includes a login test? Gotta try... gotta try...</p>
+            <p><a class="btn" href="@routes.Application.testLogin()">Test Login &raquo;</a></p>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; Netpulse 2012. All rights reserved</p>
+    </footer>
+
+</div> <!-- /container -->
+    
+}
