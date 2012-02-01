@@ -13,7 +13,8 @@ object ApplicationBuild extends Build {
       "mysql" % "mysql-connector-java" % "5.1.18",
       "joda-time" % "joda-time" % "2.0",
       "org.joda" % "joda-convert" % "1.1",
-      "commons-lang" % "commons-lang" % "2.3"
+      "commons-lang" % "commons-lang" % "2.3",
+      "org.scalaz" %% "scalaz-core" % "6.0.4"
   )
 
     val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(

@@ -57,7 +57,7 @@ object Application extends Controller {
 
       println("handling testRegistration")
 
-      val requestMap = request.body.asUrlFormEncoded
+      val requestMap = request.body.asFormUrlEncoded
       //      val data = requestMap.asInstanceOf[WrappedArray[String]].head
       println(requestMap.toString)
 

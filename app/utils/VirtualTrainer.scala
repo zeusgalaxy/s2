@@ -1,6 +1,6 @@
 package utils
 
-import play.api.libs.WS
+import play.api.libs.ws.WS
 import play.api.Play.current
 import org.joda.time._
 import org.apache.commons.lang._

@@ -1,7 +1,7 @@
 package controllers
 
 import play.api.mvc._
-import play.api.libs.WS
+import play.api.libs.ws._
 import play.api.Play.current
 
 import views._
@@ -19,7 +19,7 @@ object ApiWrapper extends Controller {
     implicit request =>
 
       val params = postOrGetParams(request, List("DOB", "weight", "gender", "email"))
-      val formBody = request.body.asUrlFormEncoded
+      val formBody = request.body.asFormUrlEncoded
 
       val npV1Host = switchHosts(request.host)
       val v1Addr = npV1Scheme + "://" + npV1Host + request.uri + {
