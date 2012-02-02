@@ -14,7 +14,7 @@ object ApplicationBuild extends Build {
       "joda-time" % "joda-time" % "2.0",
       "org.joda" % "joda-convert" % "1.1",
       "commons-lang" % "commons-lang" % "2.3",
-      "org.scalaz" %% "scalaz-core" % "6.0.4"
+      "org.scalaz" %% "scalaz-core" % "6.0.4" withSources()
   )
 
     val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(

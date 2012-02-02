@@ -20,3 +20,15 @@ GET     /testLogin                  controllers.Application.testLogin()
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
+
+
+# PageViewUpload
+POST    /core/n5iworkout.jsp                   controllers.Application.dinoAction(doPage)
+POST    /n5iworkout.jsp                        controllers.Application.pageview(doPage)
+POST    /core/n5iuploader.jsp                  controllers.Application.pageview(doPage)
+POST    /uploader.jsp                          controllers.Application.pageview(doPage)
+POST    /otherStuff.jsp                        controllers.Application.dinoWrapper(
+
+
+GET     /echo               controllers.Application.echo
+POST    /echo               controllers.Application.echo

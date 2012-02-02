@@ -6,11 +6,10 @@ import play.api._
 import play.api.mvc._
 import play.api.data._
 import play.api.data.Forms._
-import play.api.Play.current
 
-import _root_.models._
 import views._
 import models._
+import utils._
 
 object Application extends Controller {
 
@@ -103,5 +102,43 @@ object Application extends Controller {
   def testLogin = Action {
     implicit request =>
       Ok(html.testLogin())
+  }
+
+  // Local test: curl --header "Content-Type: text/xml; charset=UTF-8" -d@pageviews.xml http://localhost:9000/
+  def pageview = Action {
+    implicit request => {
+      request.body.asXml match {
+        case Some(xml)  =>
+          // for ( x <- xml \\ "pageviews") {
+          throwableToLeft {
+            PageViewModel.insert(xml)
+          } match {
+            case Right(s) => {
+              Logger.debug("PageView rows inserted:" + s)
+              Ok("Success")
+            }
+            case Left(e) => {
+              Logger.error("PageView Fail: error xml: vvvvvvvvv \n" + xml.toString + "\nend xml ^^^^^^^^^^^", e );
+              Ok("Failure")
+            }
+          }
+        //}
+        case _ => { Logger.info("PageView: No xml body"); Ok("Failure") }
+      }
+      // Pass the request with xml payload to old app here
+      //WS.url("localhost:9000/echo").post(request)
+    }
+  }
+
+  val echo = Action { request =>
+    try {
+      request.body.asXml match {
+        case Some(xml)  => { Ok("Hello!: got request [" + xml + "]") }
+        case _ =>  Ok("Fail")
+      }
+    }
+    catch {
+      case e: Exception =>  { Logger.debug("PageViewModel Err"); Ok("Failure") }
+    }
   }
 }
