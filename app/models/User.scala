@@ -52,7 +52,7 @@ object User {
    * @param orderBy firstName for sorting
    * @param filter Filter applied on the firstName column
    */
-  def list(page: Int = 0, pageSize: Int = 10, orderBy: Int = 1, filter: String = "%"): Page[User] = {
+  def list(page: Int = 0, pageSize: Int = 25, orderBy: Int = 1, filter: String = "%"): Page[User] = {
 
     val offest = pageSize * page
 
