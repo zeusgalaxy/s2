@@ -16,9 +16,9 @@ object Report extends Controller {
       Ok(html.index("This is the main page parameter"))
   }
 
-  val Home = Redirect(routes.Report.listUsers(0, 2, ""))
+  val Home = Redirect(routes.Report.listWorkoutLocations(0, 2, ""))
 
-  def listUsers(page: Int, orderBy: Int, filter: String) = Action {
+  def listWorkoutLocations(page: Int, orderBy: Int, filter: String) = Action {
     implicit request =>
 
       Ok(html.listUsers(

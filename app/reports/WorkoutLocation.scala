@@ -58,7 +58,7 @@ object WorkoutLocation {
 
     DB.withConnection { implicit connection =>
 
-      val computers = SQL(
+      val woL = SQL(
         """
           select * from user
           where user.first_name like {filter}
@@ -81,7 +81,7 @@ object WorkoutLocation {
         'filter -> filter
       ).as(scalar[Long].single)
 
-      Page(computers, page, offest, totalRows)
+      Page(woL, page, offest, totalRows)
 
     }
 
