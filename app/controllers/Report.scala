@@ -5,7 +5,7 @@ import play.api.libs.ws._
 import play.api.Play.current
 
 import views._
-import reports._
+import models.WorkoutLocation
 import models.User
 
 object Report extends Controller {
@@ -16,13 +16,14 @@ object Report extends Controller {
       Ok(html.index("This is the main page parameter"))
   }
 
-  val Home = Redirect(routes.Report.listWorkoutLocations(0, 2, ""))
+  val Home = Redirect(routes.Report.showWorkoutLocations(0, 2, ""))
 
-  def listWorkoutLocations(page: Int, orderBy: Int, filter: String) = Action {
+  def showWorkoutLocations(page: Int, orderBy: Int, filter: String) = Action {
     implicit request =>
 
-      Ok(html.listUsers(
-        User.list(page = page, orderBy = orderBy, filter = ("%" + filter + "%")),
+      Ok(html.listWorkoutLocations(
+        WorkoutLocation.list(page = page, orderBy = orderBy, filter = ("%" + filter + "%")),
+        // User.list(page = page, orderBy = orderBy, filter = ("%" + filter + "%")),
         orderBy, filter
       ))
   }

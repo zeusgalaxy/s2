@@ -1,10 +1,12 @@
-@(currentPage: Page[User], currentOrderBy: Int, currentFilter: String)(implicit flash: play.api.mvc.Flash)
+@(currentPage: Page[WorkoutLocation], currentOrderBy: Int, currentFilter: String)(implicit flash: play.api.mvc.Flash)
+
+
 
 @****************************************
 * Helper generating navigation links    *
 ****************************************@
 @link(newPage: Int, newOrderBy: Option[Int] = None) = @{
-routes.Application.listUsers(newPage, newOrderBy.map { orderBy =>
+routes.Report.showWorkoutLocations(newPage, newOrderBy.map { orderBy =>
 if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 }.getOrElse(currentOrderBy), currentFilter)
 
@@ -19,9 +21,9 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 </th>
 }
 
-@main("User List", 'listUsers) {
+@main("Workouts by Location", 'listUsers) {
 
-<h1>@Messages("users.list.firstName", currentPage.total)</h1>
+<h1>@Messages("Workouts by Location", currentPage.total)</h1>
 
 @flash.get("success").map { message =>
 <div class="alert-message warning">
@@ -31,7 +33,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
 <div id="actions">
 
-    @helper.form(action=routes.Application.listUsers()) {
+    @helper.form(action=routes.Report.showWorkoutLocations()) {
     <input type="search" name="f" value="@currentFilter" placeholder="Filter by first name name...">
     <input type="submit" value="Filter by first name" class="btn primary">
     }
@@ -42,7 +44,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
 @Option(currentPage.items).filterNot(_.isEmpty).map { users =>
 
-<table class="users zebra-striped">
+<table class="users zebra-striped table-bordered table-condensed">
     <thead>
     <tr>
         @header(2, "User ID")

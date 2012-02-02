@@ -1,4 +1,5 @@
-package reports
+package models
+// TODO: Make the above work as package reports - had problems with the page helper expecting a model
 
 import play.api.db._
 import play.api.Play.current
@@ -25,10 +26,10 @@ object WorkoutLocation {
    * Parse a WorkoutLocation from a ResultSet
    */
   val simple = {
-    get[Pk[Long]]("WorkoutLocation.id") ~
-      get[String]("WorkoutLocation.first_name") ~
-      get[String]("WorkoutLocation.last_name") ~
-      get[String]("WorkoutLocation.email") map {
+    get[Pk[Long]]("User.id") ~
+      get[String]("User.first_name") ~
+      get[String]("User.last_name") ~
+      get[String]("User.email") map {
       case id~firstName~lastName~email => WorkoutLocation(id, firstName, lastName, email)
     }
   }
@@ -52,7 +53,7 @@ object WorkoutLocation {
    * @param orderBy firstName for sorting
    * @param filter Filter applied on the firstName column
    */
-  def list(page: Int = 0, pageSize: Int = 10, orderBy: Int = 1, filter: String = "%"): Page[WorkoutLocation] = {
+  def list(page: Int = 0, pageSize: Int = 25, orderBy: Int = 1, filter: String = "%"): Page[WorkoutLocation] = {
 
     val offest = pageSize * page
 
