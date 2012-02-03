@@ -21,6 +21,7 @@ case class WorkoutLocation(id: Pk[Long] = NotAssigned, companyName: String, club
 object WorkoutLocation {
 
   val companyLimit = "Life Time Fitness"
+  val pageLength = 25
 
   // -- Parsers
 
@@ -55,7 +56,7 @@ object WorkoutLocation {
    * @param orderBy firstName for sorting
    * @param filter Filter applied on the firstName column
    */
-  def list(page: Int = 0, pageSize: Int = 25, orderBy: Int = 1, filter: String = "%"): Page[WorkoutLocation] = {
+  def list(page: Int = 0, pageSize: Int = pageLength, orderBy: Int = 1, filter: String = "%"): Page[WorkoutLocation] = {
 
     val offset = pageSize * page
 
