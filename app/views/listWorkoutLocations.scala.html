@@ -21,9 +21,9 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 </th>
 }
 
-@main("Workouts by Location", 'listUsers) {
+@main("Workouts for "+WorkoutLocation.companyLimit, 'listUsers) {
 
-<h1>@Messages("Workouts by Location", currentPage.total)</h1>
+<h2>@Messages("Workouts by Club for "+WorkoutLocation.companyLimit, currentPage.total)</h2>
 
 @flash.get("success").map { message =>
 <div class="alert-message warning">
@@ -74,10 +74,18 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
     <table class="users zebra-striped table-bordered table-condensed">
         <thead>
         <tr>
-            @header(2, "Location")
-            @header(3, "Company Name")
-            @header(4, "Club Name")
-            @header(5, "City")
+            @header(2,  "Club")
+            @header(3,  "Screens")
+            @header(4,  "Equipment")
+            @header(5,  "New Reg")
+            @header(6,  "Tot Reg")
+            @header(7,  "Workouts")
+            @header(8,  "Reg WOs")
+            @header(9,  "% Reg WOs")
+            @header(10, "WOs / Screen")
+            @header(11, "WOs / Screen / Day")
+            @header(12, "Avg Duration Mins")
+            @header(13, "Total WO Hours")
         </tr>
         </thead>
         <tbody>
@@ -86,18 +94,22 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         case woL => {
         <tr>
             @*<td><a href="@routes.Application.edit(computer.id.get)">@computer.name</a></td>*@
-            <td>
-                @woL.id
-            </td>
-            <td>
-                @woL.companyName
-            </td>
-            <td>
-                @woL.clubName
-            </td>
-            <td>
-                @woL.city
-            </td>
+
+            <td><a href="">@woL.clubName</a></td>
+
+            <td>0</td>
+
+            <td><a href="">Equipment List</a></td>
+
+            <td>0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>0</td>
+            <td>@((0L).toString)</td>
         </tr>
         }
         }

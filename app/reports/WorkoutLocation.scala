@@ -20,6 +20,8 @@ case class WorkoutLocation(id: Pk[Long] = NotAssigned, companyName: String, club
 
 object WorkoutLocation {
 
+  val companyLimit = "Life Time Fitness"
+
   // -- Parsers
 
   /**
@@ -41,7 +43,7 @@ object WorkoutLocation {
    */
   def findById(id: Long): Option[WorkoutLocation] = {
     DB.withConnection { implicit connection =>
-      SQL("select * from tmp_workout_report where id = {id}").on('id -> id).as(WorkoutLocation.simple.singleOpt)
+      SQL("select * from tmp_workout_report where id = {id} and company_name = {companyLimit}").on('id -> id, 'companyLimit -> companyLimit).as(WorkoutLocation.simple.singleOpt)
     }
   }
 
@@ -55,7 +57,7 @@ object WorkoutLocation {
    */
   def list(page: Int = 0, pageSize: Int = 25, orderBy: Int = 1, filter: String = "%"): Page[WorkoutLocation] = {
 
-    val offest = pageSize * page
+    val offset = pageSize * page
 
     DB.withConnection { implicit connection =>
 
@@ -63,13 +65,15 @@ object WorkoutLocation {
         """
           select * from tmp_workout_report
           where club_name like {filter}
+          and company_name = {companyLimit}
           order by {orderBy}
           limit {pageSize} offset {offset}
         """
       ).on(
         'pageSize -> pageSize,
-        'offset -> offest,
+        'offset -> offset,
         'filter -> filter,
+        'companyLimit -> WorkoutLocation.companyLimit,
         'orderBy -> orderBy
       ).as(WorkoutLocation.simple *)
 
@@ -77,12 +81,14 @@ object WorkoutLocation {
         """
           select count(*) from tmp_workout_report
           where club_name like {filter}
+          and company_name = {companyLimit}
         """
       ).on(
-        'filter -> filter
+        'filter -> filter,
+        'companyLimit -> WorkoutLocation.companyLimit
       ).as(scalar[Long].single)
 
-      Page(woL, page, offest, totalRows)
+      Page(woL, page, offset, totalRows)
 
     }
 
