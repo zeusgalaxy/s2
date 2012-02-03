@@ -31,11 +31,12 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 </div>
 }
 
-<div id="actions">
+<div id="actions" class="well">
 
     @helper.form(action=routes.Report.showWorkoutLocations()) {
-    <input type="search" name="f" value="@currentFilter" placeholder="Filter by first name name...">
-    <input type="submit" value="Filter by first name" class="btn primary">
+    <input type="search" name="c" value="@currentFilter" placeholder="Filter by company name...">
+    <input type="search" name="f" value="@currentFilter" placeholder="Filter by club name...">
+    <input type="submit" value="Go Filter" class="btn primary">
     }
 
     @*<a class="btn success" id="add" href="@routes.Application.create()">Add a new computer</a>}}*@
@@ -44,41 +45,67 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
 @Option(currentPage.items).filterNot(_.isEmpty).map { woL =>
 
-<table class="users zebra-striped table-bordered table-condensed">
-    <thead>
-    <tr>
-        @header(2, "Row ID")
-        @header(3, "Company Name")
-        @header(4, "Club Name")
-        @header(5, "City")
-    </tr>
-    </thead>
-    <tbody>
+    <div id="pagination_top" class="pagination">
+    <ul>
+        @currentPage.prev.map { page =>
+        <li class="prev">
+            <a href="@link(page)">&larr; Previous</a>
+        </li>
+        }.getOrElse {
+        <li class="prev disabled">
+            <a>&larr; Previous</a>
+        </li>
+        }
+        <li class="current">
+            <a>Displaying @(currentPage.offset + 1) to @(currentPage.offset + woL.size) of @currentPage.total</a>
+        </li>
+        @currentPage.next.map { page =>
+        <li class="next">
+            <a href="@link(page)">Next &rarr;</a>
+        </li>
+        }.getOrElse {
+        <li class="next disabled">
+            <a>Next &rarr;</a>
+        </li>
+        }
+    </ul>
+</div>
 
-    @woL.map {
-    case woL => {
-    <tr>
-        @*<td><a href="@routes.Application.edit(computer.id.get)">@computer.name</a></td>*@
-        <td>
-            @woL.id
-        </td>
-        <td>
-            @woL.companyName
-        </td>
-        <td>
-            @woL.clubName
-        </td>
-        <td>
-            @woL.city
-        </td>
-    </tr>
-    }
-    }
+    <table class="users zebra-striped table-bordered table-condensed">
+        <thead>
+        <tr>
+            @header(2, "Location")
+            @header(3, "Company Name")
+            @header(4, "Club Name")
+            @header(5, "City")
+        </tr>
+        </thead>
+        <tbody>
 
-    </tbody>
-</table>
+        @woL.map {
+        case woL => {
+        <tr>
+            @*<td><a href="@routes.Application.edit(computer.id.get)">@computer.name</a></td>*@
+            <td>
+                @woL.id
+            </td>
+            <td>
+                @woL.companyName
+            </td>
+            <td>
+                @woL.clubName
+            </td>
+            <td>
+                @woL.city
+            </td>
+        </tr>
+        }
+        }
 
-<div id="pagination" class="pagination">
+        </tbody>
+    </table>
+
+    <div id="pagination" class="pagination">
     <ul>
         @currentPage.prev.map { page =>
         <li class="prev">
