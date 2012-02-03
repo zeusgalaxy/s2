@@ -7,16 +7,10 @@ import play.api.Play.current
 import anorm._
 import anorm.SqlParser._
 
-case class WorkoutLocation(id: Pk[Long] = NotAssigned, companyName: String, clubName: String,  city: String)
-
-/**
- * Helper for pagination.
- */
-//case class Page[A](items: Seq[A], page: Int, offset: Long, total: Long) {
-//  lazy val prev = Option(page - 1).filter(_ >= 0)
-//  lazy val next = Option(page + 1).filter(_ => (offset + items.size) < total)
-//}
-
+case class WorkoutLocation(id: Pk[Long] = NotAssigned, companyName: String, clubName: String,  city: String, 
+                           machineCnt: Long,
+                           workoutCnt: java.math.BigDecimal
+                            )
 
 object WorkoutLocation {
 
@@ -32,8 +26,11 @@ object WorkoutLocation {
     get[Pk[Long]]("tmp_workout_report.location_id") ~
       get[String]("tmp_workout_report.company_name") ~
       get[String]("tmp_workout_report.club_name") ~
-      get[String]("tmp_workout_report.club_city") map {
-      case id~companyName~clubName~city => WorkoutLocation(id, companyName, clubName, city)
+      get[String]("tmp_workout_report.club_city") ~
+      get[Long]("tmp_workout_report.machine_cnt") ~
+    get[java.math.BigDecimal]  ("tmp_workout_report.workout_cnt") map {
+      case id~companyName~clubName~city~machineCnt~workoutCnt =>
+        WorkoutLocation(id, companyName, clubName, city, machineCnt, workoutCnt )
     }
   }
 
@@ -44,7 +41,8 @@ object WorkoutLocation {
    */
   def findById(id: Long): Option[WorkoutLocation] = {
     DB.withConnection { implicit connection =>
-      SQL("select * from tmp_workout_report where id = {id} and company_name = {companyLimit}").on('id -> id, 'companyLimit -> companyLimit).as(WorkoutLocation.simple.singleOpt)
+      SQL("select * from tmp_workout_report twr where id = {id} and company_name = {companyLimit}").on(
+        'id -> id, 'companyLimit -> companyLimit).as(WorkoutLocation.simple.singleOpt)
     }
   }
 
