@@ -10,10 +10,8 @@ import utils._
 object ApiWrapper extends Controller {
 
   lazy val npV1Scheme = current.configuration.getString("np.v1.scheme").getOrElse(throw new Exception("np.v1.scheme not in configuration"))
-  lazy val npV1Host = current.configuration.getString("np.v1.host").getOrElse(throw new Exception("np.v1.host not in configuration"))
+  lazy val npV1Host = current.configuration.getString("np.v1.s").getOrElse(throw new Exception("np.v1.s not in configuration"))
   lazy val npV1RegisterPath = current.configuration.getString("np.v1.path.register").getOrElse(throw new Exception("np.v1.path.register not in configuration"))
-
-  def switchHosts(host: String): String = host.replaceFirst("localhost:9000", "qa-v1.netpulse.ws").replaceFirst("ec2", "v1").replaceFirst("v2", "v1")
 
   def register = Action {
     implicit request =>

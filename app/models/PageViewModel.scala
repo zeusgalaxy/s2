@@ -1,5 +1,6 @@
 package models
 
+import utils._
 import scalaz._
 import Scalaz._
 import scala.util.control.Exception._
@@ -23,12 +24,12 @@ object PageViewModel {
   def parseXML(node: scala.xml.NodeSeq): Option[PageViewModel] =
     Option(PageViewModel(
       id = 0L,
-      machineId = (node \ "@machine_id").toString.toLong,
-      date = dateFormat.parse((node \ "@date").toString),
+      machineId = (node \ "@machine_id").toString().toLong,
+      date = dateFormat.parse((node \ "@date").toString()),
       // = NodeSeq(attract, login, mainMenu, workoutHistory, endOfWorkout)
       // = NodeSeq(1, 1, 1, 1, 1)
       pageCounts = for ((p, c) <- (node \\ "page" \\ "@name") zip (node \\ "page" \\ "@count"))
-      yield (p.toString, c.toString.toLong)
+      yield (p.toString(), c.toString().toLong)
     ))
 
 
@@ -68,8 +69,8 @@ object PageViewModel {
     }
 
   def insert(node: scala.xml.NodeSeq): Validation[String, Int] = {
-  
-    catching(classOf[Exception]) either {
+
+    validate {
       parseXML(node) match {
         case Some(pvm) =>
           if (verifyData(pvm)) {

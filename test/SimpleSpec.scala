@@ -1,11 +1,20 @@
 package test
 
+import utils._
 import org.specs2.mutable._
 
 import play.api.test._
 import play.api.test.Helpers._
 
 object SimpleSpec extends Specification {
+
+  val v1 = validate { "x".toInt }
+  val v2 = validate { 1.toInt }
+  val v3 = validate { 1.toString }
+
+  "v1 should be failure" in v1.isFailure
+  "v2 should be success" in v2.isSuccess
+  "v3 should be success" in v3.isSuccess
 
   "my application" should {
 
@@ -14,6 +23,8 @@ object SimpleSpec extends Specification {
 
       a must equalTo(2)
     }
+
+
 //
 //    "render index template" in {
 //      val html = views.html.index("Coco")
