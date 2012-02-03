@@ -42,34 +42,34 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
 </div>
 
-@Option(currentPage.items).filterNot(_.isEmpty).map { users =>
+@Option(currentPage.items).filterNot(_.isEmpty).map { woL =>
 
 <table class="users zebra-striped table-bordered table-condensed">
     <thead>
     <tr>
-        @header(2, "User ID")
-        @header(3, "First Name")
-        @header(4, "Last Name")
-        @header(5, "EMail")
+        @header(2, "Row ID")
+        @header(3, "Company Name")
+        @header(4, "Club Name")
+        @header(5, "City")
     </tr>
     </thead>
     <tbody>
 
-    @users.map {
-    case user => {
+    @woL.map {
+    case woL => {
     <tr>
         @*<td><a href="@routes.Application.edit(computer.id.get)">@computer.name</a></td>*@
         <td>
-            @user.id
+            @woL.id
         </td>
         <td>
-            @user.firstName
+            @woL.companyName
         </td>
         <td>
-            @user.lastName
+            @woL.clubName
         </td>
         <td>
-            @user.email
+            @woL.city
         </td>
     </tr>
     }
@@ -90,7 +90,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         </li>
         }
         <li class="current">
-            <a>Displaying @(currentPage.offset + 1) to @(currentPage.offset + users.size) of @currentPage.total</a>
+            <a>Displaying @(currentPage.offset + 1) to @(currentPage.offset + woL.size) of @currentPage.total</a>
         </li>
         @currentPage.next.map { page =>
         <li class="next">

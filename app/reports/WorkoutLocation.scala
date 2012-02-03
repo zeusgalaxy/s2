@@ -7,15 +7,15 @@ import play.api.Play.current
 import anorm._
 import anorm.SqlParser._
 
-case class WorkoutLocation(id: Pk[Long] = NotAssigned, firstName: String, lastName: String,  email: String)
+case class WorkoutLocation(id: Pk[Long] = NotAssigned, companyName: String, clubName: String,  city: String)
 
 /**
  * Helper for pagination.
  */
-case class Page[A](items: Seq[A], page: Int, offset: Long, total: Long) {
-  lazy val prev = Option(page - 1).filter(_ >= 0)
-  lazy val next = Option(page + 1).filter(_ => (offset + items.size) < total)
-}
+//case class Page[A](items: Seq[A], page: Int, offset: Long, total: Long) {
+//  lazy val prev = Option(page - 1).filter(_ >= 0)
+//  lazy val next = Option(page + 1).filter(_ => (offset + items.size) < total)
+//}
 
 
 object WorkoutLocation {
@@ -26,11 +26,11 @@ object WorkoutLocation {
    * Parse a WorkoutLocation from a ResultSet
    */
   val simple = {
-    get[Pk[Long]]("User.id") ~
-      get[String]("User.first_name") ~
-      get[String]("User.last_name") ~
-      get[String]("User.email") map {
-      case id~firstName~lastName~email => WorkoutLocation(id, firstName, lastName, email)
+    get[Pk[Long]]("tmp_workout_report.location_id") ~
+      get[String]("tmp_workout_report.company_name") ~
+      get[String]("tmp_workout_report.club_name") ~
+      get[String]("tmp_workout_report.club_city") map {
+      case id~companyName~clubName~city => WorkoutLocation(id, companyName, clubName, city)
     }
   }
 
@@ -41,7 +41,7 @@ object WorkoutLocation {
    */
   def findById(id: Long): Option[WorkoutLocation] = {
     DB.withConnection { implicit connection =>
-      SQL("select * from user where id = {id}").on('id -> id).as(WorkoutLocation.simple.singleOpt)
+      SQL("select * from tmp_workout_report where id = {id}").on('id -> id).as(WorkoutLocation.simple.singleOpt)
     }
   }
 
@@ -61,8 +61,8 @@ object WorkoutLocation {
 
       val woL = SQL(
         """
-          select * from user
-          where user.first_name like {filter}
+          select * from tmp_workout_report
+          where club_name like {filter}
           order by {orderBy}
           limit {pageSize} offset {offset}
         """
@@ -75,8 +75,8 @@ object WorkoutLocation {
 
       val totalRows = SQL(
         """
-          select count(*) from user
-          where user.first_name like {filter}
+          select count(*) from tmp_workout_report
+          where club_name like {filter}
         """
       ).on(
         'filter -> filter
