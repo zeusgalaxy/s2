@@ -1,7 +1,6 @@
 package controllers
 
 import play.api.mvc._
-import play.api.libs.ws._
 import play.api.Play.current
 
 import views._
@@ -16,57 +15,95 @@ object ApiWrapper extends Controller {
   def register = Action {
     implicit request =>
 
-      val params = postOrGetParams(request, List("DOB", "weight", "gender", "email"))
-      val formBody = request.body.asFormUrlEncoded
+      val params = postOrGetParams(request, List("DOB", "weight", "gender", "email", "id"))
 
-      val npV1Host = switchHosts(request.host)
-      val v1Addr = npV1Scheme + "://" + npV1Host + request.uri + {
-        formBody match {
-          case None => "" // We came in via GET
-          case Some(body) => {
-            "?" + (body.flatMap {
-              t => t._2.map(value => t._1 + "=" + value.toString)
+      Dino.forward(request).fold(e => Ok(e), dinoResult => {
+
+        validate[SimpleResult[_]] {
+
+          val oldXml = dinoResult.xml
+          (oldXml \\ "response" \ "@code").find(n => true) match {
+
+            case Some(code) if (code.text == "0") => {
+              val (vtUid, vtNickName, vtPassword) = VirtualTrainer.register(params).getOrThrow
+              val (vtToken, vtTokenSecret) = VirtualTrainer.login(vtNickName, vtPassword).getOrThrow
+              val vtPredefinedPresets = VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret)
+              val vtWorkouts = VirtualTrainer.workouts(vtToken, vtTokenSecret)
+              VirtualTrainer.logout(vtToken, vtTokenSecret)
+
+              Ok(XmlMutator(oldXml).add("response",
+                <vtAccount>
+                  <vtUid>
+                    {vtUid}
+                  </vtUid>
+                  <vtNickName>
+                    {vtNickName}
+                  </vtNickName>
+                  <vtPassword>
+                    {vtPassword}
+                  </vtPassword>
+                  <vtToken>
+                    {vtToken}
+                  </vtToken>
+                  <vtTokenSecret>
+                    {vtTokenSecret}
+                  </vtTokenSecret>
+                  <vtPredefinedPresets>
+                    {scala.xml.XML.loadString(vtPredefinedPresets)}
+                  </vtPredefinedPresets>
+                  <vtWorkouts>
+                    {scala.xml.XML.loadString(vtWorkouts)}
+                  </vtWorkouts>
+                </vtAccount>
+              ))
             }
-              mkString ("&"))
+            case _ => Ok(oldXml)
           }
-        }
-      }
+        }.fold(e => Ok("Failure: " + e + ". dinoResult body: " + dinoResult.getAHCResponse.getResponseBody), s => s)
+      })
+  }
 
-      try {
+// http://qa-ec2.netpulse.ws/core/n5ilogin.jsp?machine_id=18&id=1112925684&pic=22&oem_tos=15
+// http://localhost:9000/n5ilogin.jsp?machine_id=18&id=1112925684&pic=22&oem_tos=15
 
-        val result = WS.url(v1Addr).get().value
-        result.isDefined match {
-          case true => {
-            val oldXml = result.get.xml
-            (oldXml \\ "response" \ "@code").find(n => true) match {
-              case Some(code) if (code.text == "0") => {
-                val (vtUid, vtNickName, vtPassword) = VirtualTrainer.register(params).get
-                val (vtToken, vtTokenSecret) = VirtualTrainer.login(vtNickName, vtPassword).get
-                val vtPredefinedPresets = VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret)
-                val vtWorkouts = VirtualTrainer.workouts(vtToken, vtTokenSecret)
-                VirtualTrainer.logout(vtToken, vtTokenSecret)
+  def login = Action {
+    implicit request =>
 
-                Ok(XmlMutator(oldXml).add("response",
-                  <vtAccount>
-                    <vtUid>{vtUid}</vtUid>
-                    <vtNickName>{vtNickName}</vtNickName>
-                    <vtPassword>{vtPassword}</vtPassword>
-                    <vtToken>{vtToken}</vtToken>
-                    <vtTokenSecret>{vtTokenSecret}</vtTokenSecret>
-                    <vtPredefinedPresets>{vtPredefinedPresets}</vtPredefinedPresets>
-                    <vtWorkouts>{vtWorkouts}</vtWorkouts>
-                  </vtAccount>
-                ))
-              }
-              case _ => Ok(oldXml)
+      val params = postOrGetParams(request, List("id"))
+
+      Dino.forward(request).fold(e => Ok(e), dinoResult => {
+
+        validate[SimpleResult[_]] {
+          val oldXml = dinoResult.xml
+          (oldXml \\ "response" \ "@code").find(n => true) match {
+
+            case Some(code) if (code.text == "0") => {
+              val (vtToken, vtTokenSecret) = VirtualTrainer.login(params("id")(0), params("id")(0)).getOrThrow
+              val vtPredefinedPresets = VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret)
+              val vtWorkouts = VirtualTrainer.workouts(vtToken, vtTokenSecret)
+              VirtualTrainer.logout(vtToken, vtTokenSecret)
+
+              Ok(XmlMutator(oldXml).add("response",
+                <vtAccount>
+                  <vtToken>
+                    {vtToken}
+                  </vtToken>
+                  <vtTokenSecret>
+                    {vtTokenSecret}
+                  </vtTokenSecret>
+                  <vtPredefinedPresets>
+                    {scala.xml.XML.loadString(vtPredefinedPresets)}
+                  </vtPredefinedPresets>
+                  <vtWorkouts>
+                    {scala.xml.XML.loadString(vtWorkouts)}
+                  </vtWorkouts>
+                </vtAccount>
+              ))
             }
+            case _ => Ok(oldXml)
           }
-          case false => throw new Exception("The result from v1 registration call was not defined")
-        }
-
-      } catch {
-        case ex => Ok("Something went wrong: " + ex.getMessage)
-      }
+        }.fold(e => Ok("Failure: " + e + ". dinoResult body: " + dinoResult.getAHCResponse.getResponseBody), s => s)
+      })
   }
 
   def gigyaLogin = Action {

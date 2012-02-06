@@ -11,7 +11,8 @@ GET     /listUsers                      controllers.Application.listUsers(p:Int 
 GET     /gigyaLogin                 controllers.ApiWrapper.gigyaLogin
 POST    /gigyaLogin                 controllers.ApiWrapper.gigyaLogin
 
-GET      /n5iregister.jsp           controllers.ApiWrapper.register
+GET     /n5iregister.jsp            controllers.ApiWrapper.register
+GET     /n5ilogin.jsp               controllers.ApiWrapper.login
 
 GET     /createRegistration         controllers.Application.createRegistration()
 GET     /testLogin                  controllers.Application.testLogin()
@@ -22,9 +23,8 @@ GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 # PageViewUpload
 POST    /core/n5iworkout.jsp                   controllers.Dino.pageview
-POST    /n5iworkout.jsp                        controllers.Dino.passthru
-POST    /bogus.jsp                             controllers.Dino.passthru
-#POST    /core/n5iuploader.jsp                  controllers.Application.pageview(doPage)
-#POST    /uploader.jsp                          controllers.Application.pageview(doPage)
-#POST    /otherStuff.jsp                        controllers.Application.dinoWrapper(
+POST    /n5iworkout.jsp                        controllers.Dino.pageview
+POST    /core/n5iuploader.jsp                  controllers.Dino.pageview
+POST    /uploader.jsp                          controllers.Dino.pageview
+POST    /otherstuff.jsp                        controllers.Dino.passthru
 

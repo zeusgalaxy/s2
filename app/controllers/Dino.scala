@@ -1,21 +1,11 @@
 package controllers
 
-import org.apache.commons.lang.RandomStringUtils
-
 import scalaz.{Logger => _, _}
 import Scalaz._
-import scala.util.control.Exception._
-import scala.xml._
 
 import play.api._
-import http.Writeable
-import play.api.libs.ws._
-import play.api.libs.ws.WS._
 import play.api.mvc._
-import play.api.data._
-import play.api.data.Forms._
 
-import views._
 import models._
 import utils._
 
@@ -73,9 +63,6 @@ object Dino extends Controller {
         }
 
       }
-
-      // Pass the request with xml payload to old app here
-      //WS.url("localhost:9000/echo").post(request)
     }
   }
 }
