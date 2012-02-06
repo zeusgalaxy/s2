@@ -23,13 +23,15 @@ import anorm.SqlParser._
 // time_dim.day_date, time_dim.week_name, time_dim.week_of_month_number, time_dim.week_of_month_name,
 // time_dim.year_sk, time_dim.month_sk, time_dim.quarter_sk, time_dim.day_of_week_sort_name, time_dim.year_sort_number
 
-case class WorkoutLocation(id: Pk[Long] = NotAssigned, clubName: String,
-                           screens: Long, workoutCnt: java.math.BigDecimal
+case class WorkoutLocation(id: Pk[Long] = NotAssigned, clubName: String, screens: Long,
+                           woCnt: java.math.BigDecimal, woReg: java.math.BigDecimal, woPercReg: java.math.BigDecimal,
+                           woPerScreen: java.math.BigDecimal, woScreenDay: java.math.BigDecimal, durAvg: java.math.BigDecimal,
+                           durTot: java.math.BigDecimal
                             )
 
 object WorkoutLocation {
 
-  val companyLimit = "Life Time Fitness"
+  val companyFilter = 81
   val pageLength = 25
 
   // -- Parsers
@@ -41,23 +43,20 @@ object WorkoutLocation {
     get[Pk[Long]]("location.location_id") ~
       get[String]("location.club_name") ~
       get[Long]("screens") ~
-      get[java.math.BigDecimal]("wo_cnt") map {
-      case id~clubName~screens~workoutCnt =>
-        WorkoutLocation(id, clubName, screens, workoutCnt )
+      get[java.math.BigDecimal]("woCnt") ~
+      get[java.math.BigDecimal]("woReg") ~
+      get[java.math.BigDecimal]("woPercReg") ~
+      get[java.math.BigDecimal]("woPerScreen") ~
+      get[java.math.BigDecimal]("woScreenDay") ~
+      get[java.math.BigDecimal]("durAvg") ~
+      get[java.math.BigDecimal]("durTot") map {
+      case id~clubName~screens~woCnt~woReg~woPercReg~woPerScreen~woScreenDay~durAvg~durTot =>
+        this(id, clubName, screens, woCnt, woReg, woPercReg, woPerScreen, woScreenDay, durAvg, durTot )
     }
   }
 
   // -- Queries
 
-  /**
-   * Retrieve a WorkoutLocation from the id.
-   */
-  def findById(id: Long): Option[WorkoutLocation] = {
-    DB.withConnection { implicit connection =>
-      SQL("select * from tmp_workout_report twr where id = {id} and company_name = {companyLimit}").on(
-        'id -> id, 'companyLimit -> companyLimit).as(WorkoutLocation.simple.singleOpt)
-    }
-  }
 
   /**
    * Return a page of WorkoutLocations.
@@ -75,21 +74,20 @@ object WorkoutLocation {
 
       val woL = SQL(
         """
-          select l.location_id, l.club_name,
+          select l.location_id as id, l.club_name as clubName,
           count(distinct(s.machine_id)) as screens,
-          sum(s.workout_cnt) as wo_cnt,
-          sum(s.workout_regisr) as reg_wo,
-          sum(s.workout_cnt) / sum(s.workout_regisr) as perc_reg,
-          count(distinct(s.machine_id)) / sum(s.workout_cnt) as wo_screen,
-          count(distinct(s.day_int)) as days,
-          sum(s.workout_cnt) / count(distinct(s.day_int)) as wo_screen_day,
-          sum(s.duration_tot) / sum(s.workout_cnt) as dur_avg,
-          sum(s.duration_tot) / 60 as dur_tot,
+          sum(s.workout_cnt) as woCnt,
+          sum(s.workout_regisr) as woReg,
+          ifnull(sum(s.workout_cnt) / sum(s.workout_regisr), 0) as woPercReg,
+          ifnull(count(distinct(s.machine_id)) / sum(s.workout_cnt), 0) as woPerScreen,
+          ifnull(sum(s.workout_cnt) / count(distinct(s.day_int)), 0) as woScreenDay,
+          ifnull(sum(s.duration_tot) / sum(s.workout_cnt), 0) as durAvg,
+          ifnull(sum(s.duration_tot) / 60, 0) as durTot,
           count(*)
           from  workout_day_sum s
           join location l on s.location_id = l.location_id
           join time_dim t on t.day_int = s.day_int
-          where company_name = {companyLimit}
+          where company_id = {companyFilter}
           group by l.location_id
           order by {orderBy}
           limit {pageSize} offset {offset}
@@ -98,7 +96,7 @@ object WorkoutLocation {
         'pageSize -> pageSize,
         'offset -> offset,
         'filter -> filter,
-        'companyLimit -> WorkoutLocation.companyLimit,
+        'companyFilter -> WorkoutLocation.companyFilter,
         'orderBy -> orderBy
       ).as(WorkoutLocation.simple *)
 
@@ -112,7 +110,7 @@ object WorkoutLocation {
         """
       ).on(
         'filter -> filter,
-        'companyLimit -> WorkoutLocation.companyLimit
+        'companyLimit -> WorkoutLocation.companyFilter
       ).as(scalar[Long].single)
 
       Page(woL, page, offset, totalRows)

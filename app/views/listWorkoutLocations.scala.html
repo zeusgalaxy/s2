@@ -21,9 +21,9 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 </th>
 }
 
-@main("Workouts for "+WorkoutLocation.companyLimit, 'listUsers) {
+@main("Workouts for "+WorkoutLocation.companyFilter, 'listUsers) {
 
-<h2>@Messages("Workouts by Club for "+WorkoutLocation.companyLimit, currentPage.total)</h2>
+<h2>@Messages("Workouts by Club for "+WorkoutLocation.companyFilter, currentPage.total)</h2>
 
 @flash.get("success").map { message =>
 <div class="alert-message warning">
@@ -34,8 +34,8 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 <div id="actions" class="well">
 
     @helper.form(action=routes.Report.showWorkoutLocations()) {
-    <input type="search" name="c" value="@currentFilter" placeholder="Filter by company name...">
-    <input type="search" name="f" value="@currentFilter" placeholder="Filter by club name...">
+    <input type="search" name="c" value="@currentFilter" placeholder="Start date...">
+    <input type="search" name="f" value="@currentFilter" placeholder="End date...">
     <input type="submit" value="Go Filter" class="btn primary">
     }
 
@@ -45,6 +45,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
 @Option(currentPage.items).filterNot(_.isEmpty).map { woL =>
 
+@if(currentPage.total >= WorkoutLocation.pageLength ) {
     <div id="pagination_top" class="pagination">
     <ul>
         @currentPage.prev.map { page =>
@@ -70,10 +71,12 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         }
     </ul>
 </div>
+}
 
     <table class="users zebra-striped table-bordered table-condensed">
         <thead>
         <tr>
+            @header(1,  "Location ID")
             @header(2,  "Club")
             @header(3,  "Screens")
             @header(4,  "Equipment")
@@ -87,29 +90,33 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
             @header(12, "Avg Duration Mins")
             @header(13, "Total WO Hours")
         </tr>
+        <tr>
+
+        </tr>
         </thead>
         <tbody>
-
+        <tr><td>Totals: </td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
         @woL.map {
         case woL => {
         <tr>
             @*<td><a href="@routes.Application.edit(computer.id.get)">@computer.name</a></td>*@
 
+            <td><a href="">@woL.id</a></td>
             <td><a href="">@woL.clubName</a></td>
 
-            <td>n/a</td>
+            <td>@woL.screens</td>
 
             <td><a href="">Equipment List</a></td>
 
-            <td>0</td>
-            <td>0</td>
-            <td>@woL.workoutCnt</td>
-            <td>0</td>
-            <td>0</td>
-            <td>0</td>
-            <td>0</td>
-            <td>0</td>
-            <td>@((0L).toString)</td>
+            <td>n/a</td>
+            <td>n/a</td>
+            <td>@woL.woCnt</td>
+            <td>@woL.woReg</td>
+            <td>@woL.woPercReg.formatted("%.2f")</td>
+            <td>@woL.woPerScreen.formatted("%.2f")</td>
+            <td>@woL.woScreenDay.formatted("%.2f")</td>
+            <td>@woL.durAvg.formatted("%.2f")</td>
+            <td>@woL.durTot.formatted("%.2f")</td>
         </tr>
         }
         }
