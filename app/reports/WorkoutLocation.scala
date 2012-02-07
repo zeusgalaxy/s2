@@ -32,7 +32,7 @@ case class WorkoutLocation(id: Pk[Long] = NotAssigned, compName: String, clubNam
 object WorkoutLocation {
 
   val companyFilter = 81
-  val pageLength = 25
+  val pageLength = 15
   var startDateFilter = ""
   var endDateFilter = ""
 
@@ -82,7 +82,7 @@ object WorkoutLocation {
           sum(s.workout_cnt) as woCnt,
           sum(s.workout_regisr) as woReg,
           ifnull(sum(s.workout_cnt) / sum(s.workout_regisr), 0) as woPercReg,
-          ifnull(count(distinct(s.machine_id)) / sum(s.workout_cnt), 0) as woPerScreen,
+          ifnull(sum(s.workout_cnt) / count(distinct(s.machine_id)), 0) as woPerScreen,
           ifnull(sum(s.workout_cnt) / count(distinct(s.day_int)), 0) as woScreenDay,
           ifnull(sum(s.duration_tot) / sum(s.workout_cnt), 0) as durAvg,
           ifnull(sum(s.duration_tot) / 60, 0) as durTot,
@@ -90,8 +90,9 @@ object WorkoutLocation {
           from  workout_day_sum s
           join location l on s.location_id = l.location_id
           join time_dim t on t.day_int = s.day_int
-          where company_id = {companyFilter}
-          and l.club_name like {filter}
+          where company_id = {filter}
+          and l.club_name like "%"
+          and s.day_int >= 20120201 and s.day_int < 20120207
           group by l.location_id
           order by {orderBy}
           limit {pageSize} offset {offset}
@@ -106,11 +107,12 @@ object WorkoutLocation {
 
       val totalRows = SQL(
         """
-          select count(*) from  workout_day_sum s
+          select count(distinct(l.location_id))
+          from  workout_day_sum s
           join location l on s.location_id = l.location_id
           join time_dim t on t.day_int = s.day_int
-          where club_name like {filter}
-          and company_name = {companyLimit}
+          where company_id = {filter}
+          and l.club_name like "%"
         """
       ).on(
         'filter -> filter,

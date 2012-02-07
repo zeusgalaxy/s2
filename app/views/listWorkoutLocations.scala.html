@@ -21,9 +21,9 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 </th>
 }
 
-@main("Workouts for "+WorkoutLocation.companyFilter, 'listUsers) {
+@main("Workouts by Club", 'listUsers) {
 
-<h2>@Messages("Workouts by Club for "+WorkoutLocation.companyFilter, currentPage.total)</h2>
+<h2>@Messages("Workouts by Club for "+currentFilter, currentPage.total)</h2>
 
 @flash.get("success").map { message =>
 <div class="alert-message warning">
