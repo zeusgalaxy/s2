@@ -32,6 +32,18 @@ object PageViewModel {
       yield (p.toString(), c.toString().toLong)
     ))
 
+//
+//  def verifyData(pvm: PageViewModel): Validation[String, Boolean] = {
+//    if (
+//      (MachineModel.findById(pvm.machineId) match {
+//        case Some(s) => true;
+//        case None => false
+//      }) &&
+//        pvm.pageCounts.length > 0
+//    // TODO: Verify date is reasonable
+//    ) true
+//    else false
+//  }
 
   def verifyData(pvm: PageViewModel): Boolean = {
     if (
@@ -81,7 +93,6 @@ object PageViewModel {
       }
     }
   }
-
 }
 
 ////////////////////////////////////////////

@@ -26,7 +26,7 @@ object Dino extends Controller {
       }
     }
   }
-  
+
   def passthru = Action {
     implicit request => {
       val r = forward(request)
@@ -34,35 +34,25 @@ object Dino extends Controller {
     }
   }
 
-
   // Local test: curl --header "Content-Type: text/xml; charset=UTF-8" -d@pageviews.xml http://localhost:9000/n5iworkout.jsp
   def pageview = Action {
     implicit request => {
 
-      if ((~request.body.asXml \\ "pageviews").isEmpty) forward(request).fold(e => Ok(e), r => Ok(r.toString()))
+      validate {
 
-      else {
+        /**
+         * We receive a variety of different uploads in this method. If we don't find the one we're interested in
+         * (which is "pageviews"), then simply forward this on to dino for processing. If it does, in fact, have
+         * pageviews in the payload, then we process it here.
+         */
+        if ((~request.body.asXml \\ "pageviews").isEmpty)
+          forward(request).fold(e => Ok(e), r => Ok(r.toString()))
+        else {
 
-        request.body.asXml match {
-
-          case Some(xml) =>
-            def fMsg(e: String) = "PageView Fail: error xml: vvvvvvvvv \n" + xml.toString + "\nend xml ^^^^^^^^^^^" + e
-            def sMsg(i: Int) = "PageView rows inserted:" + i.toString
-            PageViewModel.insert(xml).fold(e => {
-              Logger.error(fMsg(e));
-              Ok("Failure")
-            },
-              i => {
-                Logger.debug(sMsg(i));
-                Ok("Success")
-              })
-          case _ => {
-            Logger.info("PageView: No xml body");
-            Ok("Failure")
-          }
+          val cnt = PageViewModel.insert(~request.body.asXml).getOrThrow
+          Ok("PageView load succeeded with " + cnt.toString + "inserts")
         }
-
-      }
+      }.error("Dino.pageview", "request body: " + request.body.toString).fold(e => Ok("PageView load failed"), s => s)
     }
   }
 }

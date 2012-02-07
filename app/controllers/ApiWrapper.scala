@@ -19,7 +19,8 @@ object ApiWrapper extends Controller {
 
       Dino.forward(request).fold(e => Ok(e), dinoResult => {
 
-        validate[SimpleResult[_]] {
+//        validate[SimpleResult[_]] {
+        validate {
 
           val oldXml = dinoResult.xml
           (oldXml \\ "response" \ "@code").find(n => true) match {
@@ -31,7 +32,8 @@ object ApiWrapper extends Controller {
               val vtWorkouts = VirtualTrainer.workouts(vtToken, vtTokenSecret)
               VirtualTrainer.logout(vtToken, vtTokenSecret)
 
-              Ok(XmlMutator(oldXml).add("response",
+//              Ok(XmlMutator(oldXml).add("response",
+              XmlMutator(oldXml).add("response",
                 <vtAccount>
                   <vtUid>
                     {vtUid}
@@ -55,11 +57,12 @@ object ApiWrapper extends Controller {
                     {scala.xml.XML.loadString(vtWorkouts)}
                   </vtWorkouts>
                 </vtAccount>
-              ))
+              )
             }
-            case _ => Ok(oldXml)
+//            case _ => Ok(oldXml)
+            case _ => oldXml
           }
-        }.fold(e => Ok("Failure: " + e + ". dinoResult body: " + dinoResult.getAHCResponse.getResponseBody), s => s)
+        }.debug("ApiWrapper.register", "dinoResult body: " + dinoResult.body).fold(e => Ok(dinoResult.body), s => Ok(s))
       })
   }
 
@@ -73,7 +76,7 @@ object ApiWrapper extends Controller {
 
       Dino.forward(request).fold(e => Ok(e), dinoResult => {
 
-        validate[SimpleResult[_]] {
+        validate {
           val oldXml = dinoResult.xml
           (oldXml \\ "response" \ "@code").find(n => true) match {
 
@@ -83,7 +86,8 @@ object ApiWrapper extends Controller {
               val vtWorkouts = VirtualTrainer.workouts(vtToken, vtTokenSecret)
               VirtualTrainer.logout(vtToken, vtTokenSecret)
 
-              Ok(XmlMutator(oldXml).add("response",
+//              Ok(XmlMutator(oldXml).add("response",
+              XmlMutator(oldXml).add("response",
                 <vtAccount>
                   <vtToken>
                     {vtToken}
@@ -98,11 +102,12 @@ object ApiWrapper extends Controller {
                     {scala.xml.XML.loadString(vtWorkouts)}
                   </vtWorkouts>
                 </vtAccount>
-              ))
+              )
             }
-            case _ => Ok(oldXml)
+//            case _ => Ok(oldXml)
+            case _ => oldXml
           }
-        }.fold(e => Ok("Failure: " + e + ". dinoResult body: " + dinoResult.getAHCResponse.getResponseBody), s => s)
+        }.info("ApiWrapper.login", "dinoResult body: " + dinoResult.body).fold(e => Ok(dinoResult.body), s => Ok(s))
       })
   }
 

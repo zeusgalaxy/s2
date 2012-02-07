@@ -71,10 +71,34 @@ package object utils {
     }
   }
   
-  class NPValidation[E,S](v: Validation[E,S]) {
-    def getOrThrow = v.fold(e=>throw new Exception(e.toString), s=>s)
+  class NPValidation[T](v: Validation[String, T]) {
+    
+    def logTxt(src: String, msg: String) = "\t" + src + "\t" + v.either.left.get + "\t" + msg
+    def getOrThrow =  v.fold(e => throw new Exception(e), s=>s)
+
+    def trace(src: String, msg: String): Validation[String, T] = {
+      if (v.isFailure) Logger.trace("TRACE" + logTxt(src, msg))
+      v
+    }
+    def debug(src: String, msg: String): Validation[String, T] = {
+      if (v.isFailure) Logger.debug("DEBUG" + logTxt(src, msg))
+      v
+    }
+    def info(src: String, msg: String): Validation[String, T] = {
+      if (v.isFailure) Logger.info("INFO" + logTxt(src, msg))
+      v
+    }
+    def warn(src: String, msg: String): Validation[String, T] = {
+      if (v.isFailure) Logger.warn("WARN" + logTxt(src, msg))
+      v
+    }
+    def error(src: String, msg: String): Validation[String, T] = {
+      if (v.isFailure) Logger.error("ERROR" + logTxt(src, msg))
+      v
+    }
+
   }
-  implicit def toNPValidation[E,S](v: Validation[E,S]): NPValidation[E,S] = {
+  implicit def toNPValidation[T](v: Validation[String, T]): NPValidation[T] = {
     new NPValidation(v)
   }
 }
