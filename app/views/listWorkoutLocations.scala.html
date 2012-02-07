@@ -34,8 +34,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 <div id="actions" class="well">
 
     @helper.form(action=routes.Report.showWorkoutLocations()) {
-    <input type="search" name="c" value="@currentFilter" placeholder="Start date...">
-    <input type="search" name="f" value="@currentFilter" placeholder="End date...">
+    <input type="search" name="f" value="@currentFilter" placeholder="Start date: mm/dd/yyyy" />
     <input type="submit" value="Go Filter" class="btn primary">
     }
 

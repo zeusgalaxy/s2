@@ -23,7 +23,7 @@ import anorm.SqlParser._
 // time_dim.day_date, time_dim.week_name, time_dim.week_of_month_number, time_dim.week_of_month_name,
 // time_dim.year_sk, time_dim.month_sk, time_dim.quarter_sk, time_dim.day_of_week_sort_name, time_dim.year_sort_number
 
-case class WorkoutLocation(id: Pk[Long] = NotAssigned, clubName: String, screens: Long,
+case class WorkoutLocation(id: Pk[Long] = NotAssigned, compName: String, clubName: String, screens: Long,
                            woCnt: java.math.BigDecimal, woReg: java.math.BigDecimal, woPercReg: java.math.BigDecimal,
                            woPerScreen: java.math.BigDecimal, woScreenDay: java.math.BigDecimal, durAvg: java.math.BigDecimal,
                            durTot: java.math.BigDecimal
@@ -33,6 +33,8 @@ object WorkoutLocation {
 
   val companyFilter = 81
   val pageLength = 25
+  var startDateFilter = ""
+  var endDateFilter = ""
 
   // -- Parsers
 
@@ -41,6 +43,7 @@ object WorkoutLocation {
    */
   val simple = {
     get[Pk[Long]]("location.location_id") ~
+      get[String]("location.company_name") ~
       get[String]("location.club_name") ~
       get[Long]("screens") ~
       get[java.math.BigDecimal]("woCnt") ~
@@ -50,8 +53,8 @@ object WorkoutLocation {
       get[java.math.BigDecimal]("woScreenDay") ~
       get[java.math.BigDecimal]("durAvg") ~
       get[java.math.BigDecimal]("durTot") map {
-      case id~clubName~screens~woCnt~woReg~woPercReg~woPerScreen~woScreenDay~durAvg~durTot =>
-        this(id, clubName, screens, woCnt, woReg, woPercReg, woPerScreen, woScreenDay, durAvg, durTot )
+      case id~compName~clubName~screens~woCnt~woReg~woPercReg~woPerScreen~woScreenDay~durAvg~durTot =>
+        this(id, compName, clubName, screens, woCnt, woReg, woPercReg, woPerScreen, woScreenDay, durAvg, durTot )
     }
   }
 
@@ -74,7 +77,7 @@ object WorkoutLocation {
 
       val woL = SQL(
         """
-          select l.location_id as id, l.club_name as clubName,
+          select l.location_id as id, l.company_name, l.club_name as clubName,
           count(distinct(s.machine_id)) as screens,
           sum(s.workout_cnt) as woCnt,
           sum(s.workout_regisr) as woReg,
@@ -88,6 +91,7 @@ object WorkoutLocation {
           join location l on s.location_id = l.location_id
           join time_dim t on t.day_int = s.day_int
           where company_id = {companyFilter}
+          and l.club_name like {filter}
           group by l.location_id
           order by {orderBy}
           limit {pageSize} offset {offset}
