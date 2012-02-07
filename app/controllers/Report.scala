@@ -16,15 +16,15 @@ object Report extends Controller {
       Ok(html.index("This is the main page parameter"))
   }
 
-  val Home = Redirect(routes.Report.showWorkoutLocations(0, 2, ""))
+  val Home = Redirect(routes.Report.showWorkoutLocations(0, 1, "", 0))
 
-  def showWorkoutLocations(page: Int, orderBy: Int, filter: String) = Action {
+  def showWorkoutLocations(page: Int, orderBy: Int, filter: String, startDate: Int) = Action {
     implicit request =>
 
       Ok(html.listWorkoutLocations(
-        WorkoutLocation.list(page = page, orderBy = orderBy, filter = filter ),                         // ("%" + filter + "%")
+        WorkoutLocation.list(page = page, orderBy = orderBy, filter = filter, startDate = startDate ),                         // ("%" + filter + "%")
         // User.list(page = page, orderBy = orderBy, filter = ("%" + filter + "%")),
-        orderBy, filter
+        orderBy, filter, startDate
       ))
   }
 

@@ -1,4 +1,4 @@
-@(currentPage: Page[WorkoutLocation], currentOrderBy: Int, currentFilter: String)(implicit flash: play.api.mvc.Flash)
+@(currentPage: Page[WorkoutLocation], currentOrderBy: Int, currentFilter: String, startDate: Int)(implicit flash: play.api.mvc.Flash)
 
 
 
@@ -34,8 +34,11 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 <div id="actions" class="well">
 
     @helper.form(action=routes.Report.showWorkoutLocations()) {
-    <input type="search" name="f" value="@currentFilter" placeholder="Start date: mm/dd/yyyy" />
-    <input type="submit" value="Go Filter" class="btn primary">
+    <input type="search" name="f" value="@currentFilter" placeholder="Company ID" />
+    <br>
+    <input type="search" name="sd" value="@startDate" placeholder="Start Date: yyyymmdd " />
+    @* <input type="search" name="ed" value="@endDate" placeholder="Start Date: yyyymmdd " /> *@
+    <input type="submit" value="Go" class="btn primary">
     }
 
     @*<a class="btn success" id="add" href="@routes.Application.create()">Add a new computer</a>}}*@
@@ -75,19 +78,18 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
     <table class="users zebra-striped table-bordered table-condensed">
         <thead>
         <tr>
-            @header(1,  "Location ID")
-            @header(2,  "Club")
-            @header(3,  "Screens")
-            @header(4,  "Equipment")
-            @header(5,  "New Reg")
-            @header(6,  "Tot Reg")
-            @header(7,  "Workouts")
-            @header(8,  "Reg WOs")
-            @header(9,  "% Reg WOs")
-            @header(10, "WOs / Screen")
-            @header(11, "WOs / Screen / Day")
-            @header(12, "Avg Duration Mins")
-            @header(13, "Total WO Hours")
+            @header(1,  "Club")
+            @header(2,  "Screens")
+            @header(3,  "Equipment")
+            @header(4,  "New Reg")
+            @header(5,  "Tot Reg")
+            @header(6,  "Workouts")
+            @header(7,  "Reg WOs")
+            @header(8,  "% Reg WOs")
+            @header(9,  "WOs / Screen")
+            @header(10, "WOs / Screen / Day")
+            @header(11, "Avg Duration Mins")
+            @header(12, "Total WO Hours")
         </tr>
         <tr>
 
@@ -100,7 +102,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         <tr>
             @*<td><a href="@routes.Application.edit(computer.id.get)">@computer.name</a></td>*@
 
-            <td><a href="">@woL.id</a></td>
+            @*<td><a href="">@woL.id</a></td>*@
             <td><a href="">@woL.clubName</a></td>
 
             <td>@woL.screens</td>
