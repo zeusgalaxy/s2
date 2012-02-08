@@ -1,4 +1,4 @@
-@(currentPage: Page[WorkoutLocation], currentOrderBy: Int, currentFilter: String, startDate: String)(implicit flash: play.api.mvc.Flash)
+@(currentPage: Page[WorkoutLocation], currentOrderBy: Int, currentFilter: String, startDate: String, endDate: String)(implicit flash: play.api.mvc.Flash)
 
 
 
@@ -23,6 +23,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
 @main("Workouts by Club", 'listUsers) {
 
+@* TODO: figure out how to put company name here... *@
 <h2>@Messages("Workouts by Club for "+currentFilter, currentPage.total)</h2>
 
 @flash.get("success").map { message =>
@@ -31,14 +32,14 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 </div>
 }
 
-<div id="actions" class="well">
-
+<div id="actions" class="twipsies well">
     @helper.form(action=routes.Report.showWorkoutLocations()) {
-    Club: <input type="search" name="f" value="@currentFilter" placeholder="Company ID" />
-    <br>
-    Start: <input type="search" name="sd" value="@startDate" size= "10" placeholder="Start Date: yyyymmdd " />
-    @* <input type="search" name="ed" value="@endDate" placeholder="Start Date: yyyymmdd " /> *@
-    <input type="submit" value="Go" class="btn primary">
+    <p>Comp:  <input type="search" name="f" value="@currentFilter" placeholder="Company ID" />
+    </p>
+    
+    Start: <input type="search" name="sd" value="@startDate" size= "8" placeholder="yyyymmdd " />
+    End:   <input type="search" name="ed" value="@endDate" placeholder="yyyymmdd " />
+    <input type="submit" value="Go" class="btn primary pull-right">
     }
 
     @*<a class="btn success" id="add" href="@routes.Application.create()">Add a new computer</a>}}*@
@@ -91,35 +92,46 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
             @header(11, "Avg Duration Mins")
             @header(12, "Total WO Hours")
         </tr>
-        <tr>
-
-        </tr>
         </thead>
         <tbody>
-        <tr><td>Totals: </td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-        @woL.map {
-        case woL => {
-        <tr>
-            @*<td><a href="@routes.Application.edit(computer.id.get)">@computer.name</a></td>*@
-
-            @*<td><a href="">@woL.id</a></td>*@
-            <td><a href="">@woL.clubName</a></td>
-
-            <td>@woL.screens</td>
-
-            <td><a href="">Equipment List</a></td>
-
-            <td>n/a</td>
-            <td>n/a</td>
-            <td>@woL.woCnt</td>
-            <td>@woL.woReg</td>
-            <td>@woL.woPercReg.formatted("%.2f")</td>
-            <td>@woL.woPerScreen.formatted("%.2f")</td>
-            <td>@woL.woScreenDay.formatted("%.2f")</td>
-            <td>@woL.durAvg.formatted("%.2f")</td>
-            <td>@woL.durTot.formatted("%.0f")</td>
-        </tr>
+        @currentPage.totals.map { woLtot =>
+                <tr><strong>
+                <th>Totals:</th><th>@woLtot.screens</th><th></th>
+                <th>n/a</th><th>n/a</th>
+                <th>@woLtot.woCnt</th>
+                <th>@woLtot.woReg</th>
+                <th>@woLtot.woPercReg.formatted("%.2f")</th>
+                <th>@woLtot.woPerScreen.formatted("%.2f")</th>
+                <th>@woLtot.woScreenDay.formatted("%.2f")</th>
+                <th>@woLtot.durAvg.formatted("%.2f")</th>
+                <th>@woLtot.durTot.formatted("%.0f")</th>
+                </strong></tr>
         }
+
+
+        @woL.map {
+            case woL => {
+            <tr>
+                @*<td><a href="@routes.Application.edit(computer.id.get)">@computer.name</a></td>*@
+
+                @*<td><a href="">@woL.id</a></td>*@
+                <td><a href="">@woL.clubName</a></td>
+
+                <td>@woL.screens</td>
+
+                <td><a href="">Equipment List</a></td>
+
+                <td>n/a</td>
+                <td>n/a</td>
+                <td>@woL.woCnt</td>
+                <td>@woL.woReg</td>
+                <td>@woL.woPercReg.formatted("%.2f")</td>
+                <td>@woL.woPerScreen.formatted("%.2f")</td>
+                <td>@woL.woScreenDay.formatted("%.2f")</td>
+                <td>@woL.durAvg.formatted("%.2f")</td>
+                <td>@woL.durTot.formatted("%.0f")</td>
+            </tr>
+            }
         }
 
         </tbody>
