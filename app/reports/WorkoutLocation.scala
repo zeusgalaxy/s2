@@ -69,9 +69,15 @@ object WorkoutLocation {
    * @param orderBy firstName for sorting
    * @param filter Filter applied on the firstName column
    */
-  def list(page: Int = 0, pageSize: Int = pageLength, orderBy: Int = 1, filter: String = "%", startDate: Int = 0): Page[WorkoutLocation] = {
+  def list(page: Int = 0, pageSize: Int = pageLength, orderBy: Int = 1, filter: String = "%", startDate: String = "0"): Page[WorkoutLocation] = {
 
     val offset = pageSize * page
+
+    val sDate =
+     try{ startDate.toInt } catch {
+        case e => 0
+        case _ => startDate.toInt
+      }
 
     DB.withConnection { implicit connection =>
 
@@ -91,7 +97,7 @@ object WorkoutLocation {
           join location l on s.location_id = l.location_id
           join time_dim t on t.day_int = s.day_int
           where company_id = {filter}
-          and s.day_int >= {startDate} and s.day_int < 20120210
+          and s.day_int >= {sDate} and s.day_int < 20120210
           and l.club_name like '%'
           group by l.location_id, l.company_name, l.club_name
           order by {orderBy}
@@ -102,7 +108,7 @@ object WorkoutLocation {
         'offset -> offset,
         'filter -> filter,
         'companyFilter -> WorkoutLocation.companyFilter,
-        'startDate -> startDate,
+        'sDate -> sDate,
         'orderBy -> orderBy
       ).as(WorkoutLocation.simple *)
 
@@ -113,10 +119,12 @@ object WorkoutLocation {
           join location l on s.location_id = l.location_id
           join time_dim t on t.day_int = s.day_int
           where company_id = {filter}
+          and s.day_int >= {sDate} and s.day_int < 20120210
           and l.club_name like "%"
         """
       ).on(
         'filter -> filter,
+        'sDate -> sDate,
         'companyLimit -> WorkoutLocation.companyFilter
       ).as(scalar[Long].single)
 
