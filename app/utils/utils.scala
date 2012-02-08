@@ -12,7 +12,8 @@ import Scalaz._
 
 package object utils {
 
-  def switchHosts(s: String): String = s.replaceFirst("localhost:9000", "qa-v1.netpulse.ws").replaceFirst("ec2", "v1").replaceFirst("v2", "v1")
+  def switchHosts(s: String): String = s.replaceFirst("localhost:9000", "qa-s1.netpulse.ws").
+          replaceFirst("ec2", "s1").replaceFirst("s2", "s1")
 
   def toWSRequest(r: Request[AnyContent]): (WSRequestHolder, Option[Array[Byte]]) = {
 
@@ -27,7 +28,7 @@ package object utils {
     }
 
     val qs = {for (k <- r.queryString.keys; v <- r.queryString.get(k).get) yield (k -> v)}.toMap
-    (WSRequestHolder("http://qa-v1.netpulse.ws" + r.uri, Map("ACCEPT-CHARSET" -> Seq("utf-8")), qs, None, None), newBody)
+    (WSRequestHolder("http://qa-s1.netpulse.ws" + r.uri, Map("ACCEPT-CHARSET" -> Seq("utf-8")), qs, None, None), newBody)
   }
   
   def postOrGetParams(rq: Request[AnyContent], keys: Seq[String]): Map[String, Seq[String]] = {
@@ -74,7 +75,7 @@ package object utils {
   class NPValidation[T](v: Validation[String, T]) {
     
     def logTxt(src: String, msg: String) = "\t" + src + "\t" + v.either.left.get + "\t" + msg
-    def getOrThrow =  v.fold(e => throw new Exception(e), s=>s)
+    def getOrThrow(prefix: String = "getOrThrow") =  v.fold(e => throw new Exception(prefix + ": " + e), s=>s)
 
     def trace(src: String, msg: String): Validation[String, T] = {
       if (v.isFailure) Logger.trace("TRACE" + logTxt(src, msg))

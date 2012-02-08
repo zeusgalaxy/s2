@@ -92,16 +92,26 @@ object VirtualTrainer {
     validate {
 
       val npId = params.getOrElse("id", throw new Exception("id not found"))(0)
-      val vResult = vtRequest(vtPathValidate, headerNoToken()).post(registerBody(params)).value.get
-      if (vResult.status != 200) throw new Exception("Did not got ok from VT validate_new_account: " + vResult.body)
-      val vtXml = vtRequest(vtPathRegister, headerNoToken()).post(registerBody(params)).value.get.xml
+      
+      val valPromise = vtRequest(vtPathValidate, headerNoToken()).post(registerBody(params))
+//      valPromise.await(20000)
+      val valResult = valPromise.value.get
+      if (valResult.status != 200) throw new Exception("Did not got ok from VT validate_new_account: " + valResult.body)
+//      Logger.debug("got past valPromise")
 
-      (vtXml \\ "userId").find(n => true) match {
+//      Logger.debug("before regPromise creation")
+      val regPromise = vtRequest(vtPathRegister, headerNoToken()).post(registerBody(params))
+//      Logger.debug("about to await regPromise with: " + regPromise.value.toString)
+//      regPromise.await(20000)
+      val regXml = regPromise.value.get.xml
+//      Logger.debug("got past regPromise")
+
+      (regXml \\ "userId").find(n => true) match {
         case Some(id) =>
           val linkResult = vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, id.text)).value.get
           if (linkResult.status != 200) Logger.info("VT link_external_user returned status " + linkResult.status.toString)
-          (id.text, (vtXml \\ "nickName").text, (vtXml \\ "nickName").text)
-        case _ => throw new Exception("VirtualTrainer.register: Couldn't find userId in vt xml response: " + vtXml.toString)
+          (id.text, (regXml \\ "nickName").text, (regXml \\ "nickName").text)
+        case _ => throw new Exception("VirtualTrainer.register: Couldn't find userId in vt xml response: " + regXml.toString)
       }
     }
   }
@@ -111,17 +121,19 @@ object VirtualTrainer {
    */
   def login(username: String, password: String): Validation[String, (String, String)] = {
 
+//    Some(OAuth oauth_signature="ZjBlNTFkZDM4ZTZmZjg2YjI1NmU5", oauth_token="70a6443ad76073a140e0f11d094960a8", oauth_token_secret="46bdf7ce72f214bb20c7b4507f904254")
+
     validate {
       val result = vtRequest(vtPathLogin, headerNoToken()).post(loginBody(username, password)).value.get
       val Token = """(.*oauth_token=\")([^\"]*).*""".r
       val Secret = """(.*oauth_token_secret=\")([^\"]*).*""".r
       val token = result.header("Authorization") match {
-        case Token(begin, t) => t
-        case _ => ""
+        case Some(Token(begin, t)) => t
+        case _ => throw new Exception("No token returned from vt login. Authorization header is: " + result.header("Authorization") + " Body is: " + result.body)
       }
       val secret = result.header("Authorization") match {
-        case Secret(begin, s) => s
-        case _ => ""
+        case Some(Secret(begin, s)) => s
+        case _ => throw new Exception("No secret returned from vt login. Authorization header is: " + result.header("Authorization") + " Body is: " + result.body)
       }
       (token, secret)
     }

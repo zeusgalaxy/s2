@@ -49,7 +49,7 @@ object Dino extends Controller {
           forward(request).fold(e => Ok(e), r => Ok(r.toString()))
         else {
 
-          val cnt = PageViewModel.insert(~request.body.asXml).getOrThrow
+          val cnt = PageViewModel.insert(~request.body.asXml).getOrThrow("Dino.pageview call of PageViewModel.insert")
           Ok("PageView load succeeded with " + cnt.toString + "inserts")
         }
       }.error("Dino.pageview", "request body: " + request.body.toString).fold(e => Ok("PageView load failed"), s => s)
