@@ -22,8 +22,7 @@ object Report extends Controller {
     implicit request =>
 
       Ok(html.listWorkoutLocations(
-        WorkoutLocation.list(page = page, orderBy = orderBy, filter = filter, startDate = startDate, endDate = endDate ),                         // ("%" + filter + "%")
-        // User.list(page = page, orderBy = orderBy, filter = ("%" + filter + "%")),
+        WorkoutLocation.list(page = page, orderBy = orderBy, filter = filter, startDate = startDate, endDate = endDate ),     // ("%" + filter + "%")
         orderBy, filter, startDate, endDate
       ))
   }

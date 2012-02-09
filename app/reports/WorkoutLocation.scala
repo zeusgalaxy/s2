@@ -101,7 +101,7 @@ object WorkoutLocation {
           count(distinct(s.machine_id)) as screens,
           sum(s.workout_cnt) as woCnt,
           sum(s.workout_regisr) as woReg,
-          ifnull( sum(s.workout_regisr) / sum(s.workout_cnt), 0) as woPercReg,
+          ifnull( (sum(s.workout_regisr) / sum(s.workout_cnt)) * 100 , 0) as woPercReg,
           ifnull(sum(s.workout_cnt) / count(distinct(s.machine_id)), 0) as woPerScreen,
           ifnull(sum(s.workout_cnt) / count(distinct(s.machine_id)) / count(distinct(s.day_int)), 0) as woScreenDay,
           ifnull(sum(s.duration_tot) / sum(s.workout_cnt), 0) as durAvg,
@@ -111,7 +111,7 @@ object WorkoutLocation {
           join location l on s.location_id = l.location_id
           join time_dim t on t.day_int = s.day_int
           where company_id = {filter}
-          and s.day_int >= {sDate} and s.day_int < {eDate}
+          and s.day_int between {sDate} and {eDate}
           and l.club_name like '%'
           group by l.location_id, l.company_name, l.club_name
           order by {orderBy}
@@ -133,7 +133,7 @@ object WorkoutLocation {
           count(distinct(s.machine_id)) as screens,
           sum(s.workout_cnt) as woCnt,
           sum(s.workout_regisr) as woReg,
-          ifnull( sum(s.workout_regisr) / sum(s.workout_cnt), 0) as woPercReg,
+          ifnull( (sum(s.workout_regisr) / sum(s.workout_cnt)) * 100, 0) as woPercReg,
           ifnull(sum(s.workout_cnt) / count(distinct(s.machine_id)), 0) as woPerScreen,
           ifnull(sum(s.workout_cnt) / count(distinct(s.machine_id)) / count(distinct(s.day_int)), 0) as woScreenDay,
           ifnull(sum(s.duration_tot) / sum(s.workout_cnt), 0) as durAvg,
@@ -143,7 +143,7 @@ object WorkoutLocation {
           join location l on s.location_id = l.location_id
           join time_dim t on t.day_int = s.day_int
           where company_id = {filter}
-          and s.day_int >= {sDate} and s.day_int < {eDate}
+          and s.day_int between {sDate} and {eDate}
           and l.club_name like '%'
         """
       ).on(

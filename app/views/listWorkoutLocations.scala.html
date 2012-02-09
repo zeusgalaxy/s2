@@ -34,15 +34,14 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
 <div id="actions" class="twipsies well">
     @helper.form(action=routes.Report.showWorkoutLocations()) {
-    <p>Comp:  <input type="search" name="f" value="@currentFilter" placeholder="Company ID" />
-    </p>
-    
-    Start: <input type="search" name="sd" value="@startDate" size= "8" placeholder="yyyymmdd " />
-    End:   <input type="search" name="ed" value="@endDate" placeholder="yyyymmdd " />
-    <input type="submit" value="Go" class="btn primary pull-right">
-    }
+        <p>Comp:  <input type="search" name="f" value="@currentFilter" placeholder="Company ID" /></p>
 
-    @*<a class="btn success" id="add" href="@routes.Application.create()">Add a new computer</a>}}*@
+        Start: <input type="search" name="sd" value="@startDate" size= "8" placeholder="yyyymmdd " />
+        End:   <input type="search" name="ed" value="@endDate" placeholder="yyyymmdd " />
+        @* String date: <input type="search" name="ed" value="@endDate" placeholder="yyyymmdd " />  *@
+
+        <input type="submit" value="Go" class="btn primary pull-right">
+    }
 
 </div>
 
@@ -98,7 +97,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
                 <tr><strong>
                 <th>Totals:</th><th>@woLtot.screens</th><th></th>
                 <th>n/a</th><th>n/a</th>
-                <th>@woLtot.woCnt</th>
+                <th>@woLtot.woCnt.formatted("%.0f")</th>
                 <th>@woLtot.woReg</th>
                 <th>@woLtot.woPercReg.formatted("%.2f")</th>
                 <th>@woLtot.woPerScreen.formatted("%.2f")</th>
@@ -123,7 +122,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
                 <td>n/a</td>
                 <td>n/a</td>
-                <td>@woL.woCnt</td>
+                <td>@woL.woCnt.formatted("%.0f")</td>
                 <td>@woL.woReg</td>
                 <td>@woL.woPercReg.formatted("%.2f")</td>
                 <td>@woL.woPerScreen.formatted("%.2f")</td>
