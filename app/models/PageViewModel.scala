@@ -20,20 +20,22 @@ object PageViewModel {
 
   val dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd") // format.format(new java.util.Date())
 
-  def parseXML(node: scala.xml.NodeSeq): Validation[String, PageViewModel] =
+  def parseXML(node: scala.xml.NodeSeq): ValidationNEL[String, PageViewModel] =
 
-    validate { PageViewModel(
-      id = 0L,
-      machineId = (node \ "@machine_id").toString().toLong,
-      date = dateFormat.parse((node \ "@date").toString()),
-      pageCounts = for ((p, c) <- (node \\ "page" \\ "@name") zip (node \\ "page" \\ "@count"))
-                      yield (p.toString(), c.toString().toLong)
-    )}
+    validate {
+      PageViewModel(
+        id = 0L,
+        machineId = (node \ "@machine_id").toString().toLong,
+        date = dateFormat.parse((node \ "@date").toString()),
+        pageCounts = for ((p, c) <- (node \\ "page" \\ "@name") zip (node \\ "page" \\ "@count"))
+        yield (p.toString(), c.toString().toLong)
+      )
+    }
 
-//  def test = {
-//    (3.success[String] |@| "error".failNel[Int]) ( (num, str) => str * num) ===
-//      NonEmptyList[String]("error")
-//  }
+  //  def test = {
+  //    (3.success[String] |@| "error".failNel[Int]) ( (num, str) => str * num) ===
+  //      NonEmptyList[String]("error")
+  //  }
 
   def verifyData(pvm: PageViewModel): ValidationNEL[String, PageViewModel] = {
 
@@ -62,35 +64,38 @@ object PageViewModel {
   // We can't determine if the incoming record is a duplicate. Therefore this is intentionally loose
   // and adds the record with a new timestamp/machineID as the only unique identifiers.
   //
-  def insertSQL(pvm: PageViewModel): Int =
-    DB.withConnection {
-      implicit connection => {
-        pvm.pageCounts.foreach(pc => SQL(
-          """
-          insert into client_page_view_new values ( NULL,
-           {pagename}, NOW(), {pagecount}, {machineid}, NOW()
-          )
-          """
-        ).on(
-          'pagename -> pc._1,
-          'date -> pvm.date,
-          'pagecount -> pc._2,
-          'machineid -> pvm.machineId
-        ).executeUpdate()
-        )
-        pvm.pageCounts.length // return # records added, any exception caught in controller.
-      }
-    }
-
-  def insert(node: scala.xml.NodeSeq): Validation[String, Int] = {
+  def insertSQL(pvm: PageViewModel): ValidationNEL[String, Int] = {
 
     validate {
-
-      for {
-        pvm <- parseXML(node)
-        if (verifyData(pvm).isSuccess)
-      } yield insertSQL(pvm).success
+      DB.withConnection {
+        implicit connection => {
+          pvm.pageCounts.foreach {
+            pc => SQL(
+              """
+              insert into client_page_view_new values ( NULL,
+               {pagename}, NOW(), {pagecount}, {machineid}, NOW()
+              )
+              """
+            ).on(
+              'pagename -> pc._1,
+              'date -> pvm.date,
+              'pagecount -> pc._2,
+              'machineid -> pvm.machineId
+            ).executeUpdate()
+          }
+          pvm.pageCounts.length // return # records added, any exception caught in controller.
+        }
+      }:Int
     }
+  }
+
+  def insert(node: scala.xml.NodeSeq): ValidationNEL[String, Int] = {
+
+    for {
+      a <- parseXML(node)
+      b <- verifyData(a)
+      c <- insertSQL(b)
+    } yield c
   }
 }
 

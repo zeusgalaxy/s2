@@ -9,6 +9,7 @@ import play.api.mvc._
 import play.api.libs.ws.WS._
 import scalaz.{Node => _, Logger => _, _}
 import Scalaz._
+import utils.NPValidationNEL
 
 package object utils {
 
@@ -63,43 +64,47 @@ package object utils {
     writer.toString
   }
 
-  def validate[T](body: => T): Validation[String,T] = {
+  def validate[T](body: => T): ValidationNEL[String, T] = {
     
     try {
       body.success
     } catch {
-      case e => e.getMessage.fail
+      case e => e.getMessage.failNel
     }
   }
   
-  class NPValidation[T](v: Validation[String, T]) {
+  class NPValidationNEL[T](val v: Validation[NonEmptyList[String], T]) {
     
     def logTxt(src: String, msg: String) = "\t" + src + "\t" + v.either.left.get + "\t" + msg
     def getOrThrow(prefix: String = "getOrThrow") =  v.fold(e => throw new Exception(prefix + ": " + e), s=>s)
+    def getOrThrow = v.fold(e => throw new Exception("Errors: " + e.list.mkString(", ")), s => s)
 
-    def trace(src: String, msg: String): Validation[String, T] = {
+    def trace(src: String, msg: String): Validation[NonEmptyList[String], T] = {
       if (v.isFailure) Logger.trace("TRACE" + logTxt(src, msg))
       v
     }
-    def debug(src: String, msg: String): Validation[String, T] = {
+    def debug(src: String, msg: String): Validation[NonEmptyList[String], T] = {
       if (v.isFailure) Logger.debug("DEBUG" + logTxt(src, msg))
       v
     }
-    def info(src: String, msg: String): Validation[String, T] = {
+    def info(src: String, msg: String): Validation[NonEmptyList[String], T] = {
       if (v.isFailure) Logger.info("INFO" + logTxt(src, msg))
       v
     }
-    def warn(src: String, msg: String): Validation[String, T] = {
+    def warn(src: String, msg: String): Validation[NonEmptyList[String], T] = {
       if (v.isFailure) Logger.warn("WARN" + logTxt(src, msg))
       v
     }
-    def error(src: String, msg: String): Validation[String, T] = {
+    def error(src: String, msg: String): Validation[NonEmptyList[String], T] = {
       if (v.isFailure) Logger.error("ERROR" + logTxt(src, msg))
       v
     }
-
   }
-  implicit def toNPValidation[T](v: Validation[String, T]): NPValidation[T] = {
-    new NPValidation(v)
+  
+  implicit def vToNPValidationNEL[T](v: Validation[String, T]): NPValidationNEL[T] = {
+    new NPValidationNEL(v.liftFailNel)
+  }
+  implicit def nelToValidationNEL[T](np: ValidationNEL[String, T]): NPValidationNEL[T] = {
+    new NPValidationNEL(np)
   }
 }

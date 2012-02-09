@@ -92,7 +92,7 @@ object VirtualTrainer {
   /**
    * @return A tuple with Virtual Trainer userId, nickName and password, if successful
    */
-  def register(params: Map[String, Seq[String]]): Validation[String,  (String, String, String)] = {
+  def register(params: Map[String, Seq[String]]): ValidationNEL[String,  (String, String, String)] = {
 
     validate {
 
@@ -122,9 +122,7 @@ object VirtualTrainer {
   /**
    * @return A tuple with token and token secret
    */
-  def login(username: String, password: String): Validation[String, (String, String)] = {
-
-//    Some(OAuth oauth_signature="ZjBlNTFkZDM4ZTZmZjg2YjI1NmU5", oauth_token="70a6443ad76073a140e0f11d094960a8", oauth_token_secret="46bdf7ce72f214bb20c7b4507f904254")
+  def login(username: String, password: String): ValidationNEL[String, (String, String)] = {
 
     validate {
       val result = vtRequest(vtPathLogin, headerNoToken()).post(loginBody(username, password)).value.get
@@ -151,29 +149,17 @@ object VirtualTrainer {
   /**
    * @return An xml string with the predefined presets
    */
-  def predefinedPresets(token: String, tokenSecret: String): String = {
+  def predefinedPresets(token: String, tokenSecret: String): ValidationNEL[String, String] = {
 
-    val result = vtRequest(vtPathPredefinedPresets, headerWithToken(token, tokenSecret)).get().value
-    result.isDefined match {
-      case true => {
-        result.get.body.toString
-      }
-      case false => throw new Exception("VirtualTrainer.predefinedPresets: The result from the vt predefined_presets call was not defined")
-    }
+    validate { vtRequest(vtPathPredefinedPresets, headerWithToken(token, tokenSecret)).get().value.get.body.toString }
   }
 
   /**
    * @return An xml string with the predefined presets
    */
-  def workouts(token: String, tokenSecret: String): String = {
+  def workouts(token: String, tokenSecret: String): ValidationNEL[String, String] = {
 
-    val result = vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret)).get().value
-    result.isDefined match {
-      case true => {
-        result.get.body.toString
-      }
-      case false => throw new Exception("VirtualTrainer.workouts: The result from the vt workouts call was not defined")
-    }
+    validate { vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret)).get().value.get.body.toString }
   }
 
 }

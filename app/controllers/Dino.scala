@@ -11,7 +11,7 @@ import utils._
 
 object Dino extends Controller {
 
-  def forward(request: Request[AnyContent]): Validation[String, play.api.libs.ws.Response] = {
+  def forward(request: Request[AnyContent]): ValidationNEL[String, play.api.libs.ws.Response] = {
 
     validate {
 
@@ -30,7 +30,8 @@ object Dino extends Controller {
   def passthru = Action {
     implicit request => {
       val r = forward(request)
-      r.fold(e => Ok(e), s => Ok(s.ahcResponse.getResponseBodyAsBytes))
+      r.fold(e => InternalServerError("Problem during dino passthru. Errors: " + e.list.mkString(", ")),
+        s => Ok(s.ahcResponse.getResponseBodyAsBytes))
     }
   }
 
@@ -46,13 +47,15 @@ object Dino extends Controller {
          * pageviews in the payload, then we process it here.
          */
         if ((~request.body.asXml \\ "pageviews").isEmpty)
-          forward(request).fold(e => Ok(e), r => Ok(r.toString()))
+          forward(request).fold(e => InternalServerError("Problems forward pageview call. Errors: " + e.list.mkString(", ")),
+            r => Ok(r.toString()))
         else {
 
           val cnt = PageViewModel.insert(~request.body.asXml).getOrThrow("Dino.pageview call of PageViewModel.insert")
           Ok("PageView load succeeded with " + cnt.toString + "inserts")
         }
-      }.error("Dino.pageview", "request body: " + request.body.toString).fold(e => Ok("PageView load failed"), s => s)
+      }.error("Dino.pageview", "request body: " + request.body.toString).
+        fold(e => InternalServerError("PageView load failed. Errors: " + e.list.mkString(", ")), s => s)
     }
   }
 }
