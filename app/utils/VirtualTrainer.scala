@@ -3,6 +3,8 @@ package utils
 import scalaz.{Node => _, Logger => _, _}
 import Scalaz._
 
+import models._
+
 import play.api.libs.ws.WS
 import play.api.Play.current
 import org.joda.time._
@@ -50,16 +52,19 @@ object VirtualTrainer {
 
   private def registerBody(params: Map[String, Seq[String]])(implicit nmField: String = "id", pwdField: String = "id") = {
 
-    val password = params.getOrElse(pwdField, throw new Exception(pwdField + " not found"))(0)
-    val json = ("age" -> age(params.getOrElse("DOB", throw new Exception("DOB not found"))(0))) ~
-      ("nickName" -> params.getOrElse(nmField, throw new Exception(nmField + " not found"))(0)) ~
+    val machineId = params.getOrElse("machine_id", throw new Exception("machine_id not supplied"))(0)
+    val locationId = Machine.getBasic(machineId.toLong).
+      getOrElse(throw new Exception("machine_id " + machineId.toString + " not found in database")).locationId
+    val password = params.getOrElse(pwdField, throw new Exception(pwdField + " not supplied"))(0)
+    val json = ("age" -> age(params.getOrElse("DOB", throw new Exception("DOB not supplied"))(0))) ~
+      ("nickName" -> params.getOrElse(nmField, throw new Exception(nmField + " not supplied"))(0)) ~
       ("password" -> (new sun.misc.BASE64Encoder()).encode(password.getBytes("UTF-8"))) ~
-      ("gender" -> params.getOrElse("gender", throw new Exception("gender not found"))(0).toLowerCase) ~
-      ("emailAddress" -> params.getOrElse("email", throw new Exception("email not found"))(0)) ~
-      ("weight" -> params.getOrElse("weight", throw new Exception("weight not found"))(0)) ~
+      ("gender" -> params.getOrElse("gender", throw new Exception("gender not supplied"))(0).toLowerCase) ~
+      ("emailAddress" -> params.getOrElse("email", throw new Exception("email not supplied"))(0)) ~
+      ("weight" -> params.getOrElse("weight", throw new Exception("weight not supplied"))(0)) ~
       ("weightUnit" -> "I") ~
       ("preferredLanguageCode" -> "en_US") ~
-      ("locationId" -> 1L) // TODO - What should this be?
+      ("locationId" -> locationId)
     Printer.compact(JsonAST.render(json))
 
   }
@@ -94,23 +99,21 @@ object VirtualTrainer {
       val npId = params.getOrElse("id", throw new Exception("id not found"))(0)
       
       val valPromise = vtRequest(vtPathValidate, headerNoToken()).post(registerBody(params))
-//      valPromise.await(20000)
+      valPromise.await(20000) // TODO -- too high!
       val valResult = valPromise.value.get
       if (valResult.status != 200) throw new Exception("Did not got ok from VT validate_new_account: " + valResult.body)
-//      Logger.debug("got past valPromise")
 
-//      Logger.debug("before regPromise creation")
       val regPromise = vtRequest(vtPathRegister, headerNoToken()).post(registerBody(params))
-//      Logger.debug("about to await regPromise with: " + regPromise.value.toString)
-//      regPromise.await(20000)
+      regPromise.await(20000) // TODO
       val regXml = regPromise.value.get.xml
-//      Logger.debug("got past regPromise")
 
       (regXml \\ "userId").find(n => true) match {
+
         case Some(id) =>
           val linkResult = vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, id.text)).value.get
           if (linkResult.status != 200) Logger.info("VT link_external_user returned status " + linkResult.status.toString)
           (id.text, (regXml \\ "nickName").text, (regXml \\ "nickName").text)
+
         case _ => throw new Exception("VirtualTrainer.register: Couldn't find userId in vt xml response: " + regXml.toString)
       }
     }

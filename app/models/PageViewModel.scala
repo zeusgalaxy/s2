@@ -20,41 +20,43 @@ object PageViewModel {
 
   val dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd") // format.format(new java.util.Date())
 
+  def parseXML(node: scala.xml.NodeSeq): Validation[String, PageViewModel] =
 
-  def parseXML(node: scala.xml.NodeSeq): Option[PageViewModel] =
-    Option(PageViewModel(
+    validate { PageViewModel(
       id = 0L,
       machineId = (node \ "@machine_id").toString().toLong,
       date = dateFormat.parse((node \ "@date").toString()),
-      // = NodeSeq(attract, login, mainMenu, workoutHistory, endOfWorkout)
-      // = NodeSeq(1, 1, 1, 1, 1)
       pageCounts = for ((p, c) <- (node \\ "page" \\ "@name") zip (node \\ "page" \\ "@count"))
-      yield (p.toString(), c.toString().toLong)
-    ))
+                      yield (p.toString(), c.toString().toLong)
+    )}
 
-//
-//  def verifyData(pvm: PageViewModel): Validation[String, Boolean] = {
-//    if (
-//      (MachineModel.findById(pvm.machineId) match {
-//        case Some(s) => true;
-//        case None => false
-//      }) &&
-//        pvm.pageCounts.length > 0
-//    // TODO: Verify date is reasonable
-//    ) true
-//    else false
+//  def test = {
+//    (3.success[String] |@| "error".failNel[Int]) ( (num, str) => str * num) ===
+//      NonEmptyList[String]("error")
 //  }
 
-  def verifyData(pvm: PageViewModel): Boolean = {
-    if (
-      (MachineModel.findById(pvm.machineId) match {
-        case Some(s) => true;
-        case None => false
-      }) &&
-        pvm.pageCounts.length > 0
-    // TODO: Verify date is reasonable
-    ) true
-    else false
+  def verifyData(pvm: PageViewModel): ValidationNEL[String, PageViewModel] = {
+
+    def checkMachine(pvm: PageViewModel): Validation[String, PageViewModel] = {
+      Machine.getBasic(pvm.machineId) match {
+        case Some(_) => pvm.success;
+        case None => ("Machine id " + pvm.machineId.toString + " not found in database").fail
+      }
+    }
+
+    def checkCounts(pvm: PageViewModel): Validation[String, PageViewModel] = {
+      if (pvm.pageCounts.length > 0) pvm.success else "Page view counts is zero".fail
+    }
+
+    //    for {
+    //      a <- checkMachine(pvm).liftFailNel
+    //      b <- checkCounts(pvm).liftFailNel
+    //    } yield b
+
+
+    (checkMachine(pvm).liftFailNel |@| checkCounts(pvm).liftFailNel) {
+      case (_, _) => pvm
+    }
   }
 
   // We can't determine if the incoming record is a duplicate. Therefore this is intentionally loose
@@ -83,36 +85,12 @@ object PageViewModel {
   def insert(node: scala.xml.NodeSeq): Validation[String, Int] = {
 
     validate {
-      parseXML(node) match {
-        case Some(pvm) =>
-          if (verifyData(pvm)) {
-            insertSQL(pvm)
-          }
-          else 0
-        case _ => 0
-      }
+
+      for {
+        pvm <- parseXML(node)
+        if (verifyData(pvm).isSuccess)
+      } yield insertSQL(pvm).success
     }
   }
 }
 
-////////////////////////////////////////////
-//
-// Machine Model is used to
-// verify the machine ID
-//
-case class MachineModel(id: Pk[Long] = NotAssigned, model: String)
-
-object MachineModel {
-
-  val simple = {
-    get[Pk[Long]]("machine.id") ~
-      get[String]("machine.model") map {
-      case id ~ model => MachineModel(id, model)
-    }
-  }
-
-  def findById(id: Long): Option[MachineModel] = DB.withConnection {
-    implicit connection =>
-      SQL("select * from machine where id = {id}").on('id -> id).as(MachineModel.simple.singleOpt)
-  }
-}

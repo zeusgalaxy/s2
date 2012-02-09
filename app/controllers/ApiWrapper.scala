@@ -12,9 +12,9 @@ object ApiWrapper extends Controller {
   def register = Action {
     implicit request =>
 
-      val params = postOrGetParams(request, List("DOB", "weight", "gender", "email", "id"))
+      val params = postOrGetParams(request, List("DOB", "weight", "gender", "email", "id", "machine_id"))
 
-      Dino.forward(request).fold(e => Ok("Problem during forwarding of dino call. Exception was: " + e), dinoResult => {
+      Dino.forward(request).fold(e => InternalServerError("Problem during forwarding of dino call. Exception was: " + e), dinoResult => {
 
         validate {
           val oldXml = dinoResult.xml
@@ -59,7 +59,7 @@ object ApiWrapper extends Controller {
             }
           }.debug("ApiWrapper.register", "Failure when trying to register and/or log in to Virtual Trainer").fold(e => oldXml, s => s)
         }.debug("ApiWrapper.register", "Problem with xml from dino call. Body = " + dinoResult.body).
-          fold(e => Ok("Problem with xml from dino call"), s => Ok(s))
+          fold(e => InternalServerError("Problem with xml from dino call"), s => Ok(s))
       })
   }
 
@@ -71,7 +71,7 @@ object ApiWrapper extends Controller {
 
       val params = postOrGetParams(request, List("id"))
 
-      Dino.forward(request).fold(e => Ok(e), dinoResult => {
+      Dino.forward(request).fold(e => InternalServerError(e), dinoResult => {
 
         validate {
           val oldXml = dinoResult.xml
