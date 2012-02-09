@@ -23,8 +23,8 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
 @main("Workouts by Club", 'listUsers) {
 
-@* TODO: figure out how to put company name here... *@
-<h2>@Messages("Workouts by Club for "+currentFilter, currentPage.total)</h2>
+@* TODO: figure out how to put company name here..."for "+currentFilter " *@
+<h2>@Messages("Workouts by Club", currentPage.total)</h2>
 
 @flash.get("success").map { message =>
 <div class="alert-message warning">
@@ -80,7 +80,6 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         <tr>
             @header(1,  "Club")
             @header(2,  "Screens")
-            @header(3,  "Equipment")
             @header(4,  "New Reg")
             @header(5,  "Tot Reg")
             @header(6,  "Workouts")
@@ -117,8 +116,6 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
                 <td><a href="">@woL.clubName</a></td>
 
                 <td>@woL.screens</td>
-
-                <td><a href="">Equipment List</a></td>
 
                 <td>n/a</td>
                 <td>n/a</td>
