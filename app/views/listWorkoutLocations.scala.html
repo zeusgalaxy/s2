@@ -38,7 +38,6 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
         Start: <input type="search" name="sd" value="@startDate" size= "8" placeholder="yyyymmdd " />
         End:   <input type="search" name="ed" value="@endDate" placeholder="yyyymmdd " />
-        @* String date: <input type="search" name="ed" value="@endDate" placeholder="yyyymmdd " />  *@
 
         <input type="submit" value="Go" class="btn primary pull-right">
     }
@@ -80,22 +79,32 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         <tr>
             @header(1,  "Club")
             @header(2,  "Screens")
-            @header(4,  "New Reg")
-            @header(5,  "Tot Reg")
-            @header(6,  "Workouts")
-            @header(7,  "Reg WOs")
-            @header(8,  "% Reg WOs")
-            @header(9,  "WOs / Screen")
-            @header(10, "WOs / Screen / Day")
-            @header(11, "Avg Duration Mins")
-            @header(12, "Total WO Hours")
+            @header(3,  "New Reg")
+            @header(4,  "Tot Reg")
+            @header(5,  "Workouts")
+            @header(6,  "Reg WOs")
+            @header(7,  "% Reg WOs")
+            @header(8,  "WOs / Screen")
+            @header(9, "WOs / Screen / Day")
+            @header(10, "Avg Duration Mins")
+            @header(11, "Total WO Hours")
         </tr>
         </thead>
         <tbody>
-        @currentPage.totals.map { woLtot =>
+
+        @currentPage.totals.toList.foreach  { woLtot => println(woLtot) }
+        @println("test 1: " + currentPage.totals)
+        @println("test 2: " + currentPage.totals.toList)
+        @println("test 3: " + currentPage.totals.toList(0) )
+
+        @Option(currentPage.totals).filterNot(_.isEmpty).map { tmp =>
+            @tmp.map {
+              case woLtot =>  {
                 <tr><strong>
-                <th>Totals:</th><th>@woLtot.screens</th><th></th>
-                <th>n/a</th><th>n/a</th>
+                <th>Totals:</th>
+                <th>@woLtot.screens</th>
+                <th>@woLtot.newReg</th>
+                <th>@woLtot.totReg</th>
                 <th>@woLtot.woCnt.formatted("%.0f")</th>
                 <th>@woLtot.woReg</th>
                 <th>@woLtot.woPercReg.formatted("%.2f")</th>
@@ -104,28 +113,25 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
                 <th>@woLtot.durAvg.formatted("%.2f")</th>
                 <th>@woLtot.durTot.formatted("%.0f")</th>
                 </strong></tr>
+              }
+            }
         }
 
 
         @woL.map {
-            case woL => {
+            case woLx => {
             <tr>
-                @*<td><a href="@routes.Application.edit(computer.id.get)">@computer.name</a></td>*@
-
-                @*<td><a href="">@woL.id</a></td>*@
-                <td><a href="">@woL.clubName</a></td>
-
-                <td>@woL.screens</td>
-
-                <td>n/a</td>
-                <td>n/a</td>
-                <td>@woL.woCnt.formatted("%.0f")</td>
-                <td>@woL.woReg</td>
-                <td>@woL.woPercReg.formatted("%.2f")</td>
-                <td>@woL.woPerScreen.formatted("%.2f")</td>
-                <td>@woL.woScreenDay.formatted("%.2f")</td>
-                <td>@woL.durAvg.formatted("%.2f")</td>
-                <td>@woL.durTot.formatted("%.0f")</td>
+                <td><a href="">@woLx.clubName</a></td>
+                <td>@woLx.screens</td>
+                <td>@woLx.newReg</td>
+                <td>@woLx.totReg</td>
+                <td>@woLx.woCnt.formatted("%.0f")</td>
+                <td>@woLx.woReg</td>
+                <td>@woLx.woPercReg.formatted("%.2f")</td>
+                <td>@woLx.woPerScreen.formatted("%.2f")</td>
+                <td>@woLx.woScreenDay.formatted("%.2f")</td>
+                <td>@woLx.durAvg.formatted("%.2f")</td>
+                <td>@woLx.durTot.formatted("%.0f")</td>
             </tr>
             }
         }

@@ -19,10 +19,7 @@ POST    /testRegistration           controllers.ApiWrapper.register
 GET     /testLogin                  controllers.Application.testLogin()
 
 # Reports
-GET     /report                      controllers.Report.index()
 GET     /report/WorkoutLocations     controllers.Report.showWorkoutLocations(p:Int ?= 0, s:Int ?= 1, f ?= "", sd ?= "", ed ?= "")
-# , dateStart: String
-
 
 
 # Map static resources from the /public folder to the /assets URL path

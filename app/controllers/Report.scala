@@ -10,14 +10,6 @@ import models.User
 
 object Report extends Controller {
 
-
-  def index = Action {
-    implicit request =>
-      Ok(html.index("This is the main page parameter"))
-  }
-
-  val Home = Redirect(routes.Report.showWorkoutLocations(0, 1, "", ""))
-
   def showWorkoutLocations(page: Int, orderBy: Int, filter: String, startDate: String, endDate: String) = Action {
     implicit request =>
 
