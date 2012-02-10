@@ -92,10 +92,6 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         </thead>
         <tbody>
 
-        @currentPage.totals.toList.foreach  { woLtot => println(woLtot) }
-        @println("test 1: " + currentPage.totals)
-        @println("test 2: " + currentPage.totals.toList)
-        @println("test 3: " + currentPage.totals.toList(0) )
 
         @Option(currentPage.totals).filterNot(_.isEmpty).map { tmp =>
             @tmp.map {

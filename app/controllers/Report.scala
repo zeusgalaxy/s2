@@ -1,12 +1,10 @@
 package controllers
 
 import play.api.mvc._
-import play.api.libs.ws._
-import play.api.Play.current
 
 import views._
 import models.WorkoutLocation
-import models.User
+
 
 object Report extends Controller {
 
