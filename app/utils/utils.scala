@@ -9,7 +9,6 @@ import play.api.mvc._
 import play.api.libs.ws.WS._
 import scalaz.{Node => _, Logger => _, _}
 import Scalaz._
-import utils.NPValidationNEL
 
 package object utils {
 

@@ -9,6 +9,8 @@ import play.api.Logger
 
 object ApiWrapper extends Controller {
 
+  // http://localhost:9000/n5iregister.jsp?machine_id=18&id=1115180902&membership_id=1&email=sOCClkoE%40stross.com&pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15
+
   def register = Action {
     implicit request =>
 
@@ -21,7 +23,7 @@ object ApiWrapper extends Controller {
             val oldXml = dinoResult.xml
 
             validate {
-              (oldXml \\ "response" \ "@code").find(n => true) match {
+              (oldXml \\ "response" \ "@code").find(_ => true) match {
 
                 case Some(code) if (code.text == "0") => {
 
@@ -59,7 +61,8 @@ object ApiWrapper extends Controller {
                 }
                 case _ => oldXml
               }
-            }.debug("ApiWrapper.register", "Failure when trying to register and/or log in to Virtual Trainer").fold(e => oldXml, s => s)
+            }.debug("ApiWrapper.register", "Failure when trying to register and/or log in to Virtual Trainer").
+              fold(e => oldXml, s => s)
           }.debug("ApiWrapper.register", "Problem with xml from dino call. Body = " + dinoResult.body).
             fold(e => InternalServerError("Problem with xml from dino call. Errors: " + e.list.mkString(", ")), Ok(_))
         })
