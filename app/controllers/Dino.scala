@@ -5,6 +5,7 @@ import Scalaz._
 
 import play.api._
 import play.api.mvc._
+import play.api.http._
 
 import models._
 import utils._
@@ -19,8 +20,18 @@ object Dino extends Controller {
 
       request.method match {
         case "GET" => newRequest.get().value.get
-        case "POST" => newRequest.post(newBody.getOrElse(throw new Exception("POST body is missing"))).value.get
-        case "PUT" => newRequest.put(newBody.getOrElse(throw new Exception("PUT body is missing"))).value.get
+        case "POST" => {
+
+          request.body match {
+            case AnyContentAsFormUrlEncoded(fueBody) => {
+              val wrt = Writeable.writeableOf_urlEncodedForm
+              val ct = ContentTypeOf.contentTypeOf_urlEncodedForm
+              newRequest.post[Map[String, Seq[String]]](fueBody)(wrt, ct).value.get
+            }
+            case _ => newRequest.post(newBody.get).value.get
+          }
+        }
+        case "PUT" => newRequest.put(newBody.get).value.get
         case "DELETE" => newRequest.delete().value.get
         case m => throw new Exception("Unexpected method in Dino.forward: " + m)
       }
