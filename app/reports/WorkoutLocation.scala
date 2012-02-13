@@ -137,7 +137,7 @@ object WorkoutLocation {
           sum(0) as WoCnt, sum(0) as woReg, sum(0) as WoPercReg, sum(0) as woPerScreen, sum(0) as woScreenDay, sum(0) as durAvg, sum(0) as durTot,
           e.location_id
         from exerciser e, location l 
-        where l.company_id = 81
+        where l.company_id = {filter}
         and e.location_id = l.location_id
         """
       ) .on(
