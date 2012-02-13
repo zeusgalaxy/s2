@@ -11,6 +11,7 @@ import views._
 import models._
 import utils._
 
+
 object Application extends Controller {
 
   val registrationForm = Form(

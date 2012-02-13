@@ -1,0 +1,176 @@
+@(currentPage: Page[WorkoutLocation], currentOrderBy: Int, currentFilter: String, startDate: String, endDate: String)(implicit flash: play.api.mvc.Flash)
+
+
+
+@****************************************
+* Helper generating navigation links    *
+****************************************@
+@link(newPage: Int, newOrderBy: Option[Int] = None) = @{
+routes.Report.showWorkoutLocations(newPage, newOrderBy.map { orderBy =>
+if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
+}.getOrElse(currentOrderBy), currentFilter)
+
+}
+
+@**********************************
+* Helper generating table headers *
+***********************************@
+@header(orderBy: Int, title: String) = {
+<th class="col@orderBy header @if(scala.math.abs(currentOrderBy) == orderBy) @{if(currentOrderBy < 0) "headerSortDown" else "headerSortUp"}">
+<a href="@link(0, Some(orderBy))">@title</a>
+</th>
+}
+
+@main("Workouts by Club", 'listUsers) {
+
+@* TODO: figure out how to put company name here..."for "+currentFilter " *@
+<h2>@Messages("Workouts by Club", currentPage.total)</h2>
+
+@flash.get("success").map { message =>
+<div class="alert-message warning">
+    <strong>Done!</strong> @message
+</div>
+}
+
+<div id="actions" class="twipsies well">
+    @helper.form(action=routes.Report.showWorkoutLocations()) {
+        <p>Comp:  <input type="search" name="f" value="@currentFilter" placeholder="Company ID" /></p>
+
+        Start: <input type="search" name="sd" value="@startDate" size= "8" placeholder="yyyymmdd " />
+        End:   <input type="search" name="ed" value="@endDate" placeholder="yyyymmdd " />
+
+        <input type="submit" value="Go" class="btn primary pull-right">
+    }
+
+</div>
+
+@Option(currentPage.items).filterNot(_.isEmpty).map { woL =>
+
+@if(currentPage.total >= WorkoutLocation.pageLength ) {
+    <div id="pagination_top" class="pagination">
+    <ul>
+        @currentPage.prev.map { page =>
+        <li class="prev">
+            <a href="@link(page)">&larr; Previous</a>
+        </li>
+        }.getOrElse {
+        <li class="prev disabled">
+            <a>&larr; Previous</a>
+        </li>
+        }
+        <li class="current">
+            <a>Displaying @(currentPage.offset + 1) to @(currentPage.offset + woL.size) of @currentPage.total</a>
+        </li>
+        @currentPage.next.map { page =>
+        <li class="next">
+            <a href="@link(page)">Next &rarr;</a>
+        </li>
+        }.getOrElse {
+        <li class="next disabled">
+            <a>Next &rarr;</a>
+        </li>
+        }
+    </ul>
+</div>
+}
+
+    <table class="users zebra-striped table-bordered table-condensed">
+        <thead>
+        <tr>
+            @header(1,  "Club")
+            @header(2,  "Screens")
+            @header(3,  "New Reg")
+            @header(4,  "Tot Reg")
+            @header(5,  "Workouts")
+            @header(6,  "Reg WOs")
+            @header(7,  "% Reg WOs")
+            @header(8,  "WOs / Screen")
+            @header(9, "WOs / Screen / Day")
+            @header(10, "Avg Duration Mins")
+            @header(11, "Total WO Hours")
+        </tr>
+        </thead>
+        <tbody>
+
+
+        @Option(currentPage.totals).filterNot(_.isEmpty).map { tmp =>
+            @tmp.map {
+              case woLtot =>  {
+                <tr><strong>
+                <th>Totals:</th>
+                <th>@woLtot.screens</th>
+                <th>@woLtot.newReg</th>
+                <th>@woLtot.totReg</th>
+                <th>@woLtot.woCnt.formatted("%.0f")</th>
+                <th>@woLtot.woReg</th>
+                <th>@woLtot.woPercReg.formatted("%.2f")</th>
+                <th>@woLtot.woPerScreen.formatted("%.2f")</th>
+                <th>@woLtot.woScreenDay.formatted("%.2f")</th>
+                <th>@woLtot.durAvg.formatted("%.2f")</th>
+                <th>@woLtot.durTot.formatted("%.0f")</th>
+                </strong></tr>
+              }
+            }
+        }
+
+
+        @woL.map {
+            case woLx => {
+            <tr>
+                <td><a href="">@woLx.clubName</a></td>
+                <td>@woLx.screens</td>
+                <td>@woLx.newReg</td>
+                <td>@woLx.totReg</td>
+                <td>@woLx.woCnt.formatted("%.0f")</td>
+                <td>@woLx.woReg</td>
+                <td>@woLx.woPercReg.formatted("%.2f")</td>
+                <td>@woLx.woPerScreen.formatted("%.2f")</td>
+                <td>@woLx.woScreenDay.formatted("%.2f")</td>
+                <td>@woLx.durAvg.formatted("%.2f")</td>
+                <td>@woLx.durTot.formatted("%.0f")</td>
+            </tr>
+            }
+        }
+
+        </tbody>
+    </table>
+
+      @if(currentPage.total >= WorkoutLocation.pageLength ) {
+        <div id="pagination" class="pagination">
+        <ul>
+            @currentPage.prev.map { page =>
+            <li class="prev">
+                <a href="@link(page)">&larr; Previous</a>
+            </li>
+            }.getOrElse {
+            <li class="prev disabled">
+                <a>&larr; Previous</a>
+            </li>
+            }
+            <li class="current">
+                <a>Displaying @(currentPage.offset + 1) to @(currentPage.offset + woL.size) of @currentPage.total</a>
+            </li>
+            @currentPage.next.map { page =>
+            <li class="next">
+                <a href="@link(page)">Next &rarr;</a>
+            </li>
+            }.getOrElse {
+            <li class="next disabled">
+                <a>Next &rarr;</a>
+            </li>
+            }
+        </ul>
+        </div>
+    }
+
+}.getOrElse {
+
+<div class="well">
+    <em>Nothing to display</em>
+</div>
+
+}
+
+
+}
+
