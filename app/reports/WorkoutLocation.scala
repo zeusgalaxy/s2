@@ -3,6 +3,7 @@ package models
 
 import play.api.db._
 import play.api.Play.current
+import java.math._
 
 import anorm._
 import anorm.SqlParser._
@@ -14,6 +15,13 @@ case class WorkoutLocation( clubName: String, screens: Long, newReg: java.math.B
                            woPerScreen: java.math.BigDecimal, woScreenDay: java.math.BigDecimal, durAvg: java.math.BigDecimal,
                            durTot: java.math.BigDecimal
                             )
+
+//case class tot1(  screens: Long, woCnt: java.math.BigDecimal, woReg: java.math.BigDecimal, woPercReg: java.math.BigDecimal,
+//                            woPerScreen: java.math.BigDecimal, woScreenDay: java.math.BigDecimal, durAvg: java.math.BigDecimal,
+//                            durTot: java.math.BigDecimal
+//                            )
+//
+//case class tot2 (  newReg: java.math.BigDecimal, totReg: java.math.BigDecimal )
 
 object WorkoutLocation {
 
@@ -40,8 +48,41 @@ object WorkoutLocation {
         WorkoutLocation(clubName, screens, newReg, totReg, woCnt, woReg, woPercReg, woPerScreen, woScreenDay, durAvg, durTot )
     }
   }
+  // All numbers for a total except newReg and totReg
+  val tot1_parse = {
+      get[Long]("screens") ~
+      get[java.math.BigDecimal]("woCnt") ~
+      get[java.math.BigDecimal]("woReg") ~
+      get[java.math.BigDecimal]("woPercReg") ~
+      get[java.math.BigDecimal]("woPerScreen") ~
+      get[java.math.BigDecimal]("woScreenDay") ~
+      get[java.math.BigDecimal]("durAvg") ~
+      get[java.math.BigDecimal]("durTot")
+//    map {
+//      case screens~woCnt~woReg~woPercReg~woPerScreen~woScreenDay~durAvg~durTot =>
+//        (screens, woCnt, woReg, woPercReg, woPerScreen, woScreenDay, durAvg, durTot )
+//    }
+  }
 
+  val tot2_parse = {
+    get[java.math.BigDecimal]("newReg") ~
+      get[java.math.BigDecimal]("totReg")  
+//    map {
+//      case newReg~totReg =>
+//        tot2(newReg, totReg )
+//    }
+  }
 
+  
+  def total ( p1: Any, p2: Any ): WorkoutLocation = {
+    p1 match {
+      case (screens:Long)~(woCnt:BigDecimal)~(woReg:BigDecimal)~(woPercReg:BigDecimal)~(woPerScreen:BigDecimal)~(woScreenDay:BigDecimal)~(durAvg:BigDecimal)~(durTot:BigDecimal) =>
+        p2 match {
+          case (newReg:BigDecimal)~(totReg:BigDecimal) => WorkoutLocation ("", screens, newReg, totReg, woCnt, woReg, woPercReg, woPerScreen, woScreenDay, durAvg, durTot )
+        }
+    }
+  }
+  
   // -- Queries
 
 
@@ -104,12 +145,9 @@ object WorkoutLocation {
       val tot1 = SQL(
         """
           select
-          l.club_name,
           count(distinct(s.machine_id)) as screens,
-          sum(0) as newReg,
-          sum(0) as totReg,
-          sum(s.workout_cnt) as woCnt,
-          sum(s.workout_regisr) as woReg,
+          ifnull( sum(s.workout_cnt), 0) as woCnt,
+          ifnull( sum(s.workout_regisr), 0) as woReg,
           ifnull( (sum(s.workout_regisr) / sum(s.workout_cnt)) * 100, 0) as woPercReg,
           ifnull(sum(s.workout_cnt) / count(distinct(s.machine_id)), 0) as woPerScreen,
           ifnull(sum(s.workout_cnt) / count(distinct(s.machine_id)) / count(distinct(s.day_int)), 0) as woScreenDay,
@@ -125,17 +163,15 @@ object WorkoutLocation {
         'filter -> filter,
         'sDate -> sDate,
         'eDate -> eDate
-      ).as(WorkoutLocation.simple.*)
+      ).as(WorkoutLocation.tot1_parse.single)
 
       Logger.info("tot1: " + tot1.toString)
 
       val tot2 = SQL(
         """
-        select l.club_name, 0 as screens, 
-          sum(case 1 when create_day_int >= {sDate} and create_day_int <= {eDate} then 1 else 0 end ) as newReg,
-          sum(case 1 when create_day_int <= {eDate} then 1 else 0 end ) as totReg,
-          sum(0) as WoCnt, sum(0) as woReg, sum(0) as WoPercReg, sum(0) as woPerScreen, sum(0) as woScreenDay, sum(0) as durAvg, sum(0) as durTot,
-          e.location_id
+        select  
+          ifnull( sum(case 1 when create_day_int >= {sDate} and create_day_int <= {eDate} then 1 else 0 end ), 0) as newReg,
+          ifnull( sum(case 1 when create_day_int <= {eDate} then 1 else 0 end ), 0) as totReg
         from exerciser e, location l 
         where l.company_id = {filter}
         and e.location_id = l.location_id
@@ -144,13 +180,17 @@ object WorkoutLocation {
         'filter -> filter,
         'sDate -> sDate,
         'eDate -> eDate
-      ).as(WorkoutLocation.simple.*)
+      ).as(WorkoutLocation.tot2_parse.single)
 
+      val comboTotal: WorkoutLocation = total ( tot1, tot2 )
+      
+      
       Logger.info("tot2: " + tot2.toString())
 
+      Logger.info("comboTotal: " + comboTotal.toString)
       // There most certainly a more elegant way to do this. But this works and took 2 min. No case clase or new parser required.
-      val totalCombined = List(WorkoutLocation(tot1(0).clubName, tot1(0).screens, tot2(0).newReg, tot2(0).totReg,
-                                              tot1(0).woCnt, tot1(0).woReg, tot1(0).woPercReg, tot1(0).woPerScreen, tot1(0).woScreenDay, tot1(0).durAvg, tot1(0).durTot ))
+//      val totalCombined = List(WorkoutLocation( tot1(0).screens, tot2(0).newReg, tot2(0).totReg,
+//                                              tot1(0).woCnt, tot1(0).woReg, tot1(0).woPercReg, tot1(0).woPerScreen, tot1(0).woScreenDay, tot1(0).durAvg, tot1(0).durTot ))
 
 
       val totalRows = SQL(
@@ -168,7 +208,7 @@ object WorkoutLocation {
         'eDate -> eDate
       ).as(scalar[Long].single)
 
-      Page(woL, totalCombined, page, offset, totalRows)
+      Page(woL, Seq(comboTotal), page, offset, totalRows)
     }
 
   }
