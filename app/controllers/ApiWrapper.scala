@@ -9,9 +9,70 @@ import play.api.Logger
 
 object ApiWrapper extends Controller {
 
-  // http://localhost:9000/n5iregister.jsp?machine_id=18&id=1115180902&membership_id=1&email=sOCClkoE%40stross.com&pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15
-
+  //  // http://localhost:9000/n5iregister.jsp?machine_id=18&id=1115180902&membership_id=1&email=sOCClkoE%40stross.com&pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15
   def register = Action {
+    implicit request =>
+
+      val params = postOrGetParams(request, List("DOB", "weight", "gender", "email", "id", "machine_id"))
+
+      (for {
+
+        dinoResult <- Dino.forward(request)
+        oldXml <- validate(dinoResult.xml)
+
+      } yield {
+
+        (oldXml \\ "response" \ "@code").find(_ => true) match {
+
+          case Some(code) if (code.text == "0") => {
+
+            for {
+              vtAcct <- VirtualTrainer.register(params) // tuple(uid, nickName, password)
+              (vtUid, vtNickName, vtPassword) = vtAcct
+
+              vtAuth <- VirtualTrainer.login(vtUid, vtNickName) // tuple(token, tokenSecret)
+              (vtToken, vtTokenSecret) = vtAuth
+
+              vtPredefinedPresets <- VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret)
+              vtWorkouts <- VirtualTrainer.workouts(vtToken, vtTokenSecret)
+
+            } yield
+
+              XmlMutator(oldXml).add("response",
+                <vtAccount>
+                  <vtUid>
+                    {vtUid}
+                  </vtUid>
+                  <vtNickName>
+                    {vtNickName}
+                  </vtNickName>
+                  <vtPassword>
+                    {vtPassword}
+                  </vtPassword>
+                  <vtToken>
+                    {vtToken}
+                  </vtToken>
+                  <vtTokenSecret>
+                    {vtTokenSecret}
+                  </vtTokenSecret>
+                  <vtPredefinedPresets>
+                    {scala.xml.XML.loadString(vtPredefinedPresets)}
+                  </vtPredefinedPresets>
+                  <vtWorkouts>
+                    {scala.xml.XML.loadString(vtWorkouts)}
+                  </vtWorkouts>
+                </vtAccount>
+              )
+          }.debug("ApiWrapper.register", "Problems encountered")
+            .toOption.getOrElse(XmlMutator(oldXml).add("response", <vtAccount></vtAccount>))
+
+          case _ => XmlMutator(oldXml).add("response", <vtAccount></vtAccount>)
+        }
+      }).debug("ApiWrapper.register", "Problems encountered")
+        .fold(e => InternalServerError(e.list.mkString(", ")), s => Ok(s))
+  }
+
+  def OBSOLETEregister = Action {
     implicit request =>
 
       val params = postOrGetParams(request, List("DOB", "weight", "gender", "email", "id", "machine_id"))
