@@ -3,8 +3,10 @@ package controllers
 import scalaz.{Logger => _, _}
 import Scalaz._
 
-import play.api._
+import play.api.Play.current
 import play.api.mvc._
+import play.api.libs.ws.Response
+import play.api.libs.concurrent.Promise
 import play.api.http._
 
 import models._
@@ -12,23 +14,32 @@ import utils._
 
 object Dino extends Controller {
 
+  lazy val dinoTimeout = current.configuration.getString("dino.timeout").getOrElse(throw new Exception("dino.timeout not in configuration")).toInt
+
   def forward(request: Request[AnyContent]): ValidationNEL[String, play.api.libs.ws.Response] = {
+
+    def dinoValue(p: Promise[Response], timeout: Int): Response = {
+      p.await(timeout)
+      p.value.get
+    }
 
     validate {
 
       val (newRequest, newBody) = toWSRequest(request)
 
       request.method match {
-        case "GET" => newRequest.get().value.get
+        case "GET" => {
+          dinoValue(newRequest.get(), dinoTimeout)
+        }
         case "POST" => {
 
           request.body match {
             case AnyContentAsFormUrlEncoded(fueBody) => {
               val wrt = Writeable.writeableOf_urlEncodedForm
               val ct = ContentTypeOf.contentTypeOf_urlEncodedForm
-              newRequest.post[Map[String, Seq[String]]](fueBody)(wrt, ct).value.get
+              dinoValue(newRequest.post[Map[String, Seq[String]]](fueBody)(wrt, ct), dinoTimeout)
             }
-            case _ => newRequest.post(newBody.get).value.get
+            case _ => dinoValue(newRequest.post(newBody.get), dinoTimeout)
           }
         }
         case "PUT" => newRequest.put(newBody.get).value.get
