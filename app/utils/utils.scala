@@ -7,6 +7,9 @@ import scala.xml._
 import play.api._
 import play.api.mvc._
 import play.api.libs.ws.WS._
+import play.api.libs.ws.Response
+import play.api.libs.concurrent.Promise
+
 import scalaz.{Node => _, Logger => _, _}
 import Scalaz._
 import utils.NPOption
@@ -32,6 +35,11 @@ package object utils {
       for (k <- r.queryString.keys; v <- r.queryString.get(k).get) yield (k -> v)
     }.toMap
     (WSRequestHolder("http://" + switchHosts(r.host) + r.uri, Map("ACCEPT-CHARSET" -> Seq("utf-8")), qs, None, None), newBody)
+  }
+
+  def waitVal(p: Promise[Response], timeout: Int): Response = {
+    p.await(timeout)
+    p.value.get
   }
 
   def postOrGetParams(rq: Request[AnyContent], keys: Seq[String]): Map[String, Seq[String]] = {

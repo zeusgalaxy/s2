@@ -18,18 +18,13 @@ object Dino extends Controller {
 
   def forward(request: Request[AnyContent]): ValidationNEL[String, play.api.libs.ws.Response] = {
 
-    def dinoValue(p: Promise[Response], timeout: Int): Response = {
-      p.await(timeout)
-      p.value.get
-    }
-
     validate {
 
       val (newRequest, newBody) = toWSRequest(request)
 
       request.method match {
         case "GET" => {
-          dinoValue(newRequest.get(), dinoTimeout)
+          waitVal(newRequest.get(), dinoTimeout)
         }
         case "POST" => {
 
@@ -37,9 +32,9 @@ object Dino extends Controller {
             case AnyContentAsFormUrlEncoded(fueBody) => {
               val wrt = Writeable.writeableOf_urlEncodedForm
               val ct = ContentTypeOf.contentTypeOf_urlEncodedForm
-              dinoValue(newRequest.post[Map[String, Seq[String]]](fueBody)(wrt, ct), dinoTimeout)
+              waitVal(newRequest.post[Map[String, Seq[String]]](fueBody)(wrt, ct), dinoTimeout)
             }
-            case _ => dinoValue(newRequest.post(newBody.get), dinoTimeout)
+            case _ => waitVal(newRequest.post(newBody.get), dinoTimeout)
           }
         }
         case "PUT" => newRequest.put(newBody.get).value.get

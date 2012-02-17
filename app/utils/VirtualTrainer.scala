@@ -52,6 +52,11 @@ object VirtualTrainer {
       "\", oauth_token=\"" + token +
       "\", oauth_signature=\"" + (new sun.misc.BASE64Encoder()).
       encode((consSecret + "&" + tokenSecret).getBytes("UTF-8")) + "\""
+  
+  def validSegs(segsXml: String, model: String) = {
+    for (w <- scala.xml.XML.loadString(segsXml) \\ "workoutSegments"
+         if (w \\ "deviceType").exists { _.text == model }) yield w
+  }
 
   private def registerBody(params: Map[String, Seq[String]])(implicit nmField: String = "id", pwdField: String = "id") = {
 
@@ -91,11 +96,6 @@ object VirtualTrainer {
     val h = header
     WS.url(vtPathPrefix + path).withHeaders(("Content-Type", "application/json"), ("Authorization", h))
   }
-  
-  def vtValue(p: Promise[Response], timeout: Int): Response = {
-    p.await(timeout)
-    p.value.get
-  }
 
   /**
    * @return A tuple with Virtual Trainer userId, nickName and password, if successful
@@ -107,17 +107,17 @@ object VirtualTrainer {
       val npId = params.getOrElse("id", throw new Exception("id not found"))(0)
 
       val rBody = registerBody(params)
-      val valResult = vtValue(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)
+      val valResult = waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)
       if (valResult.status != 200) throw new Exception("Did not get ok from VT validate_new_account: " + valResult.body)
 
-      val regResult = vtValue(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout)
+      val regResult = waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout)
       if (regResult.status != 200) throw new Exception("Did not get ok from VT register: " + regResult.body)
       val regXml = validate(regResult.xml).fold(e => throw new Exception("Prob w regXml: " + regResult.body), s => s)
 
       (regXml \\ "userId").find(n => true) match {
 
         case Some(id) =>
-          val linkResult = vtValue(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, id.text)), vtTimeout)
+          val linkResult = waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, id.text)), vtTimeout)
           if (linkResult.status != 200) Logger.info("VT link_external_user returned status " + linkResult.status.toString)
           (id.text, (regXml \\ "nickName").text, (regXml \\ "nickName").text)
 
@@ -138,7 +138,7 @@ object VirtualTrainer {
 
     validate {
       val lBody = loginBody(vtUsername, vtPassword)
-      val loginResult = vtValue(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout)
+      val loginResult = waitVal(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout)
       if (loginResult.status != 200) throw new Exception("Did not receive 200 from vt login. Status was: " + loginResult.status.toString)
       val Token = """(.*oauth_token=\")([^\"]*).*""".r
       val Secret = """(.*oauth_token_secret=\")([^\"]*).*""".r
@@ -157,10 +157,10 @@ object VirtualTrainer {
   /**
    * @return An xml string with the predefined presets
    */
-  def predefinedPresets(token: String, tokenSecret: String): ValidationNEL[String, String] = {
+  def predefinedPresets(token: String, tokenSecret: String, model: String): ValidationNEL[String, String] = {
 
     validate {
-      val ppResult = vtValue(vtRequest(vtPathPredefinedPresets, headerWithToken(token, tokenSecret)).get(), vtTimeout)
+      val ppResult = waitVal(vtRequest(vtPathPredefinedPresets, headerWithToken(token, tokenSecret)).get(), vtTimeout)
       if (ppResult.status != 200) throw new Exception("Did not receive 200 from vt predefined_presets. Status was: " + ppResult.status.toString)
       ppResult.body.toString
     }
@@ -169,10 +169,10 @@ object VirtualTrainer {
   /**
    * @return An xml string with the user's workouts
    */
-  def workouts(token: String, tokenSecret: String): ValidationNEL[String, String] = {
+  def workouts(token: String, tokenSecret: String, model: String): ValidationNEL[String, String] = {
 
     validate {
-      val wResult = vtValue(vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret)).get(), vtTimeout)
+      val wResult = waitVal(vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret)).get(), vtTimeout)
       if (wResult.status != 200) throw new Exception("Did not receive 200 from vt workouts. Status was: " + wResult.status.toString)
       wResult.body.toString
     }

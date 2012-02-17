@@ -16,7 +16,7 @@ object ApiWrapper extends Controller {
   def register = Action {
     implicit request =>
 
-      // Note that what is called "id" in the request is actually "login" in the database (per dino!)
+    // Note that what is called "id" in the request is actually "login" in the database (per dino!)
       val params = postOrGetParams(request, List("DOB", "weight", "gender", "email", "id", "machine_id"))
 
       (for {
@@ -39,8 +39,14 @@ object ApiWrapper extends Controller {
               (vtToken, vtTokenSecret) = vtAuth
               updResult <- validate(Exerciser.updateToken(npLogin, vtToken, vtTokenSecret))
 
-              vtPredefinedPresets <- VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret)
-              vtWorkouts <- VirtualTrainer.workouts(vtToken, vtTokenSecret)
+              val machine = params("machine_id")(0).toLong
+              val model = Machine.getWithEquip(machine).
+                getOrFail("Machine " + machine.toString + " not found in ApiWrapper.login").
+                fold(e => "", s => s._2.getOrFail("No equipment for machine " + machine.toString + " in ApiWrapper.login").
+                fold(e => "", s => s.model))
+
+              vtPredefinedPresets <- VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret, "")
+              vtWorkouts <- VirtualTrainer.workouts(vtToken, vtTokenSecret, "")
 
             } yield
 
@@ -75,7 +81,9 @@ object ApiWrapper extends Controller {
           case _ => XmlMutator(oldXml).add("response", <vtAccount></vtAccount>)
         }
       }).debug("ApiWrapper.register", "Problems encountered")
-        .fold(e => Ok(<response desc="Registration failed" code="1">{e.list.mkString(", ")}</response>), s => Ok(s))
+        .fold(e => Ok(<response desc="Registration failed" code="1">
+        {e.list.mkString(", ")}
+      </response>), s => Ok(s))
   }
 
   // http://qa-ec2.netpulse.ws/core/n5ilogin.jsp?machine_id=18&id=1112925684&pic=22&oem_tos=15
@@ -84,8 +92,8 @@ object ApiWrapper extends Controller {
   def login = Action {
     implicit request =>
 
-      // Note that what is called "id" in the request is actually "login" in the database (per dino!)
-      val params = postOrGetParams(request, List("id"))
+    // Note that what is called "id" in the request is actually "login" in the database (per dino!)
+      val params = postOrGetParams(request, List("id", "machine_id"))
 
       (for {
         dinoResult <- Dino.forward(request)
@@ -96,10 +104,16 @@ object ApiWrapper extends Controller {
           case Some(code) if (code.text == "0") => {
 
             val npLogin = params("id")(0)
+            val machine = params("machine_id")(0).toLong
+            val model = Machine.getWithEquip(machine).
+              getOrFail("Machine " + machine.toString + " not found in ApiWrapper.login").
+              fold(e => "", s => s._2.getOrFail("No equipment for machine " + machine.toString + " in ApiWrapper.login").
+              fold(e => "", s => s.model))
+
             for {
               ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found in ApiWrapper.login")
-              vtPredefinedPresets <- VirtualTrainer.predefinedPresets(ex.vtToken, ex.vtTokenSecret)
-              vtWorkouts <- VirtualTrainer.workouts(ex.vtToken, ex.vtTokenSecret)
+              vtPredefinedPresets <- VirtualTrainer.predefinedPresets(ex.vtToken, ex.vtTokenSecret, "")
+              vtWorkouts <- VirtualTrainer.workouts(ex.vtToken, ex.vtTokenSecret, "")
 
             } yield
 
@@ -125,7 +139,9 @@ object ApiWrapper extends Controller {
           case _ => oldXml
         }
       }).debug("ApiWrapper.login", "Problems encountered")
-        .fold(e => Ok(<response desc="Login failed" code="1">{e.list.mkString(", ")}</response>), s => Ok(s))
+        .fold(e => Ok(<response desc="Login failed" code="1">
+        {e.list.mkString(", ")}
+      </response>), s => Ok(s))
   }
 
   //  def registerOLD = Action {

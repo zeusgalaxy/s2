@@ -1,5 +1,6 @@
 package models
 
+import utils._
 import play.api.db._
 import play.api.Play.current
 
@@ -8,20 +9,54 @@ import anorm.SqlParser._
 
 case class MachineBasic(id: Long, locationId: Long, model: String)
 
+case class Equipment(id: Int, mfr: Short, model: Short, eType: Option[String],
+                     mfrName: Option[String], modelName: Option[String])
+
 object Machine {
 
   val basic = {
     get[Long]("machine.id") ~
       get[Long]("machine.location_id") ~
       get[String]("machine.model") map {
-      case id~locationId~model => MachineBasic(id, locationId, model)
+      case id ~ locationId ~ model => MachineBasic(id, locationId, model)
     }
+  }
+
+  val withEquip = Machine.basic ~ (Equipment.full ?) map {
+    case machine ~ equipment => (machine, equipment)
   }
 
   def getBasic(id: Long): Option[MachineBasic] = {
-    DB.withConnection { implicit connection =>
-      SQL("select id, location_id, model from machine where id = {id}").on('id -> id).as(Machine.basic.singleOpt)
-    }
+
+    validate {
+      DB.withConnection {
+        implicit connection =>
+          SQL("select * from machine where id = {id}").on('id -> id).as(Machine.basic.singleOpt)
+      }
+    }.info("Machine.getBasic", "Failure during Machine retrieval").fold(e => None, s => s)
   }
 
+  def getWithEquip(id: Long): Option[(MachineBasic, Option[Equipment])] = {
+    validate {
+      DB.withConnection {
+        implicit connection =>
+          SQL("select * from machine m join equipment e on m.equipment_id = e.id where m.id = {id}").
+            on('id -> id).as(Machine.withEquip.singleOpt)
+      }
+    }.info("Machine.getWithEquip", "Failure during Machine/Equip retrieval").fold(e => None, s => s)
+  }
+}
+
+object Equipment {
+
+  val full = {
+    get[Int]("equipment.id") ~
+      get[Short]("equipment.mfr") ~
+      get[Short]("equipment.model") ~
+      get[Option[String]]("equipment.type") ~
+      get[Option[String]]("equipment.mfr_name") ~
+      get[Option[String]]("equipment.model_name") map {
+      case id ~ mfr ~ model ~ eType ~ mfrName ~ modelName => Equipment(id, mfr, model, eType, mfrName, modelName)
+    }
+  }
 }
