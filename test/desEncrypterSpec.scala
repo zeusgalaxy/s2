@@ -2,29 +2,26 @@ package test
 
 import org.specs2.mutable._
 
-import play.api.test._
-import play.api.test.Helpers._
-import play.api.mvc.AnyContentAsXml
-import play.api.Logger
-
-
 object desEncrypterSpec extends Specification {
 
   import utils._
-  
+
+  val testString = "This is a test string for encryption"
+  var encrypted = ""
+  var dE: DesEncrypter = null
+
   "the desEncrypter " should {
 
-    val testString = "This is a test string for encryption"
-    var encrypted = ""
-    val enc = new DesEncrypter(DesEncrypter.PASSPHRASE_API_KEY)
-
+    "Create a new desEncrypter object with passphrase" in  {
+      dE = new DesEncrypter(DesEncrypter.PASSPHRASE_API_KEY)
+      dE mustNotEqual (null)
+    }
     "Encrypt a string" in {
-       encrypted = enc.encrypt(testString)
+       encrypted = dE.encrypt(testString)
        encrypted must not beEmpty
     }
-
     "Decrypt the string and have it match the original " in {
-      enc.decrypt(encrypted) must equalTo (testString)
+      dE.decrypt(encrypted) must equalTo (testString)
     }
 
   }
