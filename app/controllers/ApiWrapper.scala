@@ -43,10 +43,10 @@ object ApiWrapper extends Controller {
               val model = Machine.getWithEquip(machine).
                 getOrFail("Machine " + machine.toString + " not found in ApiWrapper.login").
                 fold(e => "", s => s._2.getOrFail("No equipment for machine " + machine.toString + " in ApiWrapper.login").
-                fold(e => "", s => s.model))
+                fold(e => "", s => s.model.toString))
 
-              vtPredefinedPresets <- VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret, "")
-              vtWorkouts <- VirtualTrainer.workouts(vtToken, vtTokenSecret, "")
+              vtPredefinedPresets <- VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret, model)
+              vtWorkouts <- VirtualTrainer.workouts(vtToken, vtTokenSecret, model)
 
             } yield
 
@@ -108,12 +108,12 @@ object ApiWrapper extends Controller {
             val model = Machine.getWithEquip(machine).
               getOrFail("Machine " + machine.toString + " not found in ApiWrapper.login").
               fold(e => "", s => s._2.getOrFail("No equipment for machine " + machine.toString + " in ApiWrapper.login").
-              fold(e => "", s => s.model))
+              fold(e => "", s => s.model.toString))
 
             for {
               ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found in ApiWrapper.login")
-              vtPredefinedPresets <- VirtualTrainer.predefinedPresets(ex.vtToken, ex.vtTokenSecret, "")
-              vtWorkouts <- VirtualTrainer.workouts(ex.vtToken, ex.vtTokenSecret, "")
+              vtPredefinedPresets <- VirtualTrainer.predefinedPresets(ex.vtToken, ex.vtTokenSecret, model)
+              vtWorkouts <- VirtualTrainer.workouts(ex.vtToken, ex.vtTokenSecret, model)
 
             } yield
 

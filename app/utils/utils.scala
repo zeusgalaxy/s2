@@ -12,7 +12,6 @@ import play.api.libs.concurrent.Promise
 
 import scalaz.{Node => _, Logger => _, _}
 import Scalaz._
-import utils.NPOption
 
 package object utils {
 
