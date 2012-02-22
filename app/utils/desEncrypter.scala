@@ -7,6 +7,8 @@ import java.security.spec._
 import java.io._
 import java.security.{NoSuchAlgorithmException, InvalidAlgorithmParameterException}
 import javax.management.openmbean.InvalidKeyException
+import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException
+import play.api.Logger
 
 /**
  *
@@ -69,11 +71,16 @@ class DesEncrypter ( passPhrase: String ) {
 
   def decrypt(str: String): String = {
     try {
+      Logger.debug("are equal: " + (str == "fIOiwo2X1Qt4+LF+BIuHNRyKMJDzgicjcTzMt5+rWKcU9hOCgMa34vDGj0teYEL0TnsIlUMLR8BY\r\nJK4de4XTlrKTCjC1+zsQUXrHRTADC7M=\r\n").toString)
       var dec: Array[Byte] = Base64.decode(str)
       var utf8: Array[Byte] = dcipher.doFinal(dec)
+
       return new String(utf8, "UTF8")
     }
     catch {
+      case e: Base64DecodingException => {
+        Logger.debug("Base64DecodingException: "+str+"\n"+e.getMessage)
+      }
       case e: BadPaddingException => {
       }
       case e: IllegalBlockSizeException => {
