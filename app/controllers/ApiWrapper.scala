@@ -42,7 +42,9 @@ object ApiWrapper extends Controller {
               val machine = params("machine_id")(0).toLong
               val model = Machine.getWithEquip(machine).
                 getOrFail("Machine " + machine.toString + " not found in ApiWrapper.login").
+                info("ApiWrapper.login", "model retrieval problems").
                 fold(e => "", s => s._2.getOrFail("No equipment for machine " + machine.toString + " in ApiWrapper.login").
+                info("ApiWrapper.login", "model retrieval problems").
                 fold(e => "", s => s.model.toString))
 
               vtPredefinedPresets <- VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret, model)
@@ -68,10 +70,10 @@ object ApiWrapper extends Controller {
                     {vtTokenSecret}
                   </vtTokenSecret>
                   <vtPredefinedPresets>
-                    {scala.xml.XML.loadString(vtPredefinedPresets)}
+                    {vtPredefinedPresets}
                   </vtPredefinedPresets>
                   <vtWorkouts>
-                    {scala.xml.XML.loadString(vtWorkouts)}
+                    {vtWorkouts}
                   </vtWorkouts>
                 </vtAccount>
               )
@@ -107,8 +109,10 @@ object ApiWrapper extends Controller {
             val machine = params("machine_id")(0).toLong
             val model = Machine.getWithEquip(machine).
               getOrFail("Machine " + machine.toString + " not found in ApiWrapper.login").
-              fold(e => "", s => s._2.getOrFail("No equipment for machine " + machine.toString + " in ApiWrapper.login").
-              fold(e => "", s => s.model.toString))
+              info("ApiWrapper.login", "model retrieval problems").
+                fold(e => "", s => s._2.getOrFail("No equipment for machine " + machine.toString + " in ApiWrapper.login").
+              info("ApiWrapper.login", "model retrieval problems").
+                fold(e => "", s => s.model.toString))
 
             for {
               ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found in ApiWrapper.login")
@@ -126,10 +130,10 @@ object ApiWrapper extends Controller {
                     {ex.vtTokenSecret}
                   </vtTokenSecret>
                   <vtPredefinedPresets>
-                    {scala.xml.XML.loadString(vtPredefinedPresets)}
+                    {vtPredefinedPresets}
                   </vtPredefinedPresets>
                   <vtWorkouts>
-                    {scala.xml.XML.loadString(vtWorkouts)}
+                    {vtWorkouts}
                   </vtWorkouts>
                 </vtAccount>
               )

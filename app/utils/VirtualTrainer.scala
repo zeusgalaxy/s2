@@ -14,6 +14,7 @@ import play.api.Logger
 import play.api.libs.ws._
 import play.api.libs.ws.WS._
 import play.api.libs.concurrent.Promise
+import xml.{Elem, NodeSeq}
 
 
 object VirtualTrainer {
@@ -52,10 +53,12 @@ object VirtualTrainer {
       "\", oauth_token=\"" + token +
       "\", oauth_signature=\"" + (new sun.misc.BASE64Encoder()).
       encode((consSecret + "&" + tokenSecret).getBytes("UTF-8")) + "\""
-  
+
   def validSegs(segsXml: String, model: String) = {
     for (w <- scala.xml.XML.loadString(segsXml) \\ "workoutSegments"
-         if (w \\ "deviceType").exists { _.text == model }) yield w
+         if (w \\ "deviceType").exists {
+           _.text == model
+         }) yield w
   }
 
   private def registerBody(params: Map[String, Seq[String]])(implicit nmField: String = "id", pwdField: String = "id") = {
@@ -102,29 +105,57 @@ object VirtualTrainer {
    */
   def register(params: Map[String, Seq[String]]): ValidationNEL[String, (String, String, String)] = {
 
-    validate {
+    //    validate {
+    //
+    //      val npId = params.getOrElse("id", throw new Exception("id not found"))(0)
+    //
+    //      val rBody = registerBody(params)
+    //      val valResult = waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)
+    //      if (valResult.status != 200) throw new Exception("Did not get ok from VT validate_new_account: " + valResult.body)
+    //
+    //      val regResult = waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout)
+    //      if (regResult.status != 200) throw new Exception("Did not get ok from VT register: " + regResult.body)
+    //      val regXml = validate(regResult.xml).fold(e => throw new Exception("Prob w regXml: " + regResult.body), s => s)
+    //      (regXml \\ "userId").find(n => true) match {
+    //
+    //        case Some(id) =>
+    //          val linkResult = waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, id.text)), vtTimeout)
+    //          if (linkResult.status != 200) Logger.info("VT link_external_user returned status " + linkResult.status.toString)
+    //          (id.text, (regXml \\ "nickName").text, (regXml \\ "nickName").text)
+    //
+    //        case _ => throw new Exception("VirtualTrainer.register: Couldn't find userId in vt xml response: " + regXml.toString)
+    //      }
+    //    }
 
-      val npId = params.getOrElse("id", throw new Exception("id not found"))(0)
+    //    EXPERIMENT =============
+//    validate {
+      for {
+        npId <- validate((params.get("id").get(0)))
+        rBody <- validate(registerBody(params))
+        valResult <- test(waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)) {
+          _.status == 200
+        }
+        regResult <- test(waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout)) {
+          _.status == 200
+        }
+        regXml <- validate(regResult.xml)
 
-      val rBody = registerBody(params)
-      val valResult = waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)
-      if (valResult.status != 200) throw new Exception("Did not get ok from VT validate_new_account: " + valResult.body)
+      } yield {
 
-      val regResult = waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout)
-      if (regResult.status != 200) throw new Exception("Did not get ok from VT register: " + regResult.body)
-      val regXml = validate(regResult.xml).fold(e => throw new Exception("Prob w regXml: " + regResult.body), s => s)
+        (regXml \\ "userId").find(n => true) match {
 
-      (regXml \\ "userId").find(n => true) match {
+          case Some(id) =>
+            val linkResult = waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, id.text)), vtTimeout)
+            if (linkResult.status != 200) Logger.info("VT link_external_user returned status " + linkResult.status.toString)
+            (id.text, (regXml \\ "nickName").text, (regXml \\ "nickName").text)
 
-        case Some(id) =>
-          val linkResult = waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, id.text)), vtTimeout)
-          if (linkResult.status != 200) Logger.info("VT link_external_user returned status " + linkResult.status.toString)
-          (id.text, (regXml \\ "nickName").text, (regXml \\ "nickName").text)
-
-        case _ => throw new Exception("VirtualTrainer.register: Couldn't find userId in vt xml response: " + regXml.toString)
+          case _ => throw new Exception("VirtualTrainer.register: Couldn't find userId in vt xml response: " + regXml.toString)
+        }
       }
-    }
+      //    "fail".failNel[(String, String, String)]
+//    }
   }
+
 
   private def getToken(login: String): ValidationNEL[String, Exerciser] = {
 
@@ -157,24 +188,33 @@ object VirtualTrainer {
   /**
    * @return An xml string with the predefined presets
    */
-  def predefinedPresets(token: String, tokenSecret: String, model: String): ValidationNEL[String, String] = {
+  def predefinedPresets(token: String, tokenSecret: String, model: String): ValidationNEL[String, NodeSeq] = {
 
     validate {
       val ppResult = waitVal(vtRequest(vtPathPredefinedPresets, headerWithToken(token, tokenSecret)).get(), vtTimeout)
       if (ppResult.status != 200) throw new Exception("Did not receive 200 from vt predefined_presets. Status was: " + ppResult.status.toString)
-      ppResult.body.toString
+
+      (ppResult.xml \\ "workoutSegments").withFilter {
+        ws => (ws \\ "deviceType").exists(dt => dt.text == model)
+      } map {
+        n => n
+      }
     }
   }
 
   /**
    * @return An xml string with the user's workouts
    */
-  def workouts(token: String, tokenSecret: String, model: String): ValidationNEL[String, String] = {
+  def workouts(token: String, tokenSecret: String, model: String): ValidationNEL[String, NodeSeq] = {
 
     validate {
       val wResult = waitVal(vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret)).get(), vtTimeout)
       if (wResult.status != 200) throw new Exception("Did not receive 200 from vt workouts. Status was: " + wResult.status.toString)
-      wResult.body.toString
+      (wResult.xml \\ "workoutSegments").withFilter {
+        ws => (ws \\ "deviceType").exists(dt => dt.text == model)
+      } map {
+        n => n
+      }
     }
   }
 

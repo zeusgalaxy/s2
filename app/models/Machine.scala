@@ -9,7 +9,7 @@ import anorm.SqlParser._
 
 case class MachineBasic(id: Long, locationId: Long, model: String)
 
-case class Equipment(id: Int, mfr: Short, model: Short, eType: Option[String],
+case class Equipment(id: Long, mfr: Int, model: Int, eType: Option[String],
                      mfrName: Option[String], modelName: Option[String])
 
 object Machine {
@@ -50,13 +50,23 @@ object Machine {
 object Equipment {
 
   val full = {
-    get[Int]("equipment.id") ~
-      get[Short]("equipment.mfr") ~
-      get[Short]("equipment.model") ~
+    long("equipment.id") ~
+      int("equipment.mfr") ~
+      int("equipment.model") ~
       get[Option[String]]("equipment.type") ~
       get[Option[String]]("equipment.mfr_name") ~
       get[Option[String]]("equipment.model_name") map {
       case id ~ mfr ~ model ~ eType ~ mfrName ~ modelName => Equipment(id, mfr, model, eType, mfrName, modelName)
     }
   }
+//  val full = {
+//    get[Int]("equipment.id") ~
+//      get[Int]("equipment.mfr") ~
+//      get[Int]("equipment.model") ~
+//      get[Option[String]]("equipment.type") ~
+//      get[Option[String]]("equipment.mfr_name") ~
+//      get[Option[String]]("equipment.model_name") map {
+//      case id ~ mfr ~ model ~ eType ~ mfrName ~ modelName => Equipment(id, mfr, model, eType, mfrName, modelName)
+//    }
+//  }
 }

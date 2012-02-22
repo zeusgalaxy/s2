@@ -73,13 +73,19 @@ package object utils {
     writer.toString
   }
 
-  def validate[T](body: => T): ValidationNEL[String, T] = {
+  def test[T](body: => T)(postCond: (T => Boolean) = { _ : T => true }): ValidationNEL[String, T] = {
 
     try {
-      body.success
+      val res = body
+      if (postCond(res)) res.success else "Failed postCond".failNel
     } catch {
       case e => e.getMessage.failNel
     }
+  }
+
+  def validate[T](body: => T): ValidationNEL[String, T] = {
+
+    test(body)({_: T => true})
   }
 
   class NPOption[T](val o: Option[T]) {
@@ -93,7 +99,7 @@ package object utils {
 
   class NPValidationNEL[T](val v: Validation[NonEmptyList[String], T]) {
 
-    def logTxt(src: String, msg: String) = "\t" + src + msg + "\t" + v.fold(e => e.list.mkString(", "), s => "") + "\t"
+    def logTxt(src: String, msg: String) = "\t" + src + "\t" + msg + "\t" + v.fold(e => e.list.mkString(", "), s => "") + "\t"
 
     def getOrThrow(prefix: String = "getOrThrow") = v.fold(e => throw new Exception(prefix + ": " + e), s => s)
 
