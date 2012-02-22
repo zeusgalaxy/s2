@@ -3,13 +3,15 @@
 <div class="topbar">
     <div class="fill">
         <div class="container">
-            <a class="brand" href="@routes.Application.index()">API</a>
+            <a class="brand" href="@routes.Application.index()">S2</a>
             <ul class="nav">
+             @* Don't show any menu items for now...
                 <li class="@{if(active == 'home) "active" else "inactive"}"><a href="@routes.Application.index()">Home</a></li>
                 <li class="@{if(active == 'listUsers) "active" else "inactive"}"><a href="@routes.Application.listUsers()">List Users</a></li>
                 <li class="@{if(active == 'testRegistration) "active" else "inactive"}"><a href="@routes.Application.createRegistration()">Test Registration</a></li>
                 <li class="@{if(active == 'testLogin) "active" else "inactive"}"><a href="@routes.Application.testLogin()">Test Login</a></li>
-                <li class="@{if(active == 'showWorkoutLocations) "active" else "inactive"}"><a href="@routes.Report.showWorkoutLocations()">Workout/Location Report</a></li>
+             *@
+                <li class="@{if(active == 'showWorkoutLocations) "active" else "inactive"}"><a href="@routes.Report.showWorkoutLocations()">Reports</a></li>
             </ul>
         </div>
     </div>
