@@ -34,20 +34,22 @@ object ApiWrapper extends Controller {
             for {
               vtAcct <- VirtualTrainer.register(params) // tuple(uid, nickName, password)
               (vtUid, vtNickName, vtPassword) = vtAcct
-
+xxx <- validate(println("we got passed the vt register. will pass: " + vtUid + ", " + vtNickName + ", " + vtPassword))
               vtAuth <- VirtualTrainer.login(vtNickName, vtPassword, npLogin) // tuple(token, tokenSecret)
               (vtToken, vtTokenSecret) = vtAuth
+yyy <- validate(println("we got passed the vt login. will pass: " + vtToken + ", " + vtTokenSecret))
               updResult <- validate(Exerciser.updateToken(npLogin, vtToken, vtTokenSecret))
 
               val machine = params("machine_id")(0).toLong
               val model = Machine.getWithEquip(machine).
-                getOrFail("Machine " + machine.toString + " not found in ApiWrapper.login").
-                info("ApiWrapper.login", "model retrieval problems").
-                fold(e => "", s => s._2.getOrFail("No equipment for machine " + machine.toString + " in ApiWrapper.login").
-                info("ApiWrapper.login", "model retrieval problems").
-                fold(e => "", s => s.model.toString))
+                         getOrFail("Machine " + machine.toString + " not found in ApiWrapper.login").
+                         info("ApiWrapper.login", "model retrieval problems").
+                         fold(e => "", s => s._2.getOrFail("No equipment for machine " + machine.toString + " in ApiWrapper.login").
+                         info("ApiWrapper.login", "model retrieval problems").
+                         fold(e => "", s => s.model.toString))
 
               vtPredefinedPresets <- VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret, model)
+zzz <- validate(println("we got passed the vt updateToken. will pass: " + vtToken + ", " + vtTokenSecret + ", " + model))
               vtWorkouts <- VirtualTrainer.workouts(vtToken, vtTokenSecret, model)
 
             } yield

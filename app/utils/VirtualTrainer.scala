@@ -105,57 +105,25 @@ object VirtualTrainer {
    */
   def register(params: Map[String, Seq[String]]): ValidationNEL[String, (String, String, String)] = {
 
-    //    validate {
-    //
-    //      val npId = params.getOrElse("id", throw new Exception("id not found"))(0)
-    //
-    //      val rBody = registerBody(params)
-    //      val valResult = waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)
-    //      if (valResult.status != 200) throw new Exception("Did not get ok from VT validate_new_account: " + valResult.body)
-    //
-    //      val regResult = waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout)
-    //      if (regResult.status != 200) throw new Exception("Did not get ok from VT register: " + regResult.body)
-    //      val regXml = validate(regResult.xml).fold(e => throw new Exception("Prob w regXml: " + regResult.body), s => s)
-    //      (regXml \\ "userId").find(n => true) match {
-    //
-    //        case Some(id) =>
-    //          val linkResult = waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, id.text)), vtTimeout)
-    //          if (linkResult.status != 200) Logger.info("VT link_external_user returned status " + linkResult.status.toString)
-    //          (id.text, (regXml \\ "nickName").text, (regXml \\ "nickName").text)
-    //
-    //        case _ => throw new Exception("VirtualTrainer.register: Couldn't find userId in vt xml response: " + regXml.toString)
-    //      }
-    //    }
-
-    //    EXPERIMENT =============
-//    validate {
-      for {
-        npId <- validate((params.get("id").get(0)))
-        rBody <- validate(registerBody(params))
-        valResult <- test(waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)) {
-          _.status == 200
-        }
-        regResult <- test(waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout)) {
-          _.status == 200
-        }
-        regXml <- validate(regResult.xml)
-
-      } yield {
-
-        (regXml \\ "userId").find(n => true) match {
-
-          case Some(id) =>
-            val linkResult = waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, id.text)), vtTimeout)
-            if (linkResult.status != 200) Logger.info("VT link_external_user returned status " + linkResult.status.toString)
-            (id.text, (regXml \\ "nickName").text, (regXml \\ "nickName").text)
-
-          case _ => throw new Exception("VirtualTrainer.register: Couldn't find userId in vt xml response: " + regXml.toString)
-        }
+    for {
+      npId <- validate((params.get("id").get(0)))
+      rBody <- validate(registerBody(params))
+      valResult <- test(waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)) {
+        _.status == 200
       }
-      //    "fail".failNel[(String, String, String)]
-//    }
-  }
+      regResult <- test(waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout)) {
+        _.status == 200
+      }
+      regXml <- validate(regResult.xml)
+      id <- validate((regXml \\ "userId" head).text)
+      nickName <- validate((regXml \\ "nickName" head).text)
 
+    } yield {
+      val linkResult = waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, id)), vtTimeout)
+      if (linkResult.status != 200) Logger.info("VT link_external_user returned status " + linkResult.status.toString)
+      (id, nickName, nickName)
+    }
+  }
 
   private def getToken(login: String): ValidationNEL[String, Exerciser] = {
 
@@ -167,22 +135,23 @@ object VirtualTrainer {
    */
   def login(vtUsername: String, vtPassword: String, npLogin: String): ValidationNEL[String, (String, String)] = {
 
-    validate {
-      val lBody = loginBody(vtUsername, vtPassword)
-      val loginResult = waitVal(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout)
-      if (loginResult.status != 200) throw new Exception("Did not receive 200 from vt login. Status was: " + loginResult.status.toString)
-      val Token = """(.*oauth_token=\")([^\"]*).*""".r
-      val Secret = """(.*oauth_token_secret=\")([^\"]*).*""".r
-      val token = loginResult.header("Authorization") match {
-        case Some(Token(begin, t)) => t
-        case _ => throw new Exception("No token returned from vt login. Authorization header is: " + loginResult.header("Authorization") + " Body is: " + loginResult.body)
+    val tEx = """(.*oauth_token=\")([^\"]*).*""".r
+    val tsEx = """(.*oauth_token_secret=\")([^\"]*).*""".r
+
+    for {
+      lBody <- validate(loginBody(vtUsername, vtPassword))
+      loginResult <- test(waitVal(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout)) {
+        _.status == 200
       }
-      val secret = loginResult.header("Authorization") match {
-        case Some(Secret(begin, s)) => s
-        case _ => throw new Exception("No secret returned from vt login. Authorization header is: " + loginResult.header("Authorization") + " Body is: " + loginResult.body)
-      }
-      (token, secret)
-    }
+      hdr <- validate(loginResult.header("Authorization").get)
+      token <- validate({
+        val tEx(_, t) = tEx.findFirstIn(hdr).get; t
+      })
+      secret <- validate({
+        val tsEx(_, s) = tsEx.findFirstIn(hdr).get; s
+      })
+
+    } yield (token, secret)
   }
 
   /**
