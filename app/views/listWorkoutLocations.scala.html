@@ -1,6 +1,6 @@
 @(currentPage: Page[WorkoutLocation], currentOrderBy: Int, currentFilter: String, startDate: String, endDate: String)(implicit flash: play.api.mvc.Flash)
 
-
+@import helper._
 
 @****************************************
 * Helper generating navigation links    *
@@ -33,15 +33,20 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 }
 
 <div id="actions" class="twipsies well">
-    @helper.form(action=routes.Report.showWorkoutLocations()) {
-        <p>Comp:  <input type="search" name="f" value="@currentFilter" placeholder="Company ID" /></p>
+    @helper.form(action=routes.Report.showWorkoutLocations(), args = 'id -> "reportForm") {
+        <p>Company:
+            <select name="f" value="@currentFilter" >
+                @List((1 -> "Netpulse"), (81 -> "Life Time Fitness"), (19 -> "New York Sports Clubs") ).map { opt =>
+                    <option value="@opt._1" @if(opt._1.toString == currentFilter){selected="yes"}>@opt._2</option>
+                }
+            </select>
+        </p>
 
         Start: <input type="search" name="sd" value="@startDate" size= "8" placeholder="yyyymmdd " />
         End:   <input type="search" name="ed" value="@endDate" placeholder="yyyymmdd " />
 
         <input type="submit" value="Go" class="btn primary pull-right">
     }
-
 </div>
 
 @Option(currentPage.items).filterNot(_.isEmpty).map { woL =>
