@@ -20,7 +20,7 @@ object Report extends Controller {
           Logger.info( "npadmin cookie = "+c+"\npassed value="+c.value+"\nresult="+xmlStr)
           // <adminUser id="89" compId="1" oemId="null" adId="null" email="dfaust@netpulse.com"></adminUser>
           (scala.xml.XML.loadString(xmlStr) \  "@compId").toString match {
-            case "1"  =>
+            case "1"  =>                                                        // Only allow Netpulse users for now
               Ok(html.listWorkoutLocations(
                 WorkoutLocation.list(page = page, orderBy = orderBy, filter = filter, startDate = startDate, endDate = endDate ),     // ("%" + filter + "%")
                 orderBy, filter, startDate, endDate
