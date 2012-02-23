@@ -7,6 +7,7 @@ import views._
 import utils._
 import models._
 import play.api.Logger
+import scala.xml._
 
 object ApiWrapper extends Controller {
 
@@ -16,65 +17,78 @@ object ApiWrapper extends Controller {
   def register = Action {
     implicit request =>
 
+      val genFailElem = <s2RegisterResult>Unable to complete registration</s2RegisterResult>
       implicit val loc = VL("ApiWrapper.register")
       // Note that what is called "id" in the request is actually "login" in the database (per dino!)
       val params = postOrGetParams(request, List("DOB", "weight", "gender", "email", "id", "machine_id"))
-
-      (for {
-
+      val oldXml: scala.xml.Elem = (for {
         dinoResult <- Dino.forward(request)
-        oldXml <- validate(dinoResult.xml)
+        dXml <- validate(dinoResult.xml)
+      } yield {
+        dXml
+      }).error(Map("msg" -> "Problem forwarding register call to Dino")).fold(e => genFailElem, s => s)
+
+      // either error code or tuple(uid, nickName, password)
+      val rVal: Either[Int, (String, String, String)] = (for {
         code <- test((oldXml \\ "response" \ "@code").text) {
           _ == "0"
         }
         npLogin <- validate(params("id")(0))
-        vtAcct <- VirtualTrainer.register(params) // tuple(uid, nickName, password)
-        (vtUid, vtNickName, vtPassword) = vtAcct
+        regResult <- validate(VirtualTrainer.register(params))
+      } yield {
+        regResult
+      }).fold(e => Left(99), s => s)
 
-        vtAuth <- VirtualTrainer.login(vtNickName, vtPassword, npLogin) // tuple(token, tokenSecret)
-        (vtToken, vtTokenSecret) = vtAuth
-        updResult <- validate(Exerciser.updateToken(npLogin, vtToken, vtTokenSecret))
-        machine <- validate(params("machine_id")(0).toLong)
+      val finalResult = rVal match {
 
-        model <- validate(Machine.getWithEquip(machine).
-          getOrFail("Machine " + machine.toString + " not found in ApiWrapper.login").
-          info(Map("msg" -> "Model retrieval problems")).
-          fold(e => "", s => s._2.getOrFail("No equipment for machine " + machine.toString + " in ApiWrapper.login").
-          info(Map("msg" -> "Model retrieval problems")).
-          fold(e => "", s => s.model.toString)))
-        vtPredefinedPresets <- VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret, model)
-        vtWorkouts <- VirtualTrainer.workouts(vtToken, vtTokenSecret, model)
+        case Left(err) =>
+          validate(XmlMutator(oldXml).add("response", <vtAccount status={err.toString}></vtAccount>))
+        case Right((vtUid, vtNickName, vtPassword)) =>
+          for {
+            npLogin <- validate(params("id")(0))
+            vtAuth <- VirtualTrainer.login(vtNickName, vtPassword, npLogin) // tuple(token, tokenSecret)
+            (vtToken, vtTokenSecret) = vtAuth
+            updResult <- validate(Exerciser.updateToken(npLogin, vtToken, vtTokenSecret))
+            machine <- validate(params("machine_id")(0).toLong)
 
-      } yield
-        XmlMutator(oldXml).add("response",
-          <vtAccount>
-            <vtUid>
-              {vtUid}
-            </vtUid>
-            <vtNickName>
-              {vtNickName}
-            </vtNickName>
-            <vtPassword>
-              {vtPassword}
-            </vtPassword>
-            <vtToken>
-              {vtToken}
-            </vtToken>
-            <vtTokenSecret>
-              {vtTokenSecret}
-            </vtTokenSecret>
-            <vtPredefinedPresets>
-              {vtPredefinedPresets}
-            </vtPredefinedPresets>
-            <vtWorkouts>
-              {vtWorkouts}
-            </vtWorkouts>
-          </vtAccount>
-        )
-        ).debug(Map("msg" -> "Problems encountered"))
-        .fold(e => Ok(<response desc="Registration failed" code="1">
-        {e.list.mkString(", ")}
-      </response>), s => Ok(s))
+            model <- validate(Machine.getWithEquip(machine).
+              getOrFail("Machine " + machine.toString + " not found in ApiWrapper.login").
+              info(Map("msg" -> "Model retrieval problems")).
+              fold(e => "", s => s._2.getOrFail("No equipment for machine " + machine.toString + " in ApiWrapper.login").
+              info(Map("msg" -> "Model retrieval problems")).
+              fold(e => "", s => s.model.toString)))
+            vtPredefinedPresets <- VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret, model)
+            vtWorkouts <- VirtualTrainer.workouts(vtToken, vtTokenSecret, model)
+
+          } yield {
+            XmlMutator(oldXml).add("response",
+              <vtAccount status="0">
+                <vtUid>
+                  {vtUid}
+                </vtUid>
+                <vtNickName>
+                  {vtNickName}
+                </vtNickName>
+                <vtPassword>
+                  {vtPassword}
+                </vtPassword>
+                <vtToken>
+                  {vtToken}
+                </vtToken>
+                <vtTokenSecret>
+                  {vtTokenSecret}
+                </vtTokenSecret>
+                <vtPredefinedPresets>
+                  {vtPredefinedPresets}
+                </vtPredefinedPresets>
+                <vtWorkouts>
+                  {vtWorkouts}
+                </vtWorkouts>
+              </vtAccount>
+            )
+          }
+      }
+    finalResult.fold(e => Ok(e.list.mkString(", ")), s => Ok(s))
   }
 
   // http://qa-ec2.netpulse.ws/core/n5ilogin.jsp?machine_id=18&id=1112925684&pic=22&oem_tos=15

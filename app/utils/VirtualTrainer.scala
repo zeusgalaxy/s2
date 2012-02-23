@@ -101,30 +101,45 @@ object VirtualTrainer {
   }
 
   /**
-   * @return A tuple with Virtual Trainer userId, nickName and password, if successful
+   * @return Either an error code OR a tuple with Virtual Trainer userId, nickName and password
    */
-  def register(params: Map[String, Seq[String]]): ValidationNEL[String, (String, String, String)] = {
+  val regVtUserExists = 1
+  val regVtUnableToGetStatus = 2
+  val regVtOtherError = 3
+
+  def register(params: Map[String, Seq[String]]): Either[Int, (String, String, String)] = {
 
     implicit val loc = VL("VirtualTrainer.register")
 
-    for {
+    val rVal: Option[(String, String, Int)] = (for {
       npId <- validate((params.get("id").get(0)))
       rBody <- validate(registerBody(params))
       valResult <- validate(waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout))
-      valStatus <- test(valResult.status) {
-        _ == 200
-      }.info(Map("vt validation status" -> valResult.status.toString, "netpulse user id" -> npId))
-      regResult <- test(waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout)) {
-        _.status == 200
-      }
-      regXml <- validate(regResult.xml)
-      id <- validate((regXml \\ "userId" head).text)
-      nickName <- validate((regXml \\ "nickName" head).text)
-
+      valStatus <- validate(valResult.status)
     } yield {
-      val linkResult = waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, id)), vtTimeout)
-      if (linkResult.status != 200) Logger.info("VT link_external_user returned status " + linkResult.status.toString)
-      (id, nickName, nickName)
+      Some((npId, rBody, valStatus))
+    }).fold(e => None, s => s)
+
+    rVal match {
+      case None => Left(regVtUnableToGetStatus)
+      case Some((_, _, status)) if (status == 500) => Left(regVtUserExists)
+      case Some((_, _, status)) if (status != 200) => Left(regVtOtherError)
+      case Some((npId, rBody, _)) =>
+        (for {
+          regResult <- test(waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout)) {
+            _.status == 200
+          }
+          regXml <- validate(regResult.xml)
+          id <- validate((regXml \\ "userId" head).text)
+          nickName <- validate((regXml \\ "nickName" head).text)
+
+        } yield {
+
+          val linkResult = waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, id)), vtTimeout)
+          if (linkResult.status != 200) Logger.info("VT link_external_user returned status " + linkResult.status.toString)
+          Right((id, nickName, nickName))
+
+        }).fold(e => Left(regVtOtherError), s => s)
     }
   }
 
@@ -148,10 +163,12 @@ object VirtualTrainer {
       }
       hdr <- validate(loginResult.header("Authorization").get)
       token <- validate({
-        val tEx(_, t) = tEx.findFirstIn(hdr).get; t
+        val tEx(_, t) = tEx.findFirstIn(hdr).get;
+        t
       })
       secret <- validate({
-        val tsEx(_, s) = tsEx.findFirstIn(hdr).get; s
+        val tsEx(_, s) = tsEx.findFirstIn(hdr).get;
+        s
       })
 
     } yield (token, secret)
