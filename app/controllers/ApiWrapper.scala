@@ -5,110 +5,152 @@ import play.api.Play.current
 
 import views._
 import utils._
+import models._
 import play.api.Logger
+import scala.xml._
 
 object ApiWrapper extends Controller {
 
+  // To test a post with curl, passing a file for the body: curl --header "Content-Type: text/xml; charset=UTF-8" -d@asset_history_upload.xml http://localhost:8080/n5iuploader.jsp
   // http://localhost:9000/n5iregister.jsp?machine_id=18&id=1115180902&membership_id=1&email=sOCClkoE%40stross.com&pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15
 
   def register = Action {
     implicit request =>
 
+      val genFailElem = <s2RegisterResult>Unable to complete registration</s2RegisterResult>
+      implicit val loc = VL("ApiWrapper.register")
+      // Note that what is called "id" in the request is actually "login" in the database (per dino!)
       val params = postOrGetParams(request, List("DOB", "weight", "gender", "email", "id", "machine_id"))
+      val oldXml: scala.xml.Elem = (for {
+        dinoResult <- Dino.forward(request)
+        dXml <- validate(dinoResult.xml)
+      } yield {
+        dXml
+      }).error(Map("msg" -> "Problem forwarding register call to Dino")).fold(e => genFailElem, s => s)
 
-      Dino.forward(request).fold(e => InternalServerError("Problem during forwarding of dino call. Errors: " + e.list.mkString(", ")),
-        dinoResult => {
+      // either error code or tuple(uid, nickName, password)
+      val rVal: Either[Int, (String, String, String)] = (for {
+        code <- test((oldXml \\ "response" \ "@code").text) {
+          _ == "0"
+        }
+        npLogin <- validate(params("id")(0))
+        regResult <- validate(VirtualTrainer.register(params))
+      } yield {
+        regResult
+      }).fold(e => Left(99), s => s)
 
-          validate {
-            val oldXml = dinoResult.xml
+      val finalResult = rVal match {
 
-            validate {
-              (oldXml \\ "response" \ "@code").find(_ => true) match {
+        case Left(err) =>
+          validate(XmlMutator(oldXml).add("response", <vtAccount status={err.toString}></vtAccount>))
+        case Right((vtUid, vtNickName, vtPassword)) =>
+          for {
+            npLogin <- validate(params("id")(0))
+            vtAuth <- VirtualTrainer.login(vtNickName, vtPassword, npLogin) // tuple(token, tokenSecret)
+            (vtToken, vtTokenSecret) = vtAuth
+            updResult <- validate(Exerciser.updateToken(npLogin, vtToken, vtTokenSecret))
+            machine <- validate(params("machine_id")(0).toLong)
 
-                case Some(code) if (code.text == "0") => {
+            model <- validate(Machine.getWithEquip(machine).
+              getOrFail("Machine " + machine.toString + " not found in ApiWrapper.login").
+              info(Map("msg" -> "Model retrieval problems")).
+              fold(e => "", s => s._2.getOrFail("No equipment for machine " + machine.toString + " in ApiWrapper.login").
+              info(Map("msg" -> "Model retrieval problems")).
+              fold(e => "", s => s.model.toString)))
+            vtPredefinedPresets <- VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret, model)
+            vtWorkouts <- VirtualTrainer.workouts(vtToken, vtTokenSecret, model)
 
-                  val (vtUid, vtNickName, vtPassword) = VirtualTrainer.register(params).getOrThrow
-                  val (vtToken, vtTokenSecret) = VirtualTrainer.login(vtNickName, vtPassword).getOrThrow
-                  val vtPredefinedPresets = VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret).getOrThrow
-                  val vtWorkouts = VirtualTrainer.workouts(vtToken, vtTokenSecret).getOrThrow
-                  VirtualTrainer.logout(vtToken, vtTokenSecret)
-
-                  XmlMutator(oldXml).add("response",
-                    <vtAccount>
-                      <vtUid>
-                        {vtUid}
-                      </vtUid>
-                      <vtNickName>
-                        {vtNickName}
-                      </vtNickName>
-                      <vtPassword>
-                        {vtPassword}
-                      </vtPassword>
-                      <vtToken>
-                        {vtToken}
-                      </vtToken>
-                      <vtTokenSecret>
-                        {vtTokenSecret}
-                      </vtTokenSecret>
-                      <vtPredefinedPresets>
-                        {scala.xml.XML.loadString(vtPredefinedPresets)}
-                      </vtPredefinedPresets>
-                      <vtWorkouts>
-                        {scala.xml.XML.loadString(vtWorkouts)}
-                      </vtWorkouts>
-                    </vtAccount>
-                  )
-                }
-                case _ => oldXml
-              }
-            }.debug("ApiWrapper.register", "Failure when trying to register and/or log in to Virtual Trainer").
-              fold(e => oldXml, s => s)
-          }.debug("ApiWrapper.register", "Problem with xml from dino call. Body = " + dinoResult.body).
-            fold(e => InternalServerError("Problem with xml from dino call. Errors: " + e.list.mkString(", ")), Ok(_))
-        })
+          } yield {
+            XmlMutator(oldXml).add("response",
+              <vtAccount status="0">
+                <vtUid>
+                  {vtUid}
+                </vtUid>
+                <vtNickName>
+                  {vtNickName}
+                </vtNickName>
+                <vtPassword>
+                  {vtPassword}
+                </vtPassword>
+                <vtToken>
+                  {vtToken}
+                </vtToken>
+                <vtTokenSecret>
+                  {vtTokenSecret}
+                </vtTokenSecret>
+                <vtPredefinedPresets>
+                  {vtPredefinedPresets}
+                </vtPredefinedPresets>
+                <vtWorkouts>
+                  {vtWorkouts}
+                </vtWorkouts>
+              </vtAccount>
+            )
+          }
+      }
+    finalResult.fold(e => Ok(e.list.mkString(", ")), s => Ok(s))
   }
 
   // http://qa-ec2.netpulse.ws/core/n5ilogin.jsp?machine_id=18&id=1112925684&pic=22&oem_tos=15
-  // http://localhost:9000/n5ilogin.jsp?machine_id=18&id=1112925684&pic=22&oem_tos=15
+  // http://localhost:9000/n5ilogin.jsp?machine_id=18&id=1114247378&pic=22&oem_tos=15
 
   def login = Action {
     implicit request =>
 
-      val params = postOrGetParams(request, List("id"))
+      implicit val loc = VL("ApiWrapper.login")
 
-      Dino.forward(request).fold(e => InternalServerError("Problems forward login rqst to dino. Errors: " + e.list.mkString(", ")),
-        dinoResult => {
+      // Note that what is called "id" in the request is actually "login" in the database (per dino!)
+      val params = postOrGetParams(request, List("id", "machine_id"))
 
-          validate {
-            val oldXml = dinoResult.xml
-            (oldXml \\ "response" \ "@code").find(n => true) match {
+      (for {
+        dinoResult <- Dino.forward(request)
+        oldXml <- validate(dinoResult.xml)
+      } yield {
+        (oldXml \\ "response" \ "@code").find(n => true) match {
 
-              case Some(code) if (code.text == "0") => {
-                val (vtToken, vtTokenSecret) = VirtualTrainer.login(params("id")(0), params("id")(0)).getOrThrow
-                val vtPredefinedPresets = VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret).getOrThrow
-                val vtWorkouts = VirtualTrainer.workouts(vtToken, vtTokenSecret).getOrThrow
-                XmlMutator(oldXml).add("response",
-                  <vtAccount>
-                    <vtToken>
-                      {vtToken}
-                    </vtToken>
-                    <vtTokenSecret>
-                      {vtTokenSecret}
-                    </vtTokenSecret>
-                    <vtPredefinedPresets>
-                      {scala.xml.XML.loadString(vtPredefinedPresets)}
-                    </vtPredefinedPresets>
-                    <vtWorkouts>
-                      {scala.xml.XML.loadString(vtWorkouts)}
-                    </vtWorkouts>
-                  </vtAccount>
-                )
-              }
-              case _ => oldXml
-            }
-          }.info("ApiWrapper.login", "dinoResult body: " + dinoResult.body).
-            fold(e => Ok(dinoResult.xml), s => Ok(s.asInstanceOf[scala.xml.Elem]))
-        })
+          case Some(code) if (code.text == "0") => {
+
+            val npLogin = params("id")(0)
+            val machine = params("machine_id")(0).toLong
+            val model = Machine.getWithEquip(machine).
+              getOrFail("Machine " + machine.toString + " not found in ApiWrapper.login").
+              info(Map("msg" -> "Model retrieval problems")).
+              fold(e => "", s => s._2.getOrFail("No equipment for machine " + machine.toString + " in ApiWrapper.login").
+              info(Map("msg" -> "Model retrieval problems")).
+              fold(e => "", s => s.model.toString))
+
+            for {
+              ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found in ApiWrapper.login")
+              vtPredefinedPresets <- VirtualTrainer.predefinedPresets(ex.vtToken, ex.vtTokenSecret, model)
+              vtWorkouts <- VirtualTrainer.workouts(ex.vtToken, ex.vtTokenSecret, model)
+
+            } yield
+
+              XmlMutator(oldXml).add("response",
+                <vtAccount>
+                  <vtToken>
+                    {ex.vtToken}
+                  </vtToken>
+                  <vtTokenSecret>
+                    {ex.vtTokenSecret}
+                  </vtTokenSecret>
+                  <vtPredefinedPresets>
+                    {vtPredefinedPresets}
+                  </vtPredefinedPresets>
+                  <vtWorkouts>
+                    {vtWorkouts}
+                  </vtWorkouts>
+                </vtAccount>
+              )
+          }.debug(Map("msg" -> "Problems encountered"))
+            .toOption.getOrElse(XmlMutator(oldXml).add("response", <vtAccount></vtAccount>))
+
+          case _ => oldXml
+        }
+      }).debug(Map("msg" -> "Problems encountered"))
+        .fold(e => Ok(<response desc="Login failed" code="1">
+        {e.list.mkString(", ")}
+      </response>), s => Ok(s))
   }
 
   def gigyaLogin = Action {

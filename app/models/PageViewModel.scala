@@ -32,11 +32,6 @@ object PageViewModel {
       )
     }
 
-  //  def test = {
-  //    (3.success[String] |@| "error".failNel[Int]) ( (num, str) => str * num) ===
-  //      NonEmptyList[String]("error")
-  //  }
-
   def verifyData(pvm: PageViewModel): ValidationNEL[String, PageViewModel] = {
 
     def checkMachine(pvm: PageViewModel): Validation[String, PageViewModel] = {
@@ -50,12 +45,7 @@ object PageViewModel {
       if (pvm.pageCounts.length > 0) pvm.success else "Page view counts is zero".fail
     }
 
-    //    for {
-    //      a <- checkMachine(pvm).liftFailNel
-    //      b <- checkCounts(pvm).liftFailNel
-    //    } yield b
-
-
+    // Note: IntelliJ's red underline below the checkCounts call appears to be bogus
     (checkMachine(pvm).liftFailNel |@| checkCounts(pvm).liftFailNel) {
       case (_, _) => pvm
     }

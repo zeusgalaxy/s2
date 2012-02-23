@@ -3,14 +3,18 @@ package controllers
 import scalaz.{Logger => _, _}
 import Scalaz._
 
-import play.api._
+import play.api.Play.current
 import play.api.mvc._
+import play.api.libs.ws.Response
+import play.api.libs.concurrent.Promise
 import play.api.http._
 
 import models._
 import utils._
 
 object Dino extends Controller {
+
+  lazy val dinoTimeout = current.configuration.getString("dino.timeout").getOrElse(throw new Exception("dino.timeout not in configuration")).toInt
 
   def forward(request: Request[AnyContent]): ValidationNEL[String, play.api.libs.ws.Response] = {
 
@@ -19,16 +23,18 @@ object Dino extends Controller {
       val (newRequest, newBody) = toWSRequest(request)
 
       request.method match {
-        case "GET" => newRequest.get().value.get
+        case "GET" => {
+          waitVal(newRequest.get(), dinoTimeout)
+        }
         case "POST" => {
 
           request.body match {
             case AnyContentAsFormUrlEncoded(fueBody) => {
               val wrt = Writeable.writeableOf_urlEncodedForm
               val ct = ContentTypeOf.contentTypeOf_urlEncodedForm
-              newRequest.post[Map[String, Seq[String]]](fueBody)(wrt, ct).value.get
+              waitVal(newRequest.post[Map[String, Seq[String]]](fueBody)(wrt, ct), dinoTimeout)
             }
-            case _ => newRequest.post(newBody.get).value.get
+            case _ => waitVal(newRequest.post(newBody.get), dinoTimeout)
           }
         }
         case "PUT" => newRequest.put(newBody.get).value.get
@@ -48,7 +54,10 @@ object Dino extends Controller {
 
   // Local test: curl --header "Content-Type: text/xml; charset=UTF-8" -d@pageviews.xml http://localhost:9000/n5iworkout.jsp
   def pageview = Action {
+
     implicit request => {
+
+      implicit val loc = VL("Dino.pageView")
 
       validate {
 
@@ -65,7 +74,7 @@ object Dino extends Controller {
           val cnt = PageViewModel.insert(~request.body.asXml).getOrThrow("Dino.pageview call of PageViewModel.insert")
           Ok("PageView load succeeded with " + cnt.toString + "inserts")
         }
-      }.error("Dino.pageview", "request body: " + request.body.toString).
+      }.error(Map("request body" -> request.body.toString)).
         fold(e => InternalServerError("PageView load failed. Errors: " + e.list.mkString(", ")), s => s)
     }
   }
