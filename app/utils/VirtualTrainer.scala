@@ -66,9 +66,9 @@ object VirtualTrainer {
     val machineId = params.getOrElse("machine_id", throw new Exception("machine_id not supplied"))(0)
     val locationId = Machine.getBasic(machineId.toLong).
       getOrElse(throw new Exception("machine_id " + machineId.toString + " not found in database")).locationId
-    val password = params.getOrElse(pwdField, throw new Exception(pwdField + " not supplied"))(0)
+    val password = params.getOrElse(pwdField, throw new Exception(pwdField + "password not supplied"))(0)
     val json = ("age" -> age(params.getOrElse("DOB", throw new Exception("DOB not supplied"))(0))) ~
-      ("nickName" -> params.getOrElse(nmField, throw new Exception(nmField + " not supplied"))(0)) ~
+      ("nickName" -> params.getOrElse(nmField, throw new Exception(nmField + "nickName not supplied"))(0)) ~
       ("password" -> (new sun.misc.BASE64Encoder()).encode(password.getBytes("UTF-8"))) ~
       ("gender" -> params.getOrElse("gender", throw new Exception("gender not supplied"))(0).toLowerCase) ~
       ("emailAddress" -> params.getOrElse("email", throw new Exception("email not supplied"))(0)) ~
@@ -105,12 +105,15 @@ object VirtualTrainer {
    */
   def register(params: Map[String, Seq[String]]): ValidationNEL[String, (String, String, String)] = {
 
+    implicit val loc = VL("VirtualTrainer.register")
+
     for {
       npId <- validate((params.get("id").get(0)))
       rBody <- validate(registerBody(params))
-      valResult <- test(waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)) {
-        _.status == 200
-      }
+      valResult <- validate(waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout))
+      valStatus <- test(valResult.status) {
+        _ == 200
+      }.info(Map("vt validation status" -> valResult.status.toString, "netpulse user id" -> npId))
       regResult <- test(waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout)) {
         _.status == 200
       }

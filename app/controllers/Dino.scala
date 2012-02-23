@@ -57,7 +57,7 @@ object Dino extends Controller {
 
     implicit request => {
 
-      implicit val loc: ValLoc = "Dino.pageView"
+      implicit val loc = VL("Dino.pageView")
 
       validate {
 

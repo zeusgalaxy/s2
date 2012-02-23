@@ -28,7 +28,7 @@ object Machine {
 
   def getBasic(id: Long): Option[MachineBasic] = {
 
-    implicit val loc: ValLoc = "Machine.getBasic"
+    implicit val loc = VL("Machine.getBasic")
 
     validate {
       DB.withConnection {
@@ -40,7 +40,7 @@ object Machine {
 
   def getWithEquip(id: Long): Option[(MachineBasic, Option[Equipment])] = {
 
-    implicit val loc: ValLoc = "Machine.getWithEquip"
+    implicit val loc = VL("Machine.getWithEquip")
 
     validate {
       DB.withConnection {

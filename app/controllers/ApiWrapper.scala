@@ -16,7 +16,7 @@ object ApiWrapper extends Controller {
   def register = Action {
     implicit request =>
 
-      implicit val loc: ValLoc = "ApiWrapper.register"
+      implicit val loc = VL("ApiWrapper.register")
       // Note that what is called "id" in the request is actually "login" in the database (per dino!)
       val params = postOrGetParams(request, List("DOB", "weight", "gender", "email", "id", "machine_id"))
 
@@ -24,14 +24,18 @@ object ApiWrapper extends Controller {
 
         dinoResult <- Dino.forward(request)
         oldXml <- validate(dinoResult.xml)
-        code <- test((oldXml \\ "response" \ "@code").text){ _ == "0" }
+        code <- test((oldXml \\ "response" \ "@code").text) {
+          _ == "0"
+        }
         npLogin <- validate(params("id")(0))
         vtAcct <- VirtualTrainer.register(params) // tuple(uid, nickName, password)
         (vtUid, vtNickName, vtPassword) = vtAcct
+
         vtAuth <- VirtualTrainer.login(vtNickName, vtPassword, npLogin) // tuple(token, tokenSecret)
         (vtToken, vtTokenSecret) = vtAuth
         updResult <- validate(Exerciser.updateToken(npLogin, vtToken, vtTokenSecret))
         machine <- validate(params("machine_id")(0).toLong)
+
         model <- validate(Machine.getWithEquip(machine).
           getOrFail("Machine " + machine.toString + " not found in ApiWrapper.login").
           info(Map("msg" -> "Model retrieval problems")).
@@ -41,33 +45,33 @@ object ApiWrapper extends Controller {
         vtPredefinedPresets <- VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret, model)
         vtWorkouts <- VirtualTrainer.workouts(vtToken, vtTokenSecret, model)
 
-      } yield 
-              XmlMutator(oldXml).add("response",
-                <vtAccount>
-                  <vtUid>
-                    {vtUid}
-                  </vtUid>
-                  <vtNickName>
-                    {vtNickName}
-                  </vtNickName>
-                  <vtPassword>
-                    {vtPassword}
-                  </vtPassword>
-                  <vtToken>
-                    {vtToken}
-                  </vtToken>
-                  <vtTokenSecret>
-                    {vtTokenSecret}
-                  </vtTokenSecret>
-                  <vtPredefinedPresets>
-                    {vtPredefinedPresets}
-                  </vtPredefinedPresets>
-                  <vtWorkouts>
-                    {vtWorkouts}
-                  </vtWorkouts>
-                </vtAccount>
-              )
-      ).debug(Map("msg" -> "Problems encountered"))
+      } yield
+        XmlMutator(oldXml).add("response",
+          <vtAccount>
+            <vtUid>
+              {vtUid}
+            </vtUid>
+            <vtNickName>
+              {vtNickName}
+            </vtNickName>
+            <vtPassword>
+              {vtPassword}
+            </vtPassword>
+            <vtToken>
+              {vtToken}
+            </vtToken>
+            <vtTokenSecret>
+              {vtTokenSecret}
+            </vtTokenSecret>
+            <vtPredefinedPresets>
+              {vtPredefinedPresets}
+            </vtPredefinedPresets>
+            <vtWorkouts>
+              {vtWorkouts}
+            </vtWorkouts>
+          </vtAccount>
+        )
+        ).debug(Map("msg" -> "Problems encountered"))
         .fold(e => Ok(<response desc="Registration failed" code="1">
         {e.list.mkString(", ")}
       </response>), s => Ok(s))
@@ -79,7 +83,7 @@ object ApiWrapper extends Controller {
   def login = Action {
     implicit request =>
 
-      implicit val loc: ValLoc = "ApiWrapper.login"
+      implicit val loc = VL("ApiWrapper.login")
 
       // Note that what is called "id" in the request is actually "login" in the database (per dino!)
       val params = postOrGetParams(request, List("id", "machine_id"))

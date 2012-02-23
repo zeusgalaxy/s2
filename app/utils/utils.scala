@@ -15,8 +15,11 @@ import Scalaz._
 
 package object utils {
 
-  def switchHosts(s: String): String = s.replaceFirst("localhost:9000", "localhost:8080").
+  def switchHosts(s: String): String = s.replaceFirst("localhost:9000", "qa-ec2.netpulse.ws").
     replaceFirst("ec2", "s1").replaceFirst("s2", "s1")
+
+//  def switchHosts(s: String): String = s.replaceFirst("localhost:9000", "localhost:8080").
+//    replaceFirst("ec2", "s1").replaceFirst("s2", "s1")
 
   def toWSRequest(r: Request[AnyContent]): (WSRequestHolder, Option[Array[Byte]]) = {
 
@@ -97,7 +100,9 @@ package object utils {
     }
   }
 
-  type ValLoc = String
+  case class VL(loc: String)
+  implicit def VLtoString(vl: VL) = vl.loc
+
   type ValMsgs = Map[String, String]
 
   class NPValidationNEL[T](val v: Validation[NonEmptyList[String], T]) {
@@ -110,27 +115,27 @@ package object utils {
 
     def getOrThrow = v.fold(e => throw new Exception("Errors: " + e.list.mkString(", ")), s => s)
 
-    def trace(msgs: ValMsgs)(implicit src: ValLoc): Validation[NonEmptyList[String], T] = {
+    def trace(msgs: ValMsgs)(implicit src: VL): Validation[NonEmptyList[String], T] = {
       if (v.isFailure) Logger.trace("TRACE" + logTxt(src, msgs))
       v
     }
 
-    def debug(msgs: ValMsgs)(implicit src: ValLoc): Validation[NonEmptyList[String], T] = {
+    def debug(msgs: ValMsgs)(implicit src: VL): Validation[NonEmptyList[String], T] = {
       if (v.isFailure) Logger.debug("DEBUG" + logTxt(src, msgs))
       v
     }
 
-    def info(msgs: ValMsgs)(implicit src: ValLoc): Validation[NonEmptyList[String], T] = {
+    def info(msgs: ValMsgs)(implicit src: VL): Validation[NonEmptyList[String], T] = {
       if (v.isFailure) Logger.info("INFO" + logTxt(src, msgs))
       v
     }
 
-    def warn(msgs: ValMsgs)(implicit src: ValLoc): Validation[NonEmptyList[String], T] = {
+    def warn(msgs: ValMsgs)(implicit src: VL): Validation[NonEmptyList[String], T] = {
       if (v.isFailure) Logger.warn("WARN" + logTxt(src, msgs))
       v
     }
 
-    def error(msgs: ValMsgs)(implicit src: ValLoc): Validation[NonEmptyList[String], T] = {
+    def error(msgs: ValMsgs)(implicit src: VL): Validation[NonEmptyList[String], T] = {
       if (v.isFailure) Logger.error("ERROR" + logTxt(src, msgs))
       v
     }

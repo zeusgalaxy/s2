@@ -23,7 +23,7 @@ object Exerciser {
 
   def findByDbId(dbId: Long): Option[Exerciser] = {
 
-    implicit val loc: ValLoc = "Exerciser.findById"
+    implicit val loc = VL("Exerciser.findById")
 
     validate {
       DB.withConnection {
@@ -35,7 +35,7 @@ object Exerciser {
 
   def findByLogin(login: String): Option[Exerciser] = {
 
-    implicit val loc: ValLoc = "Exerciser.findByLogin"
+    implicit val loc = VL("Exerciser.findByLogin")
 
     validate {
       DB.withConnection {
@@ -47,7 +47,7 @@ object Exerciser {
 
   def updateToken(login: String, token: String, tokenSecret: String): Boolean = {
 
-    implicit val loc: ValLoc = "Exerciser.updateToken"
+    implicit val loc = VL("Exerciser.updateToken")
 
     validate {
       DB.withConnection {
