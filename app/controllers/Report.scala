@@ -4,8 +4,6 @@ import play.api.mvc._
 
 import views._
 import models.WorkoutLocation
-import Security._
-import play.mvc.Http
 import play.api.Logger
 import utils._
 

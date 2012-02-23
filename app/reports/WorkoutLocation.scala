@@ -99,7 +99,7 @@ object WorkoutLocation {
 
     val offset = pageSize * page
 
-    val sDate = try{ startDate.toInt } catch { case e => 0; case _ => startDate.toInt }
+    val sDate = try{ startDate.toInt } catch { case e => 0; case _ => startDate..toInt }
     val eDate = try{ endDate.toInt }   catch { case e => 99999999; case _ => endDate.toInt }
 
 

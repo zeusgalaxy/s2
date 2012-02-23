@@ -21,6 +21,8 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 </th>
 }
 
+
+
 @main("Workouts by Club", 'listUsers) {
 
 @* TODO: figure out how to put company name here..."for "+currentFilter " *@
@@ -32,20 +34,38 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 </div>
 }
 
+@*****  Form for report filters etc. *******@
 <div id="actions" class="twipsies well">
     @helper.form(action=routes.Report.showWorkoutLocations(), args = 'id -> "reportForm") {
-        <p>Company:
+    
+    <p><input type="submit" value="Go" class="btn primary pull-right">
+        <label>Company</label>
+        <div class="input">
+            <div class="inline-inputs">
             <select name="f" value="@currentFilter" >
-                @List((1 -> "Netpulse"), (81 -> "Life Time Fitness"), (19 -> "New York Sports Clubs") ).map { opt =>
+                @Company.options.map { opt =>
                     <option value="@opt._1" @if(opt._1.toString == currentFilter){selected="yes"}>@opt._2</option>
                 }
             </select>
-        </p>
+            </div>
+        </div>
 
+    </p>
+        <label>From</label>
+            <div class="input">
+                <div class="inline-inputs">
+                    <input data-datepicker="sd" name="sd" class="small" type="text" value="@startDate" />
+                    to
+                    <input data-datepicker="ed" name="ed" class="small" type="text" value="@endDate" />
+                    <span class="help-block">Leave blank for all time.</span>
+                </div>
+            </div>
+
+@*
         Start: <input type="search" name="sd" value="@startDate" size= "8" placeholder="yyyymmdd " />
         End:   <input type="search" name="ed" value="@endDate" placeholder="yyyymmdd " />
+*@
 
-        <input type="submit" value="Go" class="btn primary pull-right">
     }
 </div>
 
@@ -122,7 +142,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         @woL.map {
             case woLx => {
             <tr>
-                <td><a href="">@woLx.clubName</a></td>
+                <td><strong>@woLx.clubName</strong></td>
                 <td>@woLx.screens</td>
                 <td>@woLx.newReg</td>
                 <td>@woLx.totReg</td>
@@ -173,6 +193,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 <div class="well">
     <em>Nothing to display</em>
 </div>
+
 
 }
 
