@@ -71,7 +71,6 @@ class DesEncrypter ( passPhrase: String ) {
 
   def decrypt(str: String): String = {
     try {
-      Logger.debug("are equal: " + (str == "fIOiwo2X1Qt4+LF+BIuHNRyKMJDzgicjcTzMt5+rWKcU9hOCgMa34vDGj0teYEL0TnsIlUMLR8BY\r\nJK4de4XTlrKTCjC1+zsQUXrHRTADC7M=\r\n").toString)
       var dec: Array[Byte] = Base64.decode(str)
       var utf8: Array[Byte] = dcipher.doFinal(dec)
 
