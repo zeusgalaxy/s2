@@ -23,25 +23,31 @@ object Exerciser {
 
   def findByDbId(dbId: Long): Option[Exerciser] = {
 
+    implicit val loc: ValLoc = "Exerciser.findById"
+
     validate {
       DB.withConnection {
         implicit connection =>
           SQL("select * from exerciser where id = {id}").on('id -> dbId).as(Exerciser.simple.singleOpt)
       }
-    }.info("Exerciser.findByDbId", "Failure during retrieval").fold(e => None, s => s)
+    }.info(Map("msg" -> "Failure during retrieval")).fold(e => None, s => s)
   }
 
   def findByLogin(login: String): Option[Exerciser] = {
+
+    implicit val loc: ValLoc = "Exerciser.findByLogin"
 
     validate {
       DB.withConnection {
         implicit connection =>
           SQL("select * from exerciser where login = {login}").on('login -> login).as(Exerciser.simple.singleOpt)
       }
-    }.info("Exerciser.findByLogin", "Failure during retrieval").fold(e => None, s => s)
+    }.info(Map("msg" -> "Failure during retrieval")).fold(e => None, s => s)
   }
 
   def updateToken(login: String, token: String, tokenSecret: String): Boolean = {
+
+    implicit val loc: ValLoc = "Exerciser.updateToken"
 
     validate {
       DB.withConnection {
@@ -58,7 +64,7 @@ object Exerciser {
             'vtTokenSecret -> tokenSecret
           ).executeUpdate()
       }
-    }.info("Exerciser.updateToken", "Failure during updateToken").fold(e => false, s => true)
+    }.info(Map("msg" -> "Failure during update")).fold(e => false, s => true)
   }
 
   //

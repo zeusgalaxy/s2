@@ -28,22 +28,27 @@ object Machine {
 
   def getBasic(id: Long): Option[MachineBasic] = {
 
+    implicit val loc: ValLoc = "Machine.getBasic"
+
     validate {
       DB.withConnection {
         implicit connection =>
           SQL("select * from machine where id = {id}").on('id -> id).as(Machine.basic.singleOpt)
       }
-    }.info("Machine.getBasic", "Failure during Machine retrieval").fold(e => None, s => s)
+    }.info(Map("msg" -> "Failure during retrieval")).fold(e => None, s => s)
   }
 
   def getWithEquip(id: Long): Option[(MachineBasic, Option[Equipment])] = {
+
+    implicit val loc: ValLoc = "Machine.getWithEquip"
+
     validate {
       DB.withConnection {
         implicit connection =>
           SQL("select * from machine m join equipment e on m.equipment_id = e.id where m.id = {id}").
             on('id -> id).as(Machine.withEquip.singleOpt)
       }
-    }.info("Machine.getWithEquip", "Failure during Machine/Equip retrieval").fold(e => None, s => s)
+    }.info(Map("msg" -> "Failure during retrieval")).fold(e => None, s => s)
   }
 }
 

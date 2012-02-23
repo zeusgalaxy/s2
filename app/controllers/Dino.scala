@@ -54,7 +54,10 @@ object Dino extends Controller {
 
   // Local test: curl --header "Content-Type: text/xml; charset=UTF-8" -d@pageviews.xml http://localhost:9000/n5iworkout.jsp
   def pageview = Action {
+
     implicit request => {
+
+      implicit val loc: ValLoc = "Dino.pageView"
 
       validate {
 
@@ -71,7 +74,7 @@ object Dino extends Controller {
           val cnt = PageViewModel.insert(~request.body.asXml).getOrThrow("Dino.pageview call of PageViewModel.insert")
           Ok("PageView load succeeded with " + cnt.toString + "inserts")
         }
-      }.error("Dino.pageview", "request body: " + request.body.toString).
+      }.error(Map("request body" -> request.body.toString)).
         fold(e => InternalServerError("PageView load failed. Errors: " + e.list.mkString(", ")), s => s)
     }
   }
