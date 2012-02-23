@@ -99,9 +99,13 @@ object WorkoutLocation {
 
     val offset = pageSize * page
 
-    val sDate = try{ startDate.toInt } catch { case e => 0; case _ => startDate..toInt }
-    val eDate = try{ endDate.toInt }   catch { case e => 99999999; case _ => endDate.toInt }
+    // TODO: this should not be here...
+    def dateStrSlice(s: String): String = { s.slice(0,4)+s.slice(5,7)+s.slice(8,10) }
 
+    val sDate = try{ dateStrSlice(startDate).toInt } catch { case _ => 0 }
+    val eDate = try{ dateStrSlice(endDate).toInt }   catch { case _ => 99999999 }
+
+    Logger.info("Date range =" + sDate.toString + " to "+eDate.toString)
 
     DB.withConnection("report") { implicit connection =>
 
