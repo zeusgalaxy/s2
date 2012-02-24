@@ -24,7 +24,11 @@
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="file://$SCALA$/src" />
+      <root url="file://$SCALA$/src/sbaz-src.jar" />
+      <root url="file://$SCALA$/src/scala-compiler-src.jar" />
+      <root url="file://$SCALA$/src/scala-dbc-src.jar" />
+      <root url="file://$SCALA$/src/scala-library-src.jar" />
+      <root url="file://$SCALA$/src/scala-swing-src.jar" />
       <root url="file://$PLAY$/framework/src/anorm/src/main/scala" />
       <root url="file://$PLAY$/framework/src/console/src/main/scala" />
       <root url="file://$PLAY$/framework/src/play/src/main/scala" />
