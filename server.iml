@@ -14,6 +14,40 @@
       <sourceFolder url="file://$MODULE_DIR$/target/scala-2.9.1/src_managed/main" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/app" isTestSource="false" />
     </content>
+    <content url="file://$PLAY$/framework/src">
+      <sourceFolder url="file://$PLAY$/framework/src/play/src/main/scala" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/sbt-plugin/src/main/scala" isTestSource="false" packagePrefix="sbt" />
+      <sourceFolder url="file://$PLAY$/framework/src/console/src/main/scala" isTestSource="false" packagePrefix="play.console" />
+      <sourceFolder url="file://$PLAY$/framework/src/play/src/test/scala/play/api" isTestSource="false" packagePrefix="play.api.libs.json" />
+      <sourceFolder url="file://$PLAY$/framework/src/console/target/scala-2.9.1/src_managed/main" isTestSource="false" packagePrefix="play.core" />
+      <sourceFolder url="file://$PLAY$/framework/src/play/src/test/scala" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/anorm/src/main/scala" isTestSource="false" packagePrefix="anorm" />
+      <sourceFolder url="file://$PLAY$/framework/src/templates/src/main/scala" isTestSource="false" packagePrefix="play.api.templates" />
+      <sourceFolder url="file://$PLAY$/framework/src/templates/src/test/scala" isTestSource="false" packagePrefix="play.templates.test" />
+      <sourceFolder url="file://$PLAY$/framework/src/play-test/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/play/target/scala-2.9.1/src_managed/main" isTestSource="false" packagePrefix="play.core" />
+      <sourceFolder url="file://$PLAY$/framework/src/play/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/play-test/src/main/scala" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/anorm" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/anorm/src" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/anorm/target" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/console" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/console/src" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/console/target" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/play" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/play/src" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/play/target" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/play-test" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/play-test/src" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/play-test/target" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/sbt-plugin" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/sbt-plugin/src" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/sbt-plugin/target" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/templates" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/templates/src" isTestSource="false" />
+      <sourceFolder url="file://$PLAY$/framework/src/templates/target" isTestSource="false" />
+    </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module-library">
@@ -25,9 +59,7 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="library" name="play" level="project" />
-    <orderEntry type="library" name="play-cache" level="project" />
-    <orderEntry type="library" name="scala" level="project" />
+    <orderEntry type="library" name="supporting-libs" level="project" />
   </component>
 </module>
 

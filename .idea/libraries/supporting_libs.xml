@@ -1,0 +1,36 @@
+<component name="libraryTable">
+  <library name="supporting-libs">
+    <CLASSES>
+      <root url="jar://$SCALA$/lib/jline.jar!/" />
+      <root url="jar://$SCALA$/lib/scala-compiler.jar!/" />
+      <root url="jar://$SCALA$/lib/scala-dbc.jar!/" />
+      <root url="jar://$SCALA$/lib/scala-library.jar!/" />
+      <root url="jar://$SCALA$/lib/scala-swing.jar!/" />
+      <root url="jar://$SCALA$/lib/scalap.jar!/" />
+      <root url="jar://$PLAY$/repository/local/play/anorm_2.9.1/2.0-RC3-SNAPSHOT/jars/anorm_2.9.1.jar!/" />
+      <root url="jar://$PLAY$/repository/local/play/console_2.9.1/2.0-RC3-SNAPSHOT/jars/console_2.9.1.jar!/" />
+      <root url="jar://$PLAY$/repository/local/play/play_2.9.1/2.0-RC3-SNAPSHOT/jars/play_2.9.1.jar!/" />
+      <root url="jar://$PLAY$/repository/local/play/play-test_2.9.1/2.0-RC3-SNAPSHOT/jars/play-test_2.9.1.jar!/" />
+      <root url="jar://$PLAY$/repository/local/play/templates_2.9.1/2.0-RC3-SNAPSHOT/jars/templates_2.9.1.jar!/" />
+      <root url="jar://$PLAY$/repository/local/play/sbt-plugin/scala_2.9.1/sbt_0.11.2/2.0-RC3-SNAPSHOT/jars/sbt-plugin.jar!/" />
+      <root url="jar://$PLAY$/repository/cache/com.ning/async-http-client/jars/async-http-client-1.7.0.jar!/" />
+      <root url="jar://$PLAY$/repository/cache/commons-io/commons-io/jars/commons-io-2.0.1.jar!/" />
+      <root url="jar://$PLAY$/repository/cache/commons-lang/commons-lang/jars/commons-lang-2.6.jar!/" />
+      <root url="jar://$PLAY$/repository/cache/joda-time/joda-time/jars/joda-time-2.0.jar!/" />
+      <root url="jar://$PLAY$/repository/cache/net.liftweb/lift-json_2.9.1/jars/lift-json_2.9.1-2.4-M5.jar!/" />
+      <root url="jar://$PLAY$/repository/cache/org.scalaz/scalaz-core_2.9.1/jars/scalaz-core_2.9.1-6.0.4.jar!/" />
+      <root url="jar://$PLAY$/repository/cache/org.specs2/specs2_2.9.1/jars/specs2_2.9.1-1.7.1.jar!/" />
+      <root url="jar://$PLAY$/repository/cache/org.specs2/specs2-scalaz-core_2.9.1/jars/specs2-scalaz-core_2.9.1-6.0.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$SCALA$/src" />
+      <root url="file://$PLAY$/framework/src/anorm/src/main/scala" />
+      <root url="file://$PLAY$/framework/src/console/src/main/scala" />
+      <root url="file://$PLAY$/framework/src/play/src/main/scala" />
+      <root url="file://$PLAY$/framework/src/play-test/src/main/scala" />
+      <root url="file://$PLAY$/framework/src/templates/src/main/scala" />
+      <root url="file://$PLAY$/framework/src/sbt-plugin/src/main/scala" />
+    </SOURCES>
+  </library>
+</component>
