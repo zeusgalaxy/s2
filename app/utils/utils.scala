@@ -15,11 +15,11 @@ import Scalaz._
 
 package object utils {
 
-  def switchHosts(s: String): String = s.replaceFirst("localhost:9000", "qa-ec2.netpulse.ws").
-    replaceFirst("ec2", "s1").replaceFirst("s2", "s1")
-
-//  def switchHosts(s: String): String = s.replaceFirst("localhost:9000", "localhost:8080").
+//  def switchHosts(s: String): String = s.replaceFirst("localhost:9000", "qa-ec2.netpulse.ws").
 //    replaceFirst("ec2", "s1").replaceFirst("s2", "s1")
+
+  def switchHosts(s: String): String = s.replaceFirst("localhost:9000", "localhost:8080").
+    replaceFirst("ec2", "s1").replaceFirst("s2", "s1")
 
   def toWSRequest(r: Request[AnyContent]): (WSRequestHolder, Option[Array[Byte]]) = {
 
