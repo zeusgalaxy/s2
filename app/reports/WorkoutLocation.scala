@@ -122,12 +122,14 @@ object WorkoutLocation {
           from  workout_day_sum s
           join location l on s.location_id = l.location_id
           join time_dim t on t.day_int = s.day_int
-          join (select
-                  sum(case 1 when create_day_int >= {sDate} and create_day_int <= {eDate} then 1 else 0 end ) as newReg,
-                  sum(case 1 when create_day_int <= {eDate} then 1 else 0 end ) as totReg,
-                  location_id
-                  from exerciser
-                  group by location_id) reg on reg.location_id = s.location_id
+          left outer join (
+            select
+              sum(case 1 when create_day_int >= {sDate} and create_day_int <= {eDate} then 1 else 0 end ) as newReg,
+              sum(case 1 when create_day_int <= {eDate} then 1 else 0 end ) as totReg,
+              location_id
+              from exerciser
+              group by location_id
+              ) reg on reg.location_id = s.location_id
           where company_id = {filter}
           and s.day_int between {sDate} and {eDate}
           group by l.location_id
