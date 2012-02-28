@@ -7,13 +7,15 @@ import models.WorkoutLocation
 import play.api.Logger
 import utils._
 
-object Report extends Controller {
-  val token = play.api.libs.Crypto.sign("myem...@example.com")
+object Report extends Controller with Secured {
+  // val token = play.api.libs.Crypto.sign("myem...@example.com")
   def showWorkoutLocations(page: Int, orderBy: Int, filter: String, startDate: String, endDate: String) = Action {
     implicit request => {
+
+      Logger.info("Session :"+session.data.toString())
       //
       // Get the company filter from the npadmin cookie.
-      // http://groups.google.com/group/play-framework/browse_thread/thread/89ed332cae46de82
+      //
       request.cookies.get("npadmin") match {
         case Some(c) => {
           val xmlStr = new DesEncrypter(DesEncrypter.SESSION_SECRET_KEY).decrypt(c.value.replace("\\r", "\r").replace("\\n", "\n"))

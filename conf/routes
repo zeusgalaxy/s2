@@ -2,6 +2,11 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
+# Authentication
+GET     /login                              controllers.Auth.login
+POST    /login                              controllers.Auth.authenticate
+GET     /logout                             controllers.Auth.logout
+
 # Home page
 GET     /                           controllers.Application.index()
 
@@ -23,6 +28,7 @@ GET     /s2/reports/WorkoutLocations controllers.Report.showWorkoutLocations(p:I
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /s2/assets/*file               controllers.Assets.at(path="/public", file)
+
 
 
 # PageViewUpload
