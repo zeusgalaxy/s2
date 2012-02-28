@@ -61,24 +61,55 @@ object VirtualTrainer {
          }) yield w
   }
 
-  private def registerBody(params: Map[String, Seq[String]])(implicit nmField: String = "id", pwdField: String = "id") = {
+  private def registerBody(params: Map[String, Seq[String]])(implicit nmField: String = "id", pwdField: String = "id"):
+  Validation[String, String] = {
 
-    val machineId = params.getOrElse("machine_id", throw new Exception("machine_id not supplied"))(0)
-    val locationId = Machine.getBasic(machineId.toLong).
-      getOrElse(throw new Exception("machine_id " + machineId.toString + " not found in database")).locationId
-    val password = params.getOrElse(pwdField, throw new Exception(pwdField + "password not supplied"))(0)
-    val json = ("age" -> age(params.getOrElse("DOB", throw new Exception("DOB not supplied"))(0))) ~
-      ("nickName" -> params.getOrElse(nmField, throw new Exception(nmField + "nickName not supplied"))(0)) ~
-      ("password" -> (new sun.misc.BASE64Encoder()).encode(password.getBytes("UTF-8"))) ~
-      ("gender" -> params.getOrElse("gender", throw new Exception("gender not supplied"))(0).toLowerCase) ~
-      ("emailAddress" -> params.getOrElse("email", throw new Exception("email not supplied"))(0)) ~
-      ("weight" -> params.getOrElse("weight", throw new Exception("weight not supplied"))(0)) ~
-      ("weightUnit" -> "I") ~
-      ("preferredLanguageCode" -> "en_US") ~
-      ("locationId" -> locationId)
-    Printer.compact(JsonAST.render(json))
+    for {
 
+      machineId <- params.get("machine_id").toSuccess("machine_id not supplied").map(_(0))
+      locationId <- Machine.getBasic(machineId.toLong).
+        toSuccess("machine_id " + machineId + " not found in database").map(_.locationId)
+      password <- params.get(pwdField).toSuccess(pwdField + " password not supplied").map(_(0))
+      dob <- params.get("DOB").toSuccess("DOB not supplied").map(_(0))
+      nickName <- params.get(nmField).toSuccess(nmField + " nickName not supplied").map(_(0))
+      gender <- params.get("gender").toSuccess("gender not supplied").map(_(0).toLowerCase)
+      emailAddr = params.get("email").toSuccess("email not supplied").map(_(0))
+      weight <- params.get("weight").toSuccess("weight not supplied").map(_(0))
+
+    } yield {
+
+      val json = ("age" -> age(dob)) ~
+        ("nickName" -> nickName) ~
+        ("password" -> (new sun.misc.BASE64Encoder()).encode(password.getBytes("UTF-8"))) ~
+        ("gender" -> gender) ~
+        ("emailAddress" -> emailAddr) ~
+        ("weight" -> weight) ~
+        ("weightUnit" -> "I") ~
+        ("preferredLanguageCode" -> "en_US") ~
+        ("locationId" -> locationId)
+
+      Printer.compact(JsonAST.render(json))
+    }
   }
+
+  //
+  //  private def registerBody(params: Map[String, Seq[String]])(implicit nmField: String = "id", pwdField: String = "id") = {
+  //
+  //    val machineId = params.getOrElse("machine_id", throw new Exception("machine_id not supplied"))(0)
+  //    val locationId = Machine.getBasic(machineId.toLong).
+  //      getOrElse(throw new Exception("machine_id " + machineId.toString + " not found in database")).locationId
+  //    val password = params.getOrElse(pwdField, throw new Exception(pwdField + "password not supplied"))(0)
+  //    val json = ("age" -> age(params.getOrElse("DOB", throw new Exception("DOB not supplied"))(0))) ~
+  //      ("nickName" -> params.getOrElse(nmField, throw new Exception(nmField + "nickName not supplied"))(0)) ~
+  //      ("password" -> (new sun.misc.BASE64Encoder()).encode(password.getBytes("UTF-8"))) ~
+  //      ("gender" -> params.getOrElse("gender", throw new Exception("gender not supplied"))(0).toLowerCase) ~
+  //      ("emailAddress" -> params.getOrElse("email", throw new Exception("email not supplied"))(0)) ~
+  //      ("weight" -> params.getOrElse("weight", throw new Exception("weight not supplied"))(0)) ~
+  //      ("weightUnit" -> "I") ~
+  //      ("preferredLanguageCode" -> "en_US") ~
+  //      ("locationId" -> locationId)
+  //    Printer.compact(JsonAST.render(json))
+  //  }
 
   private def linkBody(npId: String, vtId: String) = {
     Printer.compact(JsonAST.render(
@@ -112,7 +143,9 @@ object VirtualTrainer {
     implicit val loc = VL("VirtualTrainer.register")
 
     val rVal: Option[(String, String, Int)] = (for {
-      npId <- validate((params.get("id").get(0)))
+    //      npId <- validate((params.get("id").get(0)))
+      idParams <- params.get("id")
+      npId <- idParams(0)
       rBody <- validate(registerBody(params))
       valResult <- validate(waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout))
       valStatus <- validate(valResult.status)
