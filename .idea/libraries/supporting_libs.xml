@@ -7,11 +7,11 @@
       <root url="jar://$SCALA$/lib/scala-library.jar!/" />
       <root url="jar://$SCALA$/lib/scala-swing.jar!/" />
       <root url="jar://$SCALA$/lib/scalap.jar!/" />
-      <root url="jar://$PLAY$/repository/local/play/anorm_2.9.1/2.0-RC3-SNAPSHOT/jars/anorm_2.9.1.jar!/" />
-      <root url="jar://$PLAY$/repository/local/play/console_2.9.1/2.0-RC3-SNAPSHOT/jars/console_2.9.1.jar!/" />
-      <root url="jar://$PLAY$/repository/local/play/play_2.9.1/2.0-RC3-SNAPSHOT/jars/play_2.9.1.jar!/" />
-      <root url="jar://$PLAY$/repository/local/play/play-test_2.9.1/2.0-RC3-SNAPSHOT/jars/play-test_2.9.1.jar!/" />
-      <root url="jar://$PLAY$/repository/local/play/templates_2.9.1/2.0-RC3-SNAPSHOT/jars/templates_2.9.1.jar!/" />
+      <root url="jar://$PLAY$/repository/local/play/anorm_2.9.1/2.0-SNAPSHOT/jars/anorm_2.9.1.jar!/" />
+      <root url="jar://$PLAY$/repository/local/play/console_2.9.1/2.0-SNAPSHOT/jars/console_2.9.1.jar!/" />
+      <root url="jar://$PLAY$/repository/local/play/play_2.9.1/2.0-SNAPSHOT/jars/play_2.9.1.jar!/" />
+      <root url="jar://$PLAY$/repository/local/play/play-test_2.9.1/2.0-SNAPSHOT/jars/play-test_2.9.1.jar!/" />
+      <root url="jar://$PLAY$/repository/local/play/templates_2.9.1/2.0-SNAPSHOT/jars/templates_2.9.1.jar!/" />
       <root url="jar://$PLAY$/repository/local/play/sbt-plugin/scala_2.9.1/sbt_0.11.2/2.0-RC3-SNAPSHOT/jars/sbt-plugin.jar!/" />
       <root url="jar://$PLAY$/repository/cache/com.ning/async-http-client/jars/async-http-client-1.7.0.jar!/" />
       <root url="jar://$PLAY$/repository/cache/commons-io/commons-io/jars/commons-io-2.0.1.jar!/" />
