@@ -170,7 +170,7 @@ object VirtualTrainer {
 
     for {
       lBody <- validate(loginBody(vtUsername, vtPassword))
-      loginResult <- test(waitVal(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout))(_.status == 200)
+      loginResult <- test(waitVal(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout))(_.status == 200, "vt login result status != 200")
       hdr <- loginResult.header("Authorization").toSuccess("Authorization header not found").liftFailNel
       token <- validate({
         val tEx(_, t) = tEx.findFirstIn(hdr).get;
@@ -190,10 +190,10 @@ object VirtualTrainer {
   def predefinedPresets(token: String, tokenSecret: String, model: String): ValidationNEL[String, NodeSeq] = {
 
     for {
-      ppResult <- test(waitVal(vtRequest(vtPathPredefinedPresets, headerWithToken(token, tokenSecret)).get(), vtTimeout))(_.status == 200)
+      ppResult <- test(waitVal(vtRequest(vtPathPredefinedPresets, headerWithToken(token, tokenSecret)).
+        get(), vtTimeout))(_.status == 200, "vt predefined presets result status != 200")
       segs <- validate(ppResult.xml \\ "workoutSegments")
-      ws <- test(segs)(ws => (ws \\ "deviceType").exists(_.text == model))
-    } yield ws
+    } yield segs.withFilter(s => (s \\ "deviceType").exists{ _.text == model}).map{ s => s }
   }
 
   /**
@@ -202,9 +202,9 @@ object VirtualTrainer {
   def workouts(token: String, tokenSecret: String, model: String): ValidationNEL[String, NodeSeq] = {
 
     for {
-      ppResult <- test(waitVal(vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret)).get(), vtTimeout))(_.status == 200)
+      ppResult <- test(waitVal(vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret))
+        get(), vtTimeout))(_.status == 200, "vt workouts result status != 200")
       segs <- validate(ppResult.xml \\ "workoutSegments")
-      ws <- test(segs)(ws => (ws \\ "deviceType").exists(_.text == model))
-    } yield ws
+    } yield segs.withFilter(s => (s \\ "deviceType").exists{ _.text == model}).map{ s => s }
   }
 }
