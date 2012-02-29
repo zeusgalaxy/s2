@@ -76,11 +76,11 @@ package object utils {
     writer.toString
   }
 
-  def test[T](body: => T)(postCond: (T => Boolean) = { _ : T => true }): ValidationNEL[String, T] = {
+  def test[T](body: => T)(postCond: (T => Boolean) = { _ : T => true }, msg: String = ""): ValidationNEL[String, T] = {
 
     try {
       val res = body
-      if (postCond(res)) res.success else "Failed postCond".failNel
+      if (postCond(res)) res.success else ("Failed postCond. " + msg).failNel
     } catch {
       case e => e.getMessage.failNel
     }
