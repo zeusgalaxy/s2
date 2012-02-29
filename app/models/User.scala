@@ -5,6 +5,7 @@ import play.api.Play.current
 
 import anorm._
 import anorm.SqlParser._
+import play.Logger
 
 case class User(id:Long , firstName: String, lastName: String,  email: String)
 
@@ -23,21 +24,29 @@ object User {
    * Authenticate a User.
    */
   def authenticate(email: String, password: String): Option[User] = {
-//    DB.withConnection { implicit connection =>
-//      SQL(
-//        """
-//         select * from user where 
-//         email = {email} and password = {password}
-//        """
-//      ).on(
-//        'email -> email,
-//        'password -> password
-//      ).as(User.simple.singleOpt)
-//    }
-    if (password == "t")
-      Some(new User(26L, "Dennis", "Faust", "dfaust@netpulse.com"))
-    else
-      None
+    val user = DB.withConnection { implicit connection =>
+      SQL(
+        """
+         select * from user where
+         email = {email}
+        """
+      ).on(
+        'email -> email,
+        'password -> password
+      ).as(User.simple.singleOpt)
+    }
+
+    Logger.info("authenticate user: "+user.toString)
+    user match {
+      case Some(u) => {
+        if (password == "t")
+          Some(u)
+        else
+          None
+      }
+      case None => None
+    }
+
   }
 
   // -- Parsers
@@ -108,62 +117,5 @@ object User {
 
   }
 
-//  /**
-//   * Update a computer.
-//   *
-//   * @param id The computer id
-//   * @param computer The computer values.
-//   */
-//  def update(id: Long, computer: Computer) = {
-//    DB.withConnection { implicit connection =>
-//      SQL(
-//        """
-//          update computer
-//          set name = {name}, introduced = {introduced}, discontinued = {discontinued}, company_id = {company_id}
-//          where id = {id}
-//        """
-//      ).on(
-//        'id -> id,
-//        'name -> computer.name,
-//        'introduced -> computer.introduced,
-//        'discontinued -> computer.discontinued,
-//        'company_id -> computer.companyId
-//      ).executeUpdate()
-//    }
-//  }
-//
-//  /**
-//   * Insert a new computer.
-//   *
-//   * @param computer The computer values.
-//   */
-//  def insert(computer: Computer) = {
-//    DB.withConnection { implicit connection =>
-//      SQL(
-//        """
-//          insert into computer values (
-//            (select next value for computer_seq),
-//            {name}, {introduced}, {discontinued}, {company_id}
-//          )
-//        """
-//      ).on(
-//        'name -> computer.name,
-//        'introduced -> computer.introduced,
-//        'discontinued -> computer.discontinued,
-//        'company_id -> computer.companyId
-//      ).executeUpdate()
-//    }
-//  }
-//
-//  /**
-//   * Delete a computer.
-//   *
-//   * @param id Id of the computer to delete.
-//   */
-//  def delete(id: Long) = {
-//    DB.withConnection { implicit connection =>
-//      SQL("delete from computer where id = {id}").on('id -> id).executeUpdate()
-//    }
-//  }
 
 }
