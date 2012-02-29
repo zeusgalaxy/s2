@@ -21,14 +21,14 @@ object ApiWrapper extends Controller {
 
       val genFailElem = <s2RegisterResult>Unable to complete registration</s2RegisterResult>
       implicit val loc = VL("ApiWrapper.register")
-      
+
       // Note that what is called "id" in the request is actually "login" in the database (per dino!)
       val params = postOrGetParams(request, List("DOB", "weight", "gender", "email", "id", "machine_id"))
       val dinoXml: Validation[NonEmptyList[String], scala.xml.Elem] = for {
         dinoResult <- Dino.forward(request)
         dXml <- validate(dinoResult.xml)
       } yield dXml
-      
+
       dinoXml.error(Map("msg" -> "Problem forwarding register call to Dino"))
       val oldXml = dinoXml | genFailElem
 
@@ -85,11 +85,12 @@ object ApiWrapper extends Controller {
             )
           }
       }
-    finalResult.fold(e => Ok(e.list.mkString(", ")), s => Ok(s))
+      finalResult.fold(e => Ok(e.list.mkString(", ")), s => Ok(s))
   }
 
+
   // http://qa-ec2.netpulse.ws/core/n5ilogin.jsp?machine_id=18&id=1112925684&pic=22&oem_tos=15
-  // http://localhost:9000/n5ilogin.jsp?machine_id=18&id=1124247400&pic=22&oem_tos=15
+  // http://localhost:9000/n5ilogin.jsp?machine_id=1070&id=1124247419&pic=22&oem_tos=15
 
   def login = Action {
     implicit request =>
@@ -107,16 +108,11 @@ object ApiWrapper extends Controller {
 
           case Some(code) if (code.text == "0") => {
 
-            val npLogin = params("id")(0)
-            val machine = params("machine_id")(0).toLong
-            val model = Machine.getWithEquip(machine).
-              getOrFail("Machine " + machine.toString + " not found in ApiWrapper.login").
-              info(Map("msg" -> "Model retrieval problems")).
-              fold(e => "", s => s._2.getOrFail("No equipment for machine " + machine.toString + " in ApiWrapper.login").
-              info(Map("msg" -> "Model retrieval problems")).
-              fold(e => "", s => s.model.toString))
-
             for {
+              npLogin <- validate(params("id")(0))
+              machineId <- validate(params("machine_id")(0).toLong)
+              model <- Machine.getWithEquip(machineId).flatMap{_._2.map{e => e.model.toString}}.toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
+
               ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found in ApiWrapper.login")
               vtPredefinedPresets <- VirtualTrainer.predefinedPresets(ex.vtToken, ex.vtTokenSecret, model)
               vtWorkouts <- VirtualTrainer.workouts(ex.vtToken, ex.vtTokenSecret, model)
@@ -151,7 +147,6 @@ object ApiWrapper extends Controller {
   }
 
   def gigyaLogin = Action {
-
     implicit request =>
       Ok(html.gigya(request))
   }
