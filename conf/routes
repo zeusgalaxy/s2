@@ -3,12 +3,13 @@
 # ~~~~
 
 # Authentication
-GET     /login                              controllers.Auth.login
-POST    /login                              controllers.Auth.authenticate
+GET     /login                              controllers.Auth.login(page ?= "")
+POST    /login                              controllers.Auth.authenticate()
 GET     /logout                             controllers.Auth.logout
 
 # Home page
 GET     /                           controllers.Application.index()
+GET     /index                      controllers.Application.index()
 
 # Computers list (look at the default values for pagination parameters)
 GET     /listUsers                      controllers.Application.listUsers(p:Int ?= 0, s:Int ?= 2, f ?= "")

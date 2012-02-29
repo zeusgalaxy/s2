@@ -9,7 +9,7 @@ import utils._
 
 object Report extends Controller with Secured {
   // val token = play.api.libs.Crypto.sign("myem...@example.com")
-  def showWorkoutLocations(page: Int, orderBy: Int, filter: String, startDate: String, endDate: String) = Action {
+  def showWorkoutLocations(page: Int, orderBy: Int, filter: String, startDate: String, endDate: String) =  Action {
     implicit request => {
 
       Logger.info("Session :"+session.data.toString())

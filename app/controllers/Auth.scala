@@ -11,6 +11,7 @@ import models._
 import utils._
 
 
+
 object Auth extends Controller {
 
   val loginForm = Form(
@@ -25,18 +26,28 @@ object Auth extends Controller {
   /**
    * Login page.
    */
-  def login = Action { implicit request =>
-    Logger.info("Session: "+session.data.toString())
-    Ok(html.login(loginForm))
+  def login(destPage:String="") = Action { implicit request =>
+    Logger.info("login: dest page: "+destPage)
+    session.get("page").map {p => Logger.info("login session page: "+p) }
+    Ok(html.login(loginForm)).withSession( session + ("page" -> destPage) )
   }
 
   /**
    * Handle login form submission.
    */
-  def authenticate = Action { implicit request =>
+  def authenticate() = Action { implicit request =>
+    session.get("page").map {p => Logger.info("auth session page: "+p) }
+
     loginForm.bindFromRequest.fold(
       formWithErrors => BadRequest(html.login(formWithErrors)),
-      user => Redirect(routes.Application.index).withSession("email" -> user._1)
+      user => {
+        var targetPage = "/login"
+        session.get("page") match {
+          case Some(page) =>  targetPage = page
+          case _ => targetPage = "/index"
+        }
+        Redirect(targetPage).withSession("email" -> user._1) 
+      }
     )
   }
 
@@ -45,7 +56,7 @@ object Auth extends Controller {
    * Logout and clean the session.
    */
   def logout = Action {
-    Redirect(routes.Auth.login).withNewSession.flashing(
+    Redirect(routes.Application.index).withNewSession.flashing(
       "success" -> "You've been logged out"
     )
   }
@@ -65,15 +76,17 @@ trait Secured {
   private def username(request: RequestHeader) = request.session.get("email")
 
   /**
-   * Redirect to login if the user in not authorized.
+   * Redirect to login if the user is not authorized.
    */
-  private def onUnauthorized(request: RequestHeader) = Results.Redirect(routes.Auth.login)
-
+  private def onUnauthorized(request: RequestHeader)(destPage: String="") = {
+    Logger.info("onUnauthorized destPage ="+destPage)
+    Results.Redirect(routes.Auth.login(destPage))
+  }
 
   /**
    * Action for authenticated users.
    */
-  def IsAuthenticated(f: => String => Request[AnyContent] => Result) = Security.Authenticated(username, onUnauthorized) { user =>
+  def IsAuthenticated(destPage:String, f: => String => Request[AnyContent] => Result) = Security.Authenticated(username, onUnauthorized(_)(destPage)) { user =>
     Action(request => f(user)(request))
   }
 
