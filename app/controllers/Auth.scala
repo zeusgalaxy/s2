@@ -19,7 +19,7 @@ object Auth extends Controller {
       "email" -> text,
       "password" -> text
     ) verifying ("Invalid email or password", result => result match {
-      case (email, password) => true // User.authenticate(email, password).isDefined
+      case (email, password) => User.authenticate(email, password).isDefined
     })
   )
 
@@ -41,10 +41,11 @@ object Auth extends Controller {
     loginForm.bindFromRequest.fold(
       formWithErrors => BadRequest(html.login(formWithErrors)),
       user => {
+// Authenticate Username and pw here...
         var targetPage = "/login"
         session.get("page") match {
           case Some(page) =>  targetPage = page
-          case _ => targetPage = "/index"
+          case _ =>
         }
         Redirect(targetPage).withSession("email" -> user._1) 
       }

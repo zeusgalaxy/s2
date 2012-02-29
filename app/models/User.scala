@@ -6,7 +6,7 @@ import play.api.Play.current
 import anorm._
 import anorm.SqlParser._
 
-case class User(id: Pk[Long] = NotAssigned, firstName: String, lastName: String,  email: String)
+case class User(id:Long , firstName: String, lastName: String,  email: String)
 
 /**
  * Helper for pagination.
@@ -19,13 +19,34 @@ case class Page[A](items: Seq[A], totals: Seq[A], page: Int, offset: Long, total
 
 object User {
 
+  /**
+   * Authenticate a User.
+   */
+  def authenticate(email: String, password: String): Option[User] = {
+//    DB.withConnection { implicit connection =>
+//      SQL(
+//        """
+//         select * from user where 
+//         email = {email} and password = {password}
+//        """
+//      ).on(
+//        'email -> email,
+//        'password -> password
+//      ).as(User.simple.singleOpt)
+//    }
+    if (password == "t")
+      Some(new User(26L, "Dennis", "Faust", "dfaust@netpulse.com"))
+    else
+      None
+  }
+
   // -- Parsers
 
   /**
    * Parse a User from a ResultSet
    */
   val simple = {
-    get[Pk[Long]]("user.id") ~
+      get[Long]("user.id") ~
       get[String]("user.first_name") ~
       get[String]("user.last_name") ~
       get[String]("user.email") map {
