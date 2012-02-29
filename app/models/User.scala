@@ -36,17 +36,19 @@ object User {
       ).as(User.simple.singleOpt)
     }
 
-    Logger.info("authenticate user: "+user.toString)
     user match {
       case Some(u) => {
-        if (password == "t")
+        if (password == "t") {
+          Logger.info("authenticated user: "+user.toString)
           Some(u)
-        else
+          }
+        else {
+          Logger.info("user login rejected: "+email)
           None
-      }
+          }
+        }
       case None => None
     }
-
   }
 
   // -- Parsers
