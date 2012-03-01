@@ -14,7 +14,7 @@ import Scalaz._
 object ApiWrapper extends Controller {
 
   // To test a post with curl, passing a file for the body: curl --header "Content-Type: text/xml; charset=UTF-8" -d@asset_history_upload.xml http://localhost:8080/n5iuploader.jsp
-  // http://localhost:9000/n5iregister.jsp?machine_id=18&id=1115180902&membership_id=1&email=sOCClkoE%40stross.com&pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15
+  // http://localhost:9000/n5iregister.jsp?machine_id=1070&id=2115180102&membership_id=1&email=sOCClkoE102%40stross.com&pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15
 
   def register = Action {
     implicit request =>
@@ -147,6 +147,7 @@ object ApiWrapper extends Controller {
   }
 
   // http://localhost:9000/n5ilinkvtuser.jsp?machineid=1070&nplogin=1124247419&vtpwd=dOx2HaxVE419%40stross.com
+  // http://localhost:9000/n5ilinkvtuser.jsp?machineid=1070&nplogin=1124247419&vtpwd=1124247419
   def linkVtUser(nplogin: String, vtpwd: String, machineid: Long) = Action {
     implicit request =>
 
@@ -160,7 +161,8 @@ object ApiWrapper extends Controller {
           ex <- Exerciser.findByLogin(nplogin).getOrFail("Exerciser " + nplogin + " not found")
           vtAuth <- VirtualTrainer.login(nplogin, vtpwd, nplogin) // tuple(token, tokenSecret)
           (vtUid, vtToken, vtTokenSecret) = vtAuth
-          linkStatus <- VirtualTrainer.link(nplogin, ex.email)
+          linkStatus <- VirtualTrainer.link(nplogin, vtUid)
+//          linkStatus <- VirtualTrainer.link(nplogin, ex.email)
 
           updResult <- validate(Exerciser.updateToken(nplogin, vtUid, vtTokenSecret))
 
