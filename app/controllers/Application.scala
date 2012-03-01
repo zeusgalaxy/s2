@@ -12,7 +12,7 @@ import models._
 import utils._
 
 
-object Application extends Controller {
+object Application extends Controller with Secured {
 
   val registrationForm = Form(
     of(Registration.apply _, Registration.unapply _)(
@@ -63,13 +63,13 @@ object Application extends Controller {
       registrationForm.bindFromRequest.fold(
         formWithErrors => BadRequest(html.createRegistrationForm(formWithErrors)),
         registration => {
-          Redirect(routes.Application.index()).flashing("success" -> "Registration resulted in: %s".format(Registration.test(registration).toString()))
+          Redirect(routes.Application.index).flashing("success" -> "Registration resulted in: %s".format(Registration.test(registration).toString()))
         }
       )
   }
 
-  def testLogin = Action {
-    implicit request =>
+  def testLogin = IsAuthenticated("/testLogin", username => implicit request =>
       Ok(html.testLogin())
-  }
+      )
+
 }

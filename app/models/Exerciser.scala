@@ -8,16 +8,19 @@ import anorm._
 import anorm.SqlParser._
 import play.api.Logger
 
-case class Exerciser(dbId: Long, login: String, vtToken: String, vtTokenSecret: String)
+case class Exerciser(dbId: Long, login: String, email: String, vtToken: String, vtTokenSecret: String)
 
 object Exerciser {
+
+  implicit val loc = VL("Exerciser")
 
   val simple = {
     get[Long]("exerciser.id") ~
       get[String]("exerciser.login") ~
+      get[String]("exerciser.email") ~
       get[String]("exerciser.vt_token") ~
       get[String]("exerciser.vt_token_secret") map {
-      case dbId ~ login ~ vtToken ~ vtTokenSecret => Exerciser(dbId, login, vtToken, vtTokenSecret)
+      case dbId ~ login ~ email ~ vtToken ~ vtTokenSecret => Exerciser(dbId, login, email, vtToken, vtTokenSecret)
     }
   }
 

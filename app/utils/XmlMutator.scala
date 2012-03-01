@@ -18,5 +18,5 @@ case class XmlMutator(oldXml: Node) {
       case other => other
     }
   }
-  def add(targetElem: String, newChild: Elem) = new RuleTransformer(new AddChildrenTo(targetElem, newChild)).transform(oldXml).head
+  def add(targetElem: String, newChild: Elem): Node = new RuleTransformer(new AddChildrenTo(targetElem, newChild)).transform(oldXml).head
 }

@@ -61,23 +61,35 @@ object VirtualTrainer {
          }) yield w
   }
 
-  private def registerBody(params: Map[String, Seq[String]])(implicit nmField: String = "id", pwdField: String = "id") = {
+  private def registerBody(params: Map[String, Seq[String]])(implicit nmField: String = "id", pwdField: String = "id"):
+  Validation[String, String] = {
 
-    val machineId = params.getOrElse("machine_id", throw new Exception("machine_id not supplied"))(0)
-    val locationId = Machine.getBasic(machineId.toLong).
-      getOrElse(throw new Exception("machine_id " + machineId.toString + " not found in database")).locationId
-    val password = params.getOrElse(pwdField, throw new Exception(pwdField + "password not supplied"))(0)
-    val json = ("age" -> age(params.getOrElse("DOB", throw new Exception("DOB not supplied"))(0))) ~
-      ("nickName" -> params.getOrElse(nmField, throw new Exception(nmField + "nickName not supplied"))(0)) ~
-      ("password" -> (new sun.misc.BASE64Encoder()).encode(password.getBytes("UTF-8"))) ~
-      ("gender" -> params.getOrElse("gender", throw new Exception("gender not supplied"))(0).toLowerCase) ~
-      ("emailAddress" -> params.getOrElse("email", throw new Exception("email not supplied"))(0)) ~
-      ("weight" -> params.getOrElse("weight", throw new Exception("weight not supplied"))(0)) ~
-      ("weightUnit" -> "I") ~
-      ("preferredLanguageCode" -> "en_US") ~
-      ("locationId" -> locationId)
-    Printer.compact(JsonAST.render(json))
+    for {
 
+      machineId <- params.get("machine_id").toSuccess("machine_id not supplied").map(_(0))
+      locationId <- Machine.getBasic(machineId.toLong).
+        toSuccess("machine_id " + machineId + " not found in database").map(_.locationId)
+      password <- params.get(pwdField).toSuccess(pwdField + " password not supplied").map(_(0))
+      dob <- params.get("DOB").toSuccess("DOB not supplied").map(_(0))
+      nickName <- params.get(nmField).toSuccess(nmField + " nickName not supplied").map(_(0))
+      gender <- params.get("gender").toSuccess("gender not supplied").map(_(0).toLowerCase)
+      emailAddr <- params.get("email").toSuccess("email not supplied").map(_(0))
+      weight <- params.get("weight").toSuccess("weight not supplied").map(_(0))
+
+    } yield {
+
+      val json = ("age" -> age(dob)) ~
+        ("nickName" -> nickName) ~
+        ("password" -> (new sun.misc.BASE64Encoder()).encode(password.getBytes("UTF-8"))) ~
+        ("gender" -> gender) ~
+        ("emailAddress" -> emailAddr) ~
+        ("weight" -> weight) ~
+        ("weightUnit" -> "I") ~
+        ("preferredLanguageCode" -> "en_US") ~
+        ("locationId" -> locationId)
+
+      Printer.compact(JsonAST.render(json))
+    }
   }
 
   private def linkBody(npId: String, vtId: String) = {
@@ -111,57 +123,71 @@ object VirtualTrainer {
 
     implicit val loc = VL("VirtualTrainer.register")
 
-    val rVal: Option[(String, String, Int)] = (for {
-      npId <- validate((params.get("id").get(0)))
-      rBody <- validate(registerBody(params))
-      valResult <- validate(waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout))
-      valStatus <- validate(valResult.status)
+    val rVal: Option[(String, String, Int)] = for {
+
+      npId <- params.get("id").map(_(0))
+      rBody <- registerBody(params).toOption
+      valResult <- validate(waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)).toOption
+      valStatus = valResult.status
+
     } yield {
-      Some((npId, rBody, valStatus))
-    }).fold(e => None, s => s)
+      (npId, rBody, valStatus)
+    }
 
     rVal match {
       case None => Left(regVtUnableToGetStatus)
       case Some((_, _, status)) if (status == 500) => Left(regVtUserExists)
       case Some((_, _, status)) if (status != 200) => Left(regVtOtherError)
       case Some((npId, rBody, _)) =>
-        (for {
-          regResult <- test(waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout)) {
-            _.status == 200
-          }
-          regXml <- validate(regResult.xml)
-          id <- validate((regXml \\ "userId" head).text)
-          nickName <- validate((regXml \\ "nickName" head).text)
+        val result = for {
+          regResult <- some(waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout))
+          if (regResult.status == 200)
+          regXml <- validate(regResult.xml).toOption
+          id <- validate((regXml \\ "userId" head).text).toOption
+          nickName <- validate((regXml \\ "nickName" head).text).toOption
 
         } yield {
 
+          Logger.debug("linkBody will be: " + linkBody(npId, id).toString)
+
           val linkResult = waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, id)), vtTimeout)
           if (linkResult.status != 200) Logger.info("VT link_external_user returned status " + linkResult.status.toString)
-          Right((id, nickName, nickName))
+          (id, nickName, nickName)
 
-        }).fold(e => Left(regVtOtherError), s => s)
+        }
+        result match {
+          case None => Left(regVtOtherError)
+          case Some(r) => Right(r)
+        }
     }
   }
 
-  private def getToken(login: String): ValidationNEL[String, Exerciser] = {
+  def link(npId: String, vtId: String): ValidationNEL[String, Boolean] = {
 
-    Exerciser.findByLogin(login).getOrFail("Exerciser " + login + " not found when retrieving token")
+    implicit val loc = VL("VirtualTrainer.link")
+    Logger.debug("linkBody will be: " + linkBody(npId, vtId).toString)
+    for {
+      linkResult <- validate(waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, vtId)), vtTimeout))
+      status <- test(linkResult)(_.status == 200, "vt link external account result status was " + linkResult.status.toString).
+        error(Map("body" -> linkResult.body))
+    } yield true
   }
 
   /**
-   * @return A tuple with token and token secret, which we also save in the Exerciser table
+   * @return A tuple with vtUid, token and token secret, which we also save in the Exerciser table
    */
-  def login(vtUsername: String, vtPassword: String, npLogin: String): ValidationNEL[String, (String, String)] = {
+  def login(vtUsername: String, vtPassword: String, npLogin: String): ValidationNEL[String, (String, String, String)] = {
 
+    implicit val loc = VL("VirtualTrainer.login")
     val tEx = """(.*oauth_token=\")([^\"]*).*""".r
     val tsEx = """(.*oauth_token_secret=\")([^\"]*).*""".r
 
     for {
       lBody <- validate(loginBody(vtUsername, vtPassword))
-      loginResult <- test(waitVal(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout)) {
-        _.status == 200
-      }
-      hdr <- validate(loginResult.header("Authorization").get)
+      loginResult <- validate(waitVal(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout))
+      status <- test(loginResult)(_.status == 200, "vt login account result status was " + loginResult.status.toString).
+        error(Map("body" -> loginResult.body))
+      hdr <- loginResult.header("Authorization").toSuccess("Authorization header not found").liftFailNel
       token <- validate({
         val tEx(_, t) = tEx.findFirstIn(hdr).get;
         t
@@ -170,8 +196,9 @@ object VirtualTrainer {
         val tsEx(_, s) = tsEx.findFirstIn(hdr).get;
         s
       })
+      id <- validate((loginResult.xml \\ "userId" head).text)
 
-    } yield (token, secret)
+    } yield (id, token, secret)
   }
 
   /**
@@ -179,16 +206,11 @@ object VirtualTrainer {
    */
   def predefinedPresets(token: String, tokenSecret: String, model: String): ValidationNEL[String, NodeSeq] = {
 
-    validate {
-      val ppResult = waitVal(vtRequest(vtPathPredefinedPresets, headerWithToken(token, tokenSecret)).get(), vtTimeout)
-      if (ppResult.status != 200) throw new Exception("Did not receive 200 from vt predefined_presets. Status was: " + ppResult.status.toString)
-
-      (ppResult.xml \\ "workoutSegments").withFilter {
-        ws => (ws \\ "deviceType").exists(dt => dt.text == model)
-      } map {
-        n => n
-      }
-    }
+    for {
+      ppResult <- test(waitVal(vtRequest(vtPathPredefinedPresets, headerWithToken(token, tokenSecret)).
+        get(), vtTimeout))(_.status == 200, "vt predefined presets result status != 200")
+      segs <- validate(ppResult.xml \\ "workoutSegments")
+    } yield segs.withFilter(s => (s \\ "deviceType").exists{ _.text == model}).map{ s => s }
   }
 
   /**
@@ -196,15 +218,10 @@ object VirtualTrainer {
    */
   def workouts(token: String, tokenSecret: String, model: String): ValidationNEL[String, NodeSeq] = {
 
-    validate {
-      val wResult = waitVal(vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret)).get(), vtTimeout)
-      if (wResult.status != 200) throw new Exception("Did not receive 200 from vt workouts. Status was: " + wResult.status.toString)
-      (wResult.xml \\ "workoutSegments").withFilter {
-        ws => (ws \\ "deviceType").exists(dt => dt.text == model)
-      } map {
-        n => n
-      }
-    }
+    for {
+      ppResult <- test(waitVal(vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret))
+        get(), vtTimeout))(_.status == 200, "vt workouts result status != 200")
+      segs <- validate(ppResult.xml \\ "workoutSegments")
+    } yield segs.withFilter(s => (s \\ "deviceType").exists{ _.text == model}).map{ s => s }
   }
-
 }

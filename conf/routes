@@ -2,8 +2,14 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
+# Authentication
+GET     /login                              controllers.Auth.login(page ?= "")
+POST    /login                              controllers.Auth.authenticate()
+GET     /logout                             controllers.Auth.logout
+
 # Home page
 GET     /                           controllers.Application.index()
+GET     /index                      controllers.Application.index()
 
 # Computers list (look at the default values for pagination parameters)
 GET     /listUsers                      controllers.Application.listUsers(p:Int ?= 0, s:Int ?= 2, f ?= "")
@@ -13,6 +19,7 @@ POST    /gigyaLogin                 controllers.ApiWrapper.gigyaLogin
 
 GET     /n5iregister.jsp            controllers.ApiWrapper.register
 GET     /n5ilogin.jsp               controllers.ApiWrapper.login
+GET     /n5ilinkvtuser.jsp          controllers.ApiWrapper.linkVtUser(nplogin: String, vtpwd: String, machineid: Long)
 
 GET     /createRegistration         controllers.Application.createRegistration()
 GET     /testLogin                  controllers.Application.testLogin()
@@ -22,7 +29,8 @@ GET     /s2/reports/WorkoutLocations controllers.Report.showWorkoutLocations(p:I
 
 
 # Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file               controllers.Assets.at(path="/public", file)
+GET     /s2/assets/*file               controllers.Assets.at(path="/public", file)
+
 
 
 # PageViewUpload

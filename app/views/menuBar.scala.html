@@ -12,6 +12,7 @@
                 <li class="@{if(active == 'testLogin) "active" else "inactive"}"><a href="@routes.Application.testLogin()">Test Login</a></li>
              *@
                 <li class="@{if(active == 'showWorkoutLocations) "active" else "inactive"}"><a href="@routes.Report.showWorkoutLocations()">Reports</a></li>
+                <li class="@{if(active == 'logout) "active" else "inactive"}"><a href="@routes.Auth.logout()">Logout</a></li>
             </ul>
         </div>
     </div>

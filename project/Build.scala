@@ -5,7 +5,7 @@ import PlayProject._
 object ApplicationBuild extends Build {
 
     val appName         = "s2"
-    val appVersion      = "1.0.19.2"
+    val appVersion      = "1.0.19"
 
     val appDependencies = Seq(
       "net.liftweb" %% "lift-json" % "2.4-M5",
