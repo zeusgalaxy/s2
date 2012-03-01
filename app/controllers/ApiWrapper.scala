@@ -49,7 +49,7 @@ object ApiWrapper extends Controller {
           for {
             npLogin <- validate(params("id")(0))
             vtAuth <- VirtualTrainer.login(vtNickName, vtPassword, npLogin) // tuple(token, tokenSecret)
-            (vtToken, vtTokenSecret) = vtAuth
+            (vtUid, vtToken, vtTokenSecret) = vtAuth
             updResult <- validate(Exerciser.updateToken(npLogin, vtToken, vtTokenSecret))
             machineId <- validate(params("machine_id")(0).toLong)
             model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
@@ -158,11 +158,11 @@ object ApiWrapper extends Controller {
 
           model <- Machine.getWithEquip(machineid).flatMap(_._2.map (e => e.model.toString)).toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
           ex <- Exerciser.findByLogin(nplogin).getOrFail("Exerciser " + nplogin + " not found")
+          vtAuth <- VirtualTrainer.login(nplogin, vtpwd, nplogin) // tuple(token, tokenSecret)
+          (vtUid, vtToken, vtTokenSecret) = vtAuth
           linkStatus <- VirtualTrainer.link(nplogin, ex.email)
 
-          vtAuth <- VirtualTrainer.login(nplogin, vtpwd, nplogin) // tuple(token, tokenSecret)
-          (vtToken, vtTokenSecret) = vtAuth
-          updResult <- validate(Exerciser.updateToken(nplogin, vtToken, vtTokenSecret))
+          updResult <- validate(Exerciser.updateToken(nplogin, vtUid, vtTokenSecret))
 
           vtPredefinedPresets <- VirtualTrainer.predefinedPresets(ex.vtToken, ex.vtTokenSecret, model)
           vtWorkouts <- VirtualTrainer.workouts(ex.vtToken, ex.vtTokenSecret, model)

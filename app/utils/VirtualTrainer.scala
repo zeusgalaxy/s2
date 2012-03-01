@@ -148,6 +148,8 @@ object VirtualTrainer {
 
         } yield {
 
+          Logger.debug("linkBody will be: " + linkBody(npId, id).toString)
+
           val linkResult = waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, id)), vtTimeout)
           if (linkResult.status != 200) Logger.info("VT link_external_user returned status " + linkResult.status.toString)
           (id, nickName, nickName)
@@ -162,23 +164,29 @@ object VirtualTrainer {
 
   def link(npId: String, vtId: String): ValidationNEL[String, Boolean] = {
 
+    implicit val loc = VL("VirtualTrainer.link")
+    Logger.debug("linkBody will be: " + linkBody(npId, vtId).toString)
     for {
       linkResult <- validate(waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, vtId)), vtTimeout))
-      status <- test(linkResult)(_.status == 200, "vt link external account result status was " + linkResult.status.toString)
+      status <- test(linkResult)(_.status == 200, "vt link external account result status was " + linkResult.status.toString).
+        error(Map("body" -> linkResult.body))
     } yield true
   }
 
   /**
-   * @return A tuple with token and token secret, which we also save in the Exerciser table
+   * @return A tuple with vtUid, token and token secret, which we also save in the Exerciser table
    */
-  def login(vtUsername: String, vtPassword: String, npLogin: String): ValidationNEL[String, (String, String)] = {
+  def login(vtUsername: String, vtPassword: String, npLogin: String): ValidationNEL[String, (String, String, String)] = {
 
+    implicit val loc = VL("VirtualTrainer.login")
     val tEx = """(.*oauth_token=\")([^\"]*).*""".r
     val tsEx = """(.*oauth_token_secret=\")([^\"]*).*""".r
 
     for {
       lBody <- validate(loginBody(vtUsername, vtPassword))
-      loginResult <- test(waitVal(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout))(_.status == 200, "vt login result status != 200")
+      loginResult <- validate(waitVal(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout))
+      status <- test(loginResult)(_.status == 200, "vt login account result status was " + loginResult.status.toString).
+        error(Map("body" -> loginResult.body))
       hdr <- loginResult.header("Authorization").toSuccess("Authorization header not found").liftFailNel
       token <- validate({
         val tEx(_, t) = tEx.findFirstIn(hdr).get;
@@ -188,8 +196,9 @@ object VirtualTrainer {
         val tsEx(_, s) = tsEx.findFirstIn(hdr).get;
         s
       })
+      id <- validate((loginResult.xml \\ "userId" head).text)
 
-    } yield (token, secret)
+    } yield (id, token, secret)
   }
 
   /**
