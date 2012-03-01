@@ -52,7 +52,7 @@ object ApiWrapper extends Controller {
             (vtToken, vtTokenSecret) = vtAuth
             updResult <- validate(Exerciser.updateToken(npLogin, vtToken, vtTokenSecret))
             machineId <- validate(params("machine_id")(0).toLong)
-            model <- Machine.getWithEquip(machineId).flatMap{_._2.map{e => e.model.toString}}.toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
+            model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
 
             vtPredefinedPresets <- VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret, model)
             vtWorkouts <- VirtualTrainer.workouts(vtToken, vtTokenSecret, model)
@@ -111,7 +111,7 @@ object ApiWrapper extends Controller {
             for {
               npLogin <- validate(params("id")(0))
               machineId <- validate(params("machine_id")(0).toLong)
-              model <- Machine.getWithEquip(machineId).flatMap{_._2.map{e => e.model.toString}}.toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
+              model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
 
               ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found in ApiWrapper.login")
               vtPredefinedPresets <- VirtualTrainer.predefinedPresets(ex.vtToken, ex.vtTokenSecret, model)
@@ -145,6 +145,41 @@ object ApiWrapper extends Controller {
         {e.list.mkString(", ")}
       </response>), s => Ok(s))
   }
+
+  // http://localhost:9000/n5ilinkvtuser.jsp?machineid=1070&nplogin=1124247419&vtpwd=dOx2HaxVE419%40stross.com
+  def linkVtUser(nplogin: String, vtpwd: String, machineid: Long) = Action {
+    implicit request =>
+
+      val genFailElem = <s2LinkResult>Unable to complete account linkage</s2LinkResult>
+      implicit val loc = VL("ApiWrapper.linkVtUser")
+
+      val finalResult =
+        for {
+
+          model <- Machine.getWithEquip(machineid).flatMap(_._2.map (e => e.model.toString)).toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
+          ex <- Exerciser.findByLogin(nplogin).getOrFail("Exerciser " + nplogin + " not found")
+          linkStatus <- VirtualTrainer.link(nplogin, ex.email)
+
+          vtAuth <- VirtualTrainer.login(nplogin, vtpwd, nplogin) // tuple(token, tokenSecret)
+          (vtToken, vtTokenSecret) = vtAuth
+          updResult <- validate(Exerciser.updateToken(nplogin, vtToken, vtTokenSecret))
+
+          vtPredefinedPresets <- VirtualTrainer.predefinedPresets(ex.vtToken, ex.vtTokenSecret, model)
+          vtWorkouts <- VirtualTrainer.workouts(ex.vtToken, ex.vtTokenSecret, model)
+
+        } yield {
+          <vtAccount status="0">
+            <vtPredefinedPresets>
+              {vtPredefinedPresets}
+            </vtPredefinedPresets>
+            <vtWorkouts>
+              {vtWorkouts}
+            </vtWorkouts>
+          </vtAccount>
+        }
+      finalResult.error(Map("msg" -> "Problems during linkVtUser")).fold(e => Ok(genFailElem), s => Ok(s))
+  }
+
 
   def gigyaLogin = Action {
     implicit request =>

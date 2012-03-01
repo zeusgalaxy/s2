@@ -19,6 +19,7 @@ POST    /gigyaLogin                 controllers.ApiWrapper.gigyaLogin
 
 GET     /n5iregister.jsp            controllers.ApiWrapper.register
 GET     /n5ilogin.jsp               controllers.ApiWrapper.login
+GET     /n5ilinkvtuser.jsp          controllers.ApiWrapper.linkVtUser(nplogin: String, vtpwd: String, machineid: Long)
 
 GET     /createRegistration         controllers.Application.createRegistration()
 GET     /testLogin                  controllers.Application.testLogin()

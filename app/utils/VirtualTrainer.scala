@@ -160,6 +160,14 @@ object VirtualTrainer {
     }
   }
 
+  def link(npId: String, vtId: String): ValidationNEL[String, Boolean] = {
+
+    for {
+      linkResult <- validate(waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, vtId)), vtTimeout))
+      status <- test(linkResult)(_.status == 200, "vt link external account result status was " + linkResult.status.toString)
+    } yield true
+  }
+
   /**
    * @return A tuple with token and token secret, which we also save in the Exerciser table
    */
