@@ -43,7 +43,7 @@ object Auth extends Controller {
             case Some(page) => targetPage = page
             case _ =>
           }
-          Redirect(targetPage).withSession("email" -> user._1)
+          Redirect(targetPage).withSession("npadmin" -> user._1)              // COOKIE SET HERE
         }
       )
   }
@@ -60,13 +60,6 @@ object Auth extends Controller {
 
 }
 
-
-// Generate a random password for the user.
-//
-//String password = StringUtil.generateRandomPassword();
-//String md5Password = Credential.MD5.digest(password);
-//
-//session.get("page").map {p => Logger.info("login session page: "+p) }
 
 /**
  * Provide security features

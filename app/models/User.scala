@@ -1,7 +1,5 @@
 package models
 
-import scalaz._
-import Scalaz._
 import utils._
 import play.api.db._
 import play.api.Play.current
@@ -10,7 +8,9 @@ import anorm._
 import anorm.SqlParser._
 import play.Logger
 
-case class User(id: Long, firstName: String, lastName: String, password: String, email: String)
+// <adminUser id="89" compId="1" oemId="null" adId="null" email="dfaust@netpulse.com"></adminUser>
+//case class User(id: Long, firstName: String, lastName: String, password: String, email: String, compId: Long,  oemId: Long, adId: Long  )
+case class User(id: Long, firstName: String, lastName: String, password: String, email: String  )
 
 /**
  * Helper for pagination.
@@ -35,7 +35,7 @@ object User {
         implicit connection =>
           SQL(
             """
-             select * from user where
+             select * from admin_user where
              email = {email}
             """
           ).on(
@@ -54,11 +54,11 @@ object User {
         case None =>
           Logger.info("No user returned from sql on email " + email)
           None
-        case Some(u) if (true || u.password == password) =>
+        case Some(u) if ( u.password == Blowfish.encrypt(password) ) =>
           Logger.info("Successful login for " + email)
           Some(u)
         case Some(u) =>
-          Logger.warn("Bad word password for email " + email)
+          Logger.warn("Bad word password for email " + email )
           None
       })
   }
@@ -70,12 +70,14 @@ object User {
    */
   val simple = {
     get[Long]("user.id") ~
-      get[String]("user.first_name") ~
-      get[String]("user.last_name") ~
-      get[String]("user.password") ~
-      get[String]("user.email") map {
-      case id ~ firstName ~ lastName ~ password ~ email => User(id, firstName, lastName, password, email)
-    }
+      get[String]("admin_user.first_name") ~
+      get[String]("admin_user.last_name") ~
+      get[String]("admin_user.password") ~
+      get[String]("admin_user.email") map {
+          case id ~ firstName ~ lastName ~ password ~ email => User(id, firstName, lastName, password, email)
+        }
+    //  ~ compId ~ oemId ~ adId
+    // , compId, oemId, adId
   }
 
   // -- Queries
@@ -90,7 +92,7 @@ object User {
     validate {
       DB.withConnection {
         implicit connection =>
-          SQL("select * from user where id = {id}").on('id -> id).as(User.simple.singleOpt)
+          SQL("select * from admin_user where id = {id}").on('id -> id).as(User.simple.singleOpt)
       }
     }.error(Map("msg" -> "Error returned from SQL")).fold(e => None, s => s)
   }
@@ -112,8 +114,8 @@ object User {
 
         val computers = SQL(
           """
-            select * from user
-            where user.first_name like {filter}
+            select * from admin_user
+            where admin_user.first_name like {filter}
             order by {orderBy}
             limit {pageSize} offset {offset}
           """
@@ -126,8 +128,8 @@ object User {
 
         val totalRows = SQL(
           """
-            select count(*) from user
-            where user.first_name like {filter}
+            select count(*) from admin_user
+            where admin_user.first_name like {filter}
           """
         ).on(
           'filter -> filter
