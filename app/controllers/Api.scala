@@ -46,7 +46,7 @@ object Api extends Controller {
             </vtWorkouts>
           </vtAccount>
         }
-      finalResult.error(Map("msg" -> "Problems during linkVtUser")).fold(e => Ok(genFailElem), s => Ok(s))
+      finalResult.error.fold(e => Ok(genFailElem), s => Ok(s))
   }
 
   def gigyaLogin = Action {

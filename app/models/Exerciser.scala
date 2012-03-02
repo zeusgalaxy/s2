@@ -36,7 +36,7 @@ object Exerciser {
         implicit connection =>
           SQL("select * from exerciser where id = {id}").on('id -> dbId).as(Exerciser.simple.singleOpt)
       }
-    }.info(Map("msg" -> "Failure during retrieval")).fold(e => None, s => s)
+    }.info.fold(e => None, s => s)
   }
 
   def findByLogin(login: String): Option[Exerciser] = {
@@ -48,7 +48,7 @@ object Exerciser {
         implicit connection =>
           SQL("select * from exerciser where login = {login}").on('login -> login).as(Exerciser.simple.singleOpt)
       }
-    }.info(Map("msg" -> "Failure during retrieval")).fold(e => None, s => s)
+    }.info.fold(e => None, s => s)
   }
 
   def updateVirtualTrainer(npLogin: String, vtUserId: String, vtToken: String, vtTokenSecret: String): Boolean = {
@@ -71,6 +71,6 @@ object Exerciser {
             'vtTokenSecret -> vtTokenSecret
           ).executeUpdate()
       }
-    }.info(Map("msg" -> "Failure during update")).fold(e => false, s => true)
+    }.info.fold(e => false, s => true)
   }
 }

@@ -23,6 +23,7 @@ import Scalaz._
 // pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15
 
 case class VtUser(vtUserId: String, vtNickname: String, vtToken: String, vtTokenSecret: String)
+
 object VtUser {
   def apply(x: Elem, tok: String = "", tokSec: String = ""): VtUser = {
     val id = (x \\ "userId" head).text
@@ -32,8 +33,9 @@ object VtUser {
 }
 
 case class RegParams(npLogin: String, email: String, pic: String, dob: String, machineId: String,
-                      membershipId: String, gender: String, enableMail: String, weight: String,
-                      oemTos: String, vtNickname: String, vtPassword: String)
+                     membershipId: String, gender: String, enableMail: String, weight: String,
+                     oemTos: String, vtNickname: String, vtPassword: String)
+
 object RegParams {
   def apply(rq: Request[AnyContent]): RegParams = {
 
@@ -75,12 +77,6 @@ object VirtualTrainer {
   lazy val vtConsumerKey = current.configuration.getString("vt.consumer.key").getOrElse(throw new Exception("vt.consumer.key not in configuration"))
   lazy val vtConsumerSecret = current.configuration.getString("vt.consumer.secret").getOrElse(throw new Exception("vt.consumer.secret not in configuration"))
   lazy val vtTimeout = current.configuration.getString("vt.timeout").getOrElse(throw new Exception("vt.timeout not in configuration")).toInt
-
-  def utcNowInMillis = DateTime.now(DateTimeZone.UTC).getMillis
-
-  def utcNowInSecs = utcNowInMillis / 1000
-
-  def nonce = utcNowInMillis.toString + RandomStringUtils.randomAlphanumeric(6)
 
   def age(dob: String): Int = {
     val born = new DateTime(dob.slice(4, 8).toInt, dob.slice(0, 2).toInt, dob.slice(2, 4).toInt, 0, 0, 0)
@@ -133,7 +129,7 @@ object VirtualTrainer {
   private def linkBody(npLogin: String, vtUid: String) = {
     Printer.compact(JsonAST.render(
       ("externalUserId" -> npLogin) ~
-//      ("externalUserId" -> "1") ~       // Put a not-previously-used number here for testing purposes
+        //      ("externalUserId" -> "1") ~       // Put a not-previously-used number here for testing purposes
         ("vtUserId" -> vtUid) ~
         ("type" -> "NP")
     ))
@@ -149,6 +145,26 @@ object VirtualTrainer {
   def vtRequest(path: String, header: => String): WSRequestHolder = {
     val h = header
     WS.url(vtPathPrefix + path).withHeaders(("Content-Type", "application/json"), ("Authorization", h))
+  }
+
+  private def doVtRegister(rBody: String) = {
+    waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout)
+  }
+
+  private def doVtLogin(lBody: String) = {
+    waitVal(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout)
+  }
+
+  private def doVtLink(npLogin: String, vtUid: String) = {
+    waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npLogin, vtUid)), vtTimeout)
+  }
+
+  private def doVtPredefineds(token: String, tokenSecret: String) = {
+    waitVal(vtRequest(vtPathPredefinedPresets, headerWithToken(token, tokenSecret)).get(), vtTimeout)
+  }
+
+  private def doVtWorkouts(token: String, tokenSecret: String) = {
+    waitVal(vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret)).get(), vtTimeout)
   }
 
   val regVtUserExists = 1
@@ -174,36 +190,35 @@ object VirtualTrainer {
       case Some((_, status)) if (status == 500) => Left(regVtUserExists)
       case Some((_, status)) if (status != 200) => Left(regVtOtherError)
       case Some((rBody, _)) =>
-        val result: Validation[NonEmptyList[String], VtUser] = for {
-          regResult <- validate(waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout))
-          status <- test(regResult)(_.status == 200, "vt register result status was " + regResult.status.toString).
-            error(Map("body" -> regResult.body))
+        val result: Validation[NonEmptyList[String], VtUser] =
+          for {
+            regResult <- validate(doVtRegister(rBody))
+            status <- test(regResult)(_.status == 200).
+              add("vt register result status", regResult.status.toString).
+              add("body", regResult.body).error
 
-          regXml <- validate(regResult.xml).add("regResult", regResult.toString)
-          vtUid <- validate((regXml \\ "userId" head).text).add("regXml", regXml.toString)
-          vtNickname <- validate((regXml \\ "nickName" head).text).add("regXml", regXml.toString)
-          vtUser <- validate(VtUser(regXml)).add("regXml", regXml.toString)
+            regXml <- validate(regResult.xml).add("regResult", regResult.toString())
+            vtUid <- validate((regXml \\ "userId" head).text).add("regXml", regXml.toString())
+            vtNickname <- validate((regXml \\ "nickName" head).text).add("regXml", regXml.toString())
+            vtUser <- validate(VtUser(regXml)).add("regXml", regXml.toString())
+            linkResult <- validate(doVtLink(rp.npLogin, vtUid))
+            lStatus <- test(linkResult.status)(_ == 200).add("VT link_external_user status", linkResult.status.toString).error
 
-        } yield {
+          } yield vtUser
 
-          Logger.debug("linkBody will be: " + linkBody(rp.npLogin, vtUid).toString)
-
-          val linkResult = waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(rp.npLogin, vtUid)), vtTimeout)
-          if (linkResult.status != 200) Logger.info("VT link_external_user returned status " + linkResult.status.toString)
-          vtUser
-        }
-        result.error(Map("msg"->"Something failed: ")).fold(e => Left(regVtOtherError), s => Right(s))
+        result.add("Result", "Failure").error.fold(e => Left(regVtOtherError), s => Right(s))
     }
   }
 
   def link(npLogin: String, vtUid: String): ValidationNEL[String, Boolean] = {
 
     implicit val loc = VL("VirtualTrainer.link")
-    Logger.debug("linkBody will be: " + linkBody(npLogin, vtUid).toString)
+
     for {
-      linkResult <- validate(waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npLogin, vtUid)), vtTimeout))
-      status <- test(linkResult)(_.status == 200, "vt link external account result status was " + linkResult.status.toString).
-        error(Map("body" -> linkResult.body))
+      linkResult <- validate(doVtLink(npLogin, vtUid))
+      status <- test(linkResult)(_.status == 200).
+        add("vt link external account result status", linkResult.status.toString).
+        add("body", linkResult.body).error
     } yield true
   }
 
@@ -215,19 +230,22 @@ object VirtualTrainer {
 
     for {
       lBody <- validate(loginBody(emailOrNickname, vtPassword))
-      loginResult <- validate(waitVal(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout))
-      status <- test(loginResult)(_.status == 200, "vt login account result status was " + loginResult.status.toString).
-        error(Map("body" -> loginResult.body))
+      loginResult <- validate(doVtLogin(lBody))
+      status <- test(loginResult)(_.status == 200).
+        add("vt login account result status", loginResult.status.toString).
+        add("body", loginResult.body).error
       hdr <- loginResult.header("Authorization").toSuccess("Authorization header not found").liftFailNel
+
       token <- validate({
         val tEx(_, t) = tEx.findFirstIn(hdr).get;
         t
-      })
+      }).add("Auth header", hdr)
+
       secret <- validate({
         val tsEx(_, s) = tsEx.findFirstIn(hdr).get;
         s
-      })
-      id <- validate((loginResult.xml \\ "userId" head).text)
+      }).add("Auth header", hdr)
+      id <- validate((loginResult.xml \\ "userId" head).text).add("vt login xml", loginResult.xml.toString())
 
     } yield (id, token, secret)
   }
@@ -237,11 +255,18 @@ object VirtualTrainer {
    */
   def predefinedPresets(token: String, tokenSecret: String, model: String): ValidationNEL[String, NodeSeq] = {
 
+    implicit val loc = VL("VirtualTrainer.predefinedPresets")
+
     for {
-      ppResult <- test(waitVal(vtRequest(vtPathPredefinedPresets, headerWithToken(token, tokenSecret)).
-        get(), vtTimeout))(_.status == 200, "vt predefined presets result status != 200")
-      segs <- validate(ppResult.xml \\ "workoutSegments")
-    } yield segs.withFilter(s => (s \\ "deviceType").exists{ _.text == model}).map{ s => s }
+      ppResult <- validate(doVtPredefineds(token, tokenSecret))
+      status <- test(ppResult)(_.status == 200).add("vt predefined presets result status", ppResult.status.toString)
+      segs <- validate(ppResult.xml \\ "workoutSegments").add("pp result xml", ppResult.xml.toString())
+
+    } yield segs.withFilter(s => (s \\ "deviceType").exists {
+      _.text == model
+    }).map {
+      s => s
+    }
   }
 
   /**
@@ -249,10 +274,16 @@ object VirtualTrainer {
    */
   def workouts(token: String, tokenSecret: String, model: String): ValidationNEL[String, NodeSeq] = {
 
+    implicit val loc = VL("VirtualTrainer.workouts")
+
     for {
-      ppResult <- test(waitVal(vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret))
-        get(), vtTimeout))(_.status == 200, "vt workouts result status != 200")
+      ppResult <- validate(doVtWorkouts(token, tokenSecret))
+      status <- test(ppResult)(_.status == 200).add("vt workouts result status", ppResult.status.toString)
       segs <- validate(ppResult.xml \\ "workoutSegments")
-    } yield segs.withFilter(s => (s \\ "deviceType").exists{ _.text == model}).map{ s => s }
+    } yield segs.withFilter(s => (s \\ "deviceType").exists {
+      _.text == model
+    }).map {
+      s => s
+    }
   }
 }

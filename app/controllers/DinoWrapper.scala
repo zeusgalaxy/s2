@@ -75,7 +75,7 @@ object DinoWrapper extends Controller {
           val cnt = PageViewModel.insert(~request.body.asXml).getOrThrow("Dino.pageview call of PageViewModel.insert")
           Ok("PageView load succeeded with " + cnt.toString + "inserts")
         }
-      }.error(Map("request body" -> request.body.toString)).
+      }.add("request body", request.body.toString).error.
         fold(e => InternalServerError("PageView load failed. Errors: " + e.list.mkString(", ")), s => s)
     }
   }
@@ -95,7 +95,7 @@ object DinoWrapper extends Controller {
         dXml <- validate(dinoResult.xml)
       } yield dXml
 
-      dinoXml.error(Map("msg" -> "Problem forwarding register call to Dino"))
+      dinoXml.error
       val oldXml = dinoXml | genFailElem
 
       // either error code or object encapsulating vt user
@@ -104,7 +104,7 @@ object DinoWrapper extends Controller {
         vtUser <- validate(VirtualTrainer.register(rp))
       } yield {
         vtUser
-      }).error(Map("msg"->"Something went wrong")).fold(e => Left(99), s => s)
+      }).error.fold(e => Left(99), s => s)
 
       val finalResult = rVal match {
 
@@ -195,13 +195,11 @@ object DinoWrapper extends Controller {
                   </vtWorkouts>
                 </vtAccount>
               )
-          }.debug(Map("msg" -> "Problems encountered"))
-            .toOption.getOrElse(XmlMutator(oldXml).add("response", <vtAccount></vtAccount>))
+          }.debug.toOption.getOrElse(XmlMutator(oldXml).add("response", <vtAccount></vtAccount>))
 
           case _ => oldXml
         }
-      }).debug(Map("msg" -> "Problems encountered"))
-        .fold(e => Ok(<response desc="Login failed" code="1">
+      }).debug.fold(e => Ok(<response desc="Login failed" code="1">
         {e.list.mkString(", ")}
       </response>), s => Ok(s))
   }

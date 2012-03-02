@@ -30,6 +30,8 @@ object User {
    */
   def authenticate(email: String, password: String): Option[User] = {
 
+    implicit val loc = VL("User.authenticate")
+
     val sqlValid = validate {
       DB.withConnection {
         implicit connection =>
@@ -47,7 +49,7 @@ object User {
 
     sqlValid.fold(
       e => {
-        sqlValid.error(Map("msg" -> ("Error occurred during sql processing for email " + email)))
+        sqlValid.add("email", email).error
         None
       },
       s => s match {
@@ -92,7 +94,7 @@ object User {
         implicit connection =>
           SQL("select * from user where id = {id}").on('id -> id).as(User.simple.singleOpt)
       }
-    }.error(Map("msg" -> "Error returned from SQL")).fold(e => None, s => s)
+    }.error.fold(e => None, s => s)
   }
 
   /**

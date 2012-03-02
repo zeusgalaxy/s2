@@ -35,7 +35,7 @@ object Machine {
         implicit connection =>
           SQL("select * from machine where id = {id}").on('id -> id).as(Machine.basic.singleOpt)
       }
-    }.info(Map("msg" -> "Failure during retrieval")).fold(e => None, s => s)
+    }.info.fold(e => None, s => s)
   }
 
   def getWithEquip(id: Long): Option[(MachineBasic, Option[Equipment])] = {
@@ -48,7 +48,7 @@ object Machine {
           SQL("select * from machine m join equipment e on m.equipment_id = e.id where m.id = {id}").
             on('id -> id).as(Machine.withEquip.singleOpt)
       }
-    }.info(Map("msg" -> "Failure during retrieval")).fold(e => None, s => s)
+    }.info.fold(e => None, s => s)
   }
 }
 
