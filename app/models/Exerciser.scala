@@ -31,7 +31,7 @@ object Exerciser {
 
     implicit val loc = VL("Exerciser.findById")
 
-    validate {
+    vld {
       DB.withConnection {
         implicit connection =>
           SQL("select * from exerciser where id = {id}").on('id -> dbId).as(Exerciser.simple.singleOpt)
@@ -43,7 +43,7 @@ object Exerciser {
 
     implicit val loc = VL("Exerciser.findByLogin")
 
-    validate {
+    vld {
       DB.withConnection {
         implicit connection =>
           SQL("select * from exerciser where login = {login}").on('login -> login).as(Exerciser.simple.singleOpt)
@@ -51,11 +51,11 @@ object Exerciser {
     }.info.fold(e => None, s => s)
   }
 
-  def updateVirtualTrainer(npLogin: String, vtUserId: String, vtToken: String, vtTokenSecret: String): Boolean = {
+  def updVT(npLogin: String, vtUserId: String, vtToken: String, vtTokenSecret: String): Boolean = {
 
     implicit val loc = VL("Exerciser.updateVirtualTrainer")
 
-    validate {
+    vld {
       DB.withConnection {
         implicit connection =>
           SQL(

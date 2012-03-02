@@ -7,13 +7,10 @@ import models._
 
 import play.api.Play.current
 import org.joda.time._
-import org.apache.commons.lang._
 import net.liftweb.json._
 import net.liftweb.json.JsonDSL._
-import play.api.Logger
 import play.api.libs.ws._
 import play.api.libs.ws.WS._
-import play.api.libs.concurrent.Promise
 import xml.{Elem, NodeSeq}
 import play.api.mvc._
 import scalaz._
@@ -65,18 +62,7 @@ object RegParams {
   }
 }
 
-object VirtualTrainer {
-  lazy val vtPathPrefix = current.configuration.getString("vt.path.prefix").getOrElse(throw new Exception("vt.path.prefix not in configuration"))
-  lazy val vtPathValidate = current.configuration.getString("vt.path.validate").getOrElse(throw new Exception("vt.path.validate not in configuration"))
-  lazy val vtPathRegister = current.configuration.getString("vt.path.register").getOrElse(throw new Exception("vt.path.register not in configuration"))
-  lazy val vtPathLink = current.configuration.getString("vt.path.link").getOrElse(throw new Exception("vt.path.link not in configuration"))
-  lazy val vtPathLogin = current.configuration.getString("vt.path.login").getOrElse(throw new Exception("vt.path.login not in configuration"))
-  lazy val vtPathLogout = current.configuration.getString("vt.path.logout").getOrElse(throw new Exception("vt.path.logout not in configuration"))
-  lazy val vtPathPredefinedPresets = current.configuration.getString("vt.path.predefinedPresets").getOrElse(throw new Exception("vt.path.predefinedPresets not in configuration"))
-  lazy val vtPathWorkouts = current.configuration.getString("vt.path.workouts").getOrElse(throw new Exception("vt.path.workouts not in configuration"))
-  lazy val vtConsumerKey = current.configuration.getString("vt.consumer.key").getOrElse(throw new Exception("vt.consumer.key not in configuration"))
-  lazy val vtConsumerSecret = current.configuration.getString("vt.consumer.secret").getOrElse(throw new Exception("vt.consumer.secret not in configuration"))
-  lazy val vtTimeout = current.configuration.getString("vt.timeout").getOrElse(throw new Exception("vt.timeout not in configuration")).toInt
+object VT {
 
   def age(dob: String): Int = {
     val born = new DateTime(dob.slice(4, 8).toInt, dob.slice(0, 2).toInt, dob.slice(2, 4).toInt, 0, 0, 0)
@@ -86,15 +72,14 @@ object VirtualTrainer {
   def headerNoToken(consKey: String = vtConsumerKey, consSecret: String = vtConsumerSecret): String =
     "OAuth oauth_consumer_key=\"" +
       consKey + "\", oauth_nonce=\"" + nonce + "\", oauth_timestamp=\"" + utcNowInSecs +
-      "\", oauth_signature=\"" + (new sun.misc.BASE64Encoder()).encode(consSecret.getBytes("UTF-8")) + "\""
+      "\", oauth_signature=\"" + b64Enc.encode(consSecret.getBytes("UTF-8")) + "\""
 
   def headerWithToken(token: String, tokenSecret: String,
                       consKey: String = vtConsumerKey, consSecret: String = vtConsumerSecret): String =
     "OAuth oauth_consumer_key=\"" +
       consKey + "\", oauth_nonce=\"" + nonce + "\", oauth_timestamp=\"" + utcNowInSecs +
       "\", oauth_token=\"" + token +
-      "\", oauth_signature=\"" + (new sun.misc.BASE64Encoder()).
-      encode((consSecret + "&" + tokenSecret).getBytes("UTF-8")) + "\""
+      "\", oauth_signature=\"" + b64Enc.encode((consSecret + "&" + tokenSecret).getBytes("UTF-8")) + "\""
 
   def validSegs(segsXml: String, model: String) = {
     for (w <- scala.xml.XML.loadString(segsXml) \\ "workoutSegments"
@@ -114,7 +99,7 @@ object VirtualTrainer {
 
       val json = ("age" -> age(rp.dob)) ~
         ("nickName" -> rp.vtNickname) ~
-        ("password" -> (new sun.misc.BASE64Encoder()).encode(rp.vtPassword.getBytes("UTF-8"))) ~
+        ("password" -> b64Enc.encode(rp.vtPassword.getBytes("UTF-8"))) ~
         ("gender" -> rp.gender.toLowerCase) ~
         ("emailAddress" -> rp.email) ~
         ("weight" -> rp.weight) ~
@@ -137,8 +122,8 @@ object VirtualTrainer {
 
   private def loginBody(emailOrLogin: String, password: String) = {
     Printer.compact(JsonAST.render(
-      ("username" -> (new sun.misc.BASE64Encoder()).encode(emailOrLogin.getBytes("UTF-8"))) ~
-        ("password" -> (new sun.misc.BASE64Encoder()).encode(password.getBytes("UTF-8")))
+      ("username" -> b64Enc.encode(emailOrLogin.getBytes("UTF-8"))) ~
+        ("password" -> b64Enc.encode(password.getBytes("UTF-8")))
     ))
   }
 
@@ -173,12 +158,12 @@ object VirtualTrainer {
 
   def register(rp: RegParams): Either[Int, VtUser] = {
 
-    implicit val loc = VL("VirtualTrainer.register")
+    implicit val loc = VL("VT.register")
 
     val rVal: Option[(String, Int)] = for {
 
       rBody <- registerBody(rp).toOption
-      valResult <- validate(waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)).toOption
+      valResult <- vld(waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)).toOption
       valStatus = valResult.status
 
     } yield {
@@ -192,17 +177,16 @@ object VirtualTrainer {
       case Some((rBody, _)) =>
         val result: Validation[NonEmptyList[String], VtUser] =
           for {
-            regResult <- validate(doVtRegister(rBody))
-            status <- test(regResult)(_.status == 200).
+            regResult <- vld(doVtRegister(rBody))
+            status <- tst(regResult)(_.status == 200).
               add("vt register result status", regResult.status.toString).
               add("body", regResult.body).error
 
-            regXml <- validate(regResult.xml).add("regResult", regResult.toString())
-            vtUid <- validate((regXml \\ "userId" head).text).add("regXml", regXml.toString())
-            vtNickname <- validate((regXml \\ "nickName" head).text).add("regXml", regXml.toString())
-            vtUser <- validate(VtUser(regXml)).add("regXml", regXml.toString())
-            linkResult <- validate(doVtLink(rp.npLogin, vtUid))
-            lStatus <- test(linkResult.status)(_ == 200).add("VT link_external_user status", linkResult.status.toString).error
+            regXml <- vld(regResult.xml).add("regResult", regResult.toString())
+            vtUid <- vld((regXml \\ "userId" head).text).add("regXml", regXml.toString())
+            vtNickname <- vld((regXml \\ "nickName" head).text).add("regXml", regXml.toString())
+            vtUser <- vld(VtUser(regXml)).add("regXml", regXml.toString())
+            linkResult <- link(rp.npLogin, vtUid)
 
           } yield vtUser
 
@@ -212,11 +196,11 @@ object VirtualTrainer {
 
   def link(npLogin: String, vtUid: String): ValidationNEL[String, Boolean] = {
 
-    implicit val loc = VL("VirtualTrainer.link")
+    implicit val loc = VL("VT.link")
 
     for {
-      linkResult <- validate(doVtLink(npLogin, vtUid))
-      status <- test(linkResult)(_.status == 200).
+      linkResult <- vld(doVtLink(npLogin, vtUid))
+      status <- tst(linkResult)(_.status == 200).
         add("vt link external account result status", linkResult.status.toString).
         add("body", linkResult.body).error
     } yield true
@@ -224,28 +208,28 @@ object VirtualTrainer {
 
   def login(emailOrNickname: String, vtPassword: String): ValidationNEL[String, (String, String, String)] = {
 
-    implicit val loc = VL("VirtualTrainer.login")
+    implicit val loc = VL("VT.login")
     val tEx = """(.*oauth_token=\")([^\"]*).*""".r
     val tsEx = """(.*oauth_token_secret=\")([^\"]*).*""".r
 
     for {
-      lBody <- validate(loginBody(emailOrNickname, vtPassword))
-      loginResult <- validate(doVtLogin(lBody))
-      status <- test(loginResult)(_.status == 200).
+      lBody <- vld(loginBody(emailOrNickname, vtPassword))
+      loginResult <- vld(doVtLogin(lBody))
+      status <- tst(loginResult)(_.status == 200).
         add("vt login account result status", loginResult.status.toString).
         add("body", loginResult.body).error
       hdr <- loginResult.header("Authorization").toSuccess("Authorization header not found").liftFailNel
 
-      token <- validate({
+      token <- vld({
         val tEx(_, t) = tEx.findFirstIn(hdr).get;
         t
       }).add("Auth header", hdr)
 
-      secret <- validate({
+      secret <- vld({
         val tsEx(_, s) = tsEx.findFirstIn(hdr).get;
         s
       }).add("Auth header", hdr)
-      id <- validate((loginResult.xml \\ "userId" head).text).add("vt login xml", loginResult.xml.toString())
+      id <- vld((loginResult.xml \\ "userId" head).text).add("vt login xml", loginResult.xml.toString())
 
     } yield (id, token, secret)
   }
@@ -255,12 +239,12 @@ object VirtualTrainer {
    */
   def predefinedPresets(token: String, tokenSecret: String, model: String): ValidationNEL[String, NodeSeq] = {
 
-    implicit val loc = VL("VirtualTrainer.predefinedPresets")
+    implicit val loc = VL("VT.predefinedPresets")
 
     for {
-      ppResult <- validate(doVtPredefineds(token, tokenSecret))
-      status <- test(ppResult)(_.status == 200).add("vt predefined presets result status", ppResult.status.toString)
-      segs <- validate(ppResult.xml \\ "workoutSegments").add("pp result xml", ppResult.xml.toString())
+      ppResult <- vld(doVtPredefineds(token, tokenSecret))
+      status <- tst(ppResult)(_.status == 200).add("vt result status", ppResult.status.toString)
+      segs <- vld(ppResult.xml \\ "workoutSegments").add("pp result xml", ppResult.xml.toString())
 
     } yield segs.withFilter(s => (s \\ "deviceType").exists {
       _.text == model
@@ -274,16 +258,29 @@ object VirtualTrainer {
    */
   def workouts(token: String, tokenSecret: String, model: String): ValidationNEL[String, NodeSeq] = {
 
-    implicit val loc = VL("VirtualTrainer.workouts")
+    implicit val loc = VL("VT.workouts")
 
     for {
-      ppResult <- validate(doVtWorkouts(token, tokenSecret))
-      status <- test(ppResult)(_.status == 200).add("vt workouts result status", ppResult.status.toString)
-      segs <- validate(ppResult.xml \\ "workoutSegments")
+      ppResult <- vld(doVtWorkouts(token, tokenSecret))
+      status <- tst(ppResult)(_.status == 200).add("vt result status", ppResult.status.toString)
+      segs <- vld(ppResult.xml \\ "workoutSegments")
     } yield segs.withFilter(s => (s \\ "deviceType").exists {
       _.text == model
     }).map {
       s => s
     }
   }
+
+  lazy val vtPathPrefix = current.configuration.getString("vt.path.prefix").getOrElse(throw new Exception("vt.path.prefix not in configuration"))
+  lazy val vtPathValidate = current.configuration.getString("vt.path.validate").getOrElse(throw new Exception("vt.path.validate not in configuration"))
+  lazy val vtPathRegister = current.configuration.getString("vt.path.register").getOrElse(throw new Exception("vt.path.register not in configuration"))
+  lazy val vtPathLink = current.configuration.getString("vt.path.link").getOrElse(throw new Exception("vt.path.link not in configuration"))
+  lazy val vtPathLogin = current.configuration.getString("vt.path.login").getOrElse(throw new Exception("vt.path.login not in configuration"))
+  lazy val vtPathLogout = current.configuration.getString("vt.path.logout").getOrElse(throw new Exception("vt.path.logout not in configuration"))
+  lazy val vtPathPredefinedPresets = current.configuration.getString("vt.path.predefinedPresets").getOrElse(throw new Exception("vt.path.predefinedPresets not in configuration"))
+  lazy val vtPathWorkouts = current.configuration.getString("vt.path.workouts").getOrElse(throw new Exception("vt.path.workouts not in configuration"))
+  lazy val vtConsumerKey = current.configuration.getString("vt.consumer.key").getOrElse(throw new Exception("vt.consumer.key not in configuration"))
+  lazy val vtConsumerSecret = current.configuration.getString("vt.consumer.secret").getOrElse(throw new Exception("vt.consumer.secret not in configuration"))
+  lazy val vtTimeout = current.configuration.getString("vt.timeout").getOrElse(throw new Exception("vt.timeout not in configuration")).toInt
+
 }

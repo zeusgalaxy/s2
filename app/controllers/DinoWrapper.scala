@@ -17,12 +17,10 @@ object DinoWrapper extends Controller {
 
   def forward(request: Request[AnyContent]): ValidationNEL[String, play.api.libs.ws.Response] = {
 
-    validate {
+    vld {
 
       val (newRequest, newBody) = toWSRequest(request)
 
-//      Logger.debug("DinoWrapper.forward old request was " + request.toString())
-//      Logger.debug("DinoWrapper.forward new request is " + newRequest.toString())
       request.method match {
         case "GET" => {
           waitVal(newRequest.get(), dinoTimeout)
@@ -60,7 +58,7 @@ object DinoWrapper extends Controller {
 
       implicit val loc = VL("Dino.pageView")
 
-      validate {
+      vld {
 
         /**
          * We receive a variety of different uploads in this method. If we don't find the one we're interested in
@@ -86,22 +84,15 @@ object DinoWrapper extends Controller {
   def register = Action {
     implicit request =>
 
-      val genFailElem = <s2RegisterResult>Unable to complete registration</s2RegisterResult>
       implicit val loc = VL("DinoWrapper.register")
 
       val rp = RegParams(request)
-      val dinoXml: Validation[NonEmptyList[String], scala.xml.Elem] = for {
-        dinoResult <- forward(request)
-        dXml <- validate(dinoResult.xml)
-      } yield dXml
-
-      dinoXml.error
-      val oldXml = dinoXml | genFailElem
+      val oldXml = forward(request).flatMap { r => vld(r.xml) }.error | <s2Reg>Unable to register</s2Reg>
 
       // either error code or object encapsulating vt user
       val rVal: Either[Int, VtUser] = (for {
-        code <- test((oldXml \\ "response" \ "@code").text)(_ == "0", "oldXml response code != 0")
-        vtUser <- validate(VirtualTrainer.register(rp))
+        code <- tst((oldXml \\ "response" \ "@code").text)(_ == "0", "oldXml response code != 0")
+        vtUser <- vld(VT.register(rp))
       } yield {
         vtUser
       }).error.fold(e => Left(99), s => s)
@@ -109,17 +100,18 @@ object DinoWrapper extends Controller {
       val finalResult = rVal match {
 
         case Left(err) =>
-          validate(XmlMutator(oldXml).add("response", <vtAccount status={err.toString}></vtAccount>))
+          vld(XmlMutator(oldXml).add("response", <vtAccount status={err.toString}></vtAccount>))
         case Right(vtUser) =>
           for {
-            vtAuth <- VirtualTrainer.login(vtUser.vtNickname, vtUser.vtNickname) // tuple(token, tokenSecret)
+            vtAuth <- VT.login(vtUser.vtNickname, vtUser.vtNickname)
             (vtUid, vtToken, vtTokenSecret) = vtAuth
-            updResult <- validate(Exerciser.updateVirtualTrainer(rp.npLogin, vtUid, vtToken, vtTokenSecret))
-            machineId <- validate(rp.machineId.toLong)
-            model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
+            updResult <- vld(Exerciser.updVT(rp.npLogin, vtUid, vtToken, vtTokenSecret))
+            machineId <- vld(rp.machineId.toLong)
+            model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
+              toSuccess(NonEmptyList("Unable to rtrv mach/equip/model"))
 
-            vtPredefinedPresets <- VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret, model)
-            vtWorkouts <- VirtualTrainer.workouts(vtToken, vtTokenSecret, model)
+            vtPredefinedPresets <- VT.predefinedPresets(vtToken, vtTokenSecret, model)
+            vtWorkouts <- VT.workouts(vtToken, vtTokenSecret, model)
 
           } yield {
             XmlMutator(oldXml).add("response",
@@ -146,7 +138,7 @@ object DinoWrapper extends Controller {
             )
           }
       }
-      finalResult.fold(e => Ok(e.list.mkString(", ")), s => Ok(s))
+      finalResult.error.fold(e => Ok(e.list.mkString(", ")), s => Ok(s))
   }
 
   // http://qa-ec2.netpulse.ws/core/n5ilogin.jsp?machine_id=18&id=1112925684&pic=22&oem_tos=15
@@ -162,20 +154,21 @@ object DinoWrapper extends Controller {
 
       (for {
         dinoResult <- forward(request)
-        oldXml <- validate(dinoResult.xml)
+        oldXml <- vld(dinoResult.xml)
       } yield {
         (oldXml \\ "response" \ "@code").find(n => true) match {
 
           case Some(code) if (code.text == "0") => {
 
             for {
-              npLogin <- validate(params("id")(0))
-              machineId <- validate(params("machine_id")(0).toLong)
-              model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
+              npLogin <- vld(params("id")(0))
+              machineId <- vld(params("machine_id")(0).toLong)
+              model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
+                toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
 
               ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found in ApiWrapper.login")
-              vtPredefinedPresets <- VirtualTrainer.predefinedPresets(ex.vtToken, ex.vtTokenSecret, model)
-              vtWorkouts <- VirtualTrainer.workouts(ex.vtToken, ex.vtTokenSecret, model)
+              vtPredefinedPresets <- VT.predefinedPresets(ex.vtToken, ex.vtTokenSecret, model)
+              vtWorkouts <- VT.workouts(ex.vtToken, ex.vtTokenSecret, model)
 
             } yield
 
@@ -195,11 +188,11 @@ object DinoWrapper extends Controller {
                   </vtWorkouts>
                 </vtAccount>
               )
-          }.debug.toOption.getOrElse(XmlMutator(oldXml).add("response", <vtAccount></vtAccount>))
+          }.error.toOption.getOrElse(XmlMutator(oldXml).add("response", <vtAccount></vtAccount>))
 
           case _ => oldXml
         }
-      }).debug.fold(e => Ok(<response desc="Login failed" code="1">
+      }).error.fold(e => Ok(<response desc="Login failed" code="1">
         {e.list.mkString(", ")}
       </response>), s => Ok(s))
   }

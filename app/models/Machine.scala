@@ -30,7 +30,7 @@ object Machine {
 
     implicit val loc = VL("Machine.getBasic")
 
-    validate {
+    vld {
       DB.withConnection {
         implicit connection =>
           SQL("select * from machine where id = {id}").on('id -> id).as(Machine.basic.singleOpt)
@@ -42,7 +42,7 @@ object Machine {
 
     implicit val loc = VL("Machine.getWithEquip")
 
-    validate {
+    vld {
       DB.withConnection {
         implicit connection =>
           SQL("select * from machine m join equipment e on m.equipment_id = e.id where m.id = {id}").

@@ -32,7 +32,7 @@ object User {
 
     implicit val loc = VL("User.authenticate")
 
-    val sqlValid = validate {
+    val sqlValid = vld {
       DB.withConnection {
         implicit connection =>
           SQL(
@@ -89,7 +89,7 @@ object User {
 
     implicit val loc = VL("User.findById")
     
-    validate {
+    vld {
       DB.withConnection {
         implicit connection =>
           SQL("select * from user where id = {id}").on('id -> id).as(User.simple.singleOpt)

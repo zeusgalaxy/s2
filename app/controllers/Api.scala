@@ -27,14 +27,14 @@ object Api extends Controller {
 
           model <- Machine.getWithEquip(machineId).flatMap(_._2.map (e => e.model.toString)).toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
           ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found")
-          vtAuth <- VirtualTrainer.login(ex.email, vtPassword) // tuple(token, tokenSecret)
+          vtAuth <- VT.login(ex.email, vtPassword) // tuple(token, tokenSecret)
           (vtUid, vtToken, vtTokenSecret) = vtAuth
-          linkStatus <- VirtualTrainer.link(npLogin, vtUid)
+          linkStatus <- VT.link(npLogin, vtUid)
 
-          updResult <- validate(Exerciser.updateVirtualTrainer(npLogin, vtUid, vtToken, vtTokenSecret))
+          updResult <- vld(Exerciser.updVT(npLogin, vtUid, vtToken, vtTokenSecret))
 
-          vtPredefinedPresets <- VirtualTrainer.predefinedPresets(ex.vtToken, ex.vtTokenSecret, model)
-          vtWorkouts <- VirtualTrainer.workouts(ex.vtToken, ex.vtTokenSecret, model)
+          vtPredefinedPresets <- VT.predefinedPresets(ex.vtToken, ex.vtTokenSecret, model)
+          vtWorkouts <- VT.workouts(ex.vtToken, ex.vtTokenSecret, model)
 
         } yield {
           <vtAccount status="0">

@@ -63,6 +63,7 @@ package object utils {
   def utcNowInMillis = DateTime.now(DateTimeZone.UTC).getMillis
   def utcNowInSecs = utcNowInMillis / 1000
   def nonce = utcNowInMillis.toString + RandomStringUtils.randomAlphanumeric(6)
+  lazy val b64Enc = new sun.misc.BASE64Encoder()
 
   def noHdr(xml: String): String = {
 
@@ -87,7 +88,7 @@ package object utils {
     writer.toString
   }
 
-  def test[T](body: => T)(postCond: (T => Boolean) = { _ : T => true }, msg: String = "Failed post condition"): ValidationNEL[String, T] = {
+  def tst[T](body: => T)(postCond: (T => Boolean) = { _ : T => true }, msg: String = "Failed post condition"): ValidationNEL[String, T] = {
 
     try {
       val res = body
@@ -97,9 +98,9 @@ package object utils {
     }
   }
 
-  def validate[T](body: => T): ValidationNEL[String, T] = {
+  def vld[T](body: => T): ValidationNEL[String, T] = {
 
-    test(body)({_: T => true})
+    tst(body)({_: T => true})
   }
 
   class NPOption[T](val o: Option[T]) {
