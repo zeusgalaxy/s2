@@ -10,6 +10,13 @@ object desEncrypterSpec extends Specification {
   var encrypted = ""
   var dE: DesEncrypter = null
 
+
+  "the BlowfishEncrypter" should {
+    "Encrypt this string correctly" in {
+      Blowfish.encrypt(testString) must equalTo("-7025642f40677a6b7de24c9b0f57d063bf9d0bed6aa455ef98e1d75239624ebe848d6241be2fff2a")
+    }
+  }
+
   "the desEncrypter " should {
 
     "Create a new desEncrypter object with passphrase" in  {
@@ -23,7 +30,7 @@ object desEncrypterSpec extends Specification {
     "Decrypt the string and have it match the original " in {
       dE.decrypt(encrypted) must equalTo (testString)
     }
-
   }
+
 }
 

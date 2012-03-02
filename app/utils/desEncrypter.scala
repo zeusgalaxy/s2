@@ -1,5 +1,6 @@
 package utils
 
+import scalaz._
 import com.sun.org.apache.xml.internal.security.utils.Base64
 import javax.crypto._
 import javax.crypto.spec._
@@ -9,6 +10,39 @@ import java.security.{NoSuchAlgorithmException, InvalidAlgorithmParameterExcepti
 import javax.management.openmbean.InvalidKeyException
 import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException
 import play.api.Logger
+
+// A version of the old way of encrypting the admin passwords. Doesn't match so let's move on.
+//
+//import org.mortbay.jetty.security.Credential;
+//import java.security.MessageDigest
+//def md5(s: String) = {
+// MessageDigest.getInstance("MD5").digest(s.getBytes)
+//}
+
+/**
+ *  Encrypt the specified string.
+ *  This interoperates with the web password on Dino. It does not work with the MD5 Digest passwords
+ *  Be very careful about the charset. If they are different on Dino or here then the interop won't
+ *  work!
+ *
+ *  Matches up with code in Dino:  src/java/com/netpulse/util/StringUtil
+ */
+object Blowfish {
+
+  implicit val loc = VL("desEncrypter.Blowfish")
+
+  def encrypt (encryptMe: String): String = {
+    validate {
+      val key = new SecretKeySpec ("jaas is the way".getBytes("UTF-8"), "Blowfish")
+      val cipher: Cipher = Cipher.getInstance ("Blowfish")
+
+      cipher.init(Cipher.ENCRYPT_MODE, key)
+      val encoding = cipher.doFinal(encryptMe.getBytes("UTF-8"))
+      val n = new BigInt(new java.math.BigInteger(encoding))
+      n.toString(16)
+    }.error(Map("msg" -> "Encrytpion Error")).fold(e => "", s => s)
+  }
+}
 
 /**
  *
@@ -26,6 +60,8 @@ class DesEncrypter ( passPhrase: String ) {
   private var dcipher: Cipher = null
   private var salt: Array[Byte] = Array(0xA9.asInstanceOf[Byte], 0x9B.asInstanceOf[Byte], 0xC8.asInstanceOf[Byte], 0x32.asInstanceOf[Byte], 0x56.asInstanceOf[Byte], 0x35.asInstanceOf[Byte], 0xE3.asInstanceOf[Byte], 0x03.asInstanceOf[Byte])
   private var iterationCount: Int = 19
+
+  implicit val loc = VL("desEncrypter")
 
   // Constructor
   try {
