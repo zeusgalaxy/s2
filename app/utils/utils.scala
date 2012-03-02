@@ -33,10 +33,15 @@ package object utils {
       case _ => None
     }
 
-    val qs = {
-      for (k <- r.queryString.keys; v <- r.queryString.get(k).get) yield (k -> v)
-    }.toMap
-    (WSRequestHolder("http://" + switchHosts(r.host) + r.uri, Map("ACCEPT-CHARSET" -> Seq("utf-8")), qs, None, None), newBody)
+////    Logger.debug("toWSRequest new body will be " + newBody.toString)
+//    // It turns out we don't need this (below). The uri already includes the query string.
+//    val qs = {
+//      for (k <- r.queryString.keys; v <- r.queryString.get(k).get) yield (k -> v)
+//    }.toMap
+//    Logger.debug("toWSRequest new query string will be " + qs.toString)
+//    Logger.debug("toWSRequest old uri was " + r.uri.toString)
+//    (WSRequestHolder("http://" + switchHosts(r.host) + r.uri, Map("ACCEPT-CHARSET" -> Seq("utf-8")), qs, None, None), newBody)
+    (WSRequestHolder("http://" + switchHosts(r.host) + r.uri, Map("ACCEPT-CHARSET" -> Seq("utf-8")), Map(), None, None), newBody)
   }
 
   def waitVal(p: Promise[Response], timeout: Int): Response = {
@@ -113,6 +118,12 @@ package object utils {
     def getOrThrow(prefix: String = "getOrThrow") = v.fold(e => throw new Exception(prefix + ": " + e), s => s)
 
     def getOrThrow = v.fold(e => throw new Exception("Errors: " + e.list.mkString(", ")), s => s)
+
+    // [({type l[a] = ValidationNEL[String, a]})#l, Int]
+    // ({type l[a] = ValidationNEL[String, a]})#l
+    def add(k: String, msg: String): Validation[NonEmptyList[String], T] = {
+      if (v.isFailure) (v <* ("Additional info: " + k + ": " + msg).failNel[T]) else v
+    }
 
     def trace(msgs: ValMsgs)(implicit src: VL): Validation[NonEmptyList[String], T] = {
       if (v.isFailure) Logger.trace("TRACE" + logTxt(src, msgs))

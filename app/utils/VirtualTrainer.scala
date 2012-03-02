@@ -15,7 +15,53 @@ import play.api.libs.ws._
 import play.api.libs.ws.WS._
 import play.api.libs.concurrent.Promise
 import xml.{Elem, NodeSeq}
+import play.api.mvc._
+import scalaz._
+import Scalaz._
 
+// http://localhost:9000/n5iregister.jsp?machine_id=1070&id=2115180102&membership_id=1&email=sOCClkoE102%40stross.com&
+// pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15
+
+case class VtUser(vtUserId: String, vtNickname: String, vtToken: String, vtTokenSecret: String)
+object VtUser {
+  def apply(x: Elem, tok: String = "", tokSec: String = ""): VtUser = {
+    val id = (x \\ "userId" head).text
+    val nm = (x \\ "nickName" head).text
+    VtUser(id, nm, tok, tokSec)
+  }
+}
+
+case class RegParams(npLogin: String, email: String, pic: String, dob: String, machineId: String,
+                      membershipId: String, gender: String, enableMail: String, weight: String,
+                      oemTos: String, vtNickname: String, vtPassword: String)
+object RegParams {
+  def apply(rq: Request[AnyContent]): RegParams = {
+
+    implicit val source = rq.body.asFormUrlEncoded match {
+      case Some(form) => form
+      case None => rq.queryString
+    }
+
+    def getS(k: String)(implicit p: Map[String, Seq[String]]) = {
+      p.getOrElse(k, Seq(""))(0)
+    }
+
+    val npLogin = getS("id")
+    val email = getS("email")
+    val pic = getS("pic")
+    val dob = getS("DOB")
+    val machineId = getS("machine_id")
+    val membershipId = getS("membership_id")
+    val gender = getS("gender")
+    val enableMail = getS("enableMail")
+    val weight = getS("weight")
+    val oemTos = getS("oem_tos")
+    val vtNickname = email
+    val vtp = getS("vt_password")
+    val vtPassword = if (vtp == "") email else vtp
+    RegParams(npLogin, email, pic, dob, machineId, membershipId, gender, enableMail, weight, oemTos, vtNickname, vtPassword)
+  }
+}
 
 object VirtualTrainer {
   lazy val vtPathPrefix = current.configuration.getString("vt.path.prefix").getOrElse(throw new Exception("vt.path.prefix not in configuration"))
@@ -61,29 +107,21 @@ object VirtualTrainer {
          }) yield w
   }
 
-  private def registerBody(params: Map[String, Seq[String]])(implicit nmField: String = "id", pwdField: String = "id"):
-  Validation[String, String] = {
+  private def registerBody(rp: RegParams): Validation[String, String] = {
 
     for {
 
-      machineId <- params.get("machine_id").toSuccess("machine_id not supplied").map(_(0))
-      locationId <- Machine.getBasic(machineId.toLong).
-        toSuccess("machine_id " + machineId + " not found in database").map(_.locationId)
-      password <- params.get(pwdField).toSuccess(pwdField + " password not supplied").map(_(0))
-      dob <- params.get("DOB").toSuccess("DOB not supplied").map(_(0))
-      nickName <- params.get(nmField).toSuccess(nmField + " nickName not supplied").map(_(0))
-      gender <- params.get("gender").toSuccess("gender not supplied").map(_(0).toLowerCase)
-      emailAddr <- params.get("email").toSuccess("email not supplied").map(_(0))
-      weight <- params.get("weight").toSuccess("weight not supplied").map(_(0))
+      locationId <- Machine.getBasic(rp.machineId.toLong).
+        toSuccess("machine_id " + rp.machineId + " not found in database").map(_.locationId)
 
     } yield {
 
-      val json = ("age" -> age(dob)) ~
-        ("nickName" -> nickName) ~
-        ("password" -> (new sun.misc.BASE64Encoder()).encode(password.getBytes("UTF-8"))) ~
-        ("gender" -> gender) ~
-        ("emailAddress" -> emailAddr) ~
-        ("weight" -> weight) ~
+      val json = ("age" -> age(rp.dob)) ~
+        ("nickName" -> rp.vtNickname) ~
+        ("password" -> (new sun.misc.BASE64Encoder()).encode(rp.vtPassword.getBytes("UTF-8"))) ~
+        ("gender" -> rp.gender.toLowerCase) ~
+        ("emailAddress" -> rp.email) ~
+        ("weight" -> rp.weight) ~
         ("weightUnit" -> "I") ~
         ("preferredLanguageCode" -> "en_US") ~
         ("locationId" -> locationId)
@@ -92,17 +130,18 @@ object VirtualTrainer {
     }
   }
 
-  private def linkBody(npId: String, vtId: String) = {
+  private def linkBody(npLogin: String, vtUid: String) = {
     Printer.compact(JsonAST.render(
-      ("externalUserId" -> npId) ~
-        ("vtUserId" -> vtId) ~
+      ("externalUserId" -> npLogin) ~
+//      ("externalUserId" -> "1") ~       // Put a not-previously-used number here for testing purposes
+        ("vtUserId" -> vtUid) ~
         ("type" -> "NP")
     ))
   }
 
-  private def loginBody(username: String, password: String) = {
+  private def loginBody(emailOrLogin: String, password: String) = {
     Printer.compact(JsonAST.render(
-      ("username" -> (new sun.misc.BASE64Encoder()).encode(username.getBytes("UTF-8"))) ~
+      ("username" -> (new sun.misc.BASE64Encoder()).encode(emailOrLogin.getBytes("UTF-8"))) ~
         ("password" -> (new sun.misc.BASE64Encoder()).encode(password.getBytes("UTF-8")))
     ))
   }
@@ -112,78 +151,70 @@ object VirtualTrainer {
     WS.url(vtPathPrefix + path).withHeaders(("Content-Type", "application/json"), ("Authorization", h))
   }
 
-  /**
-   * @return Either an error code OR a tuple with Virtual Trainer userId, nickName and password
-   */
   val regVtUserExists = 1
   val regVtUnableToGetStatus = 2
   val regVtOtherError = 3
 
-  def register(params: Map[String, Seq[String]]): Either[Int, (String, String, String)] = {
+  def register(rp: RegParams): Either[Int, VtUser] = {
 
     implicit val loc = VL("VirtualTrainer.register")
 
-    val rVal: Option[(String, String, Int)] = for {
+    val rVal: Option[(String, Int)] = for {
 
-      npId <- params.get("id").map(_(0))
-      rBody <- registerBody(params).toOption
+      rBody <- registerBody(rp).toOption
       valResult <- validate(waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)).toOption
       valStatus = valResult.status
 
     } yield {
-      (npId, rBody, valStatus)
+      (rBody, valStatus)
     }
 
     rVal match {
       case None => Left(regVtUnableToGetStatus)
-      case Some((_, _, status)) if (status == 500) => Left(regVtUserExists)
-      case Some((_, _, status)) if (status != 200) => Left(regVtOtherError)
-      case Some((npId, rBody, _)) =>
-        val result = for {
-          regResult <- some(waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout))
-          if (regResult.status == 200)
-          regXml <- validate(regResult.xml).toOption
-          id <- validate((regXml \\ "userId" head).text).toOption
-          nickName <- validate((regXml \\ "nickName" head).text).toOption
+      case Some((_, status)) if (status == 500) => Left(regVtUserExists)
+      case Some((_, status)) if (status != 200) => Left(regVtOtherError)
+      case Some((rBody, _)) =>
+        val result: Validation[NonEmptyList[String], VtUser] = for {
+          regResult <- validate(waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout))
+          status <- test(regResult)(_.status == 200, "vt register result status was " + regResult.status.toString).
+            error(Map("body" -> regResult.body))
+
+          regXml <- validate(regResult.xml).add("regResult", regResult.toString)
+          vtUid <- validate((regXml \\ "userId" head).text).add("regXml", regXml.toString)
+          vtNickname <- validate((regXml \\ "nickName" head).text).add("regXml", regXml.toString)
+          vtUser <- validate(VtUser(regXml)).add("regXml", regXml.toString)
 
         } yield {
 
-          Logger.debug("linkBody will be: " + linkBody(npId, id).toString)
+          Logger.debug("linkBody will be: " + linkBody(rp.npLogin, vtUid).toString)
 
-          val linkResult = waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, id)), vtTimeout)
+          val linkResult = waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(rp.npLogin, vtUid)), vtTimeout)
           if (linkResult.status != 200) Logger.info("VT link_external_user returned status " + linkResult.status.toString)
-          (id, nickName, nickName)
-
+          vtUser
         }
-        result match {
-          case None => Left(regVtOtherError)
-          case Some(r) => Right(r)
-        }
+        result.error(Map("msg"->"Something failed: ")).fold(e => Left(regVtOtherError), s => Right(s))
     }
   }
 
-  def link(npId: String, vtId: String): ValidationNEL[String, Boolean] = {
+  def link(npLogin: String, vtUid: String): ValidationNEL[String, Boolean] = {
 
     implicit val loc = VL("VirtualTrainer.link")
-    Logger.debug("linkBody will be: " + linkBody(npId, vtId).toString)
+    Logger.debug("linkBody will be: " + linkBody(npLogin, vtUid).toString)
     for {
-      linkResult <- validate(waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npId, vtId)), vtTimeout))
+      linkResult <- validate(waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npLogin, vtUid)), vtTimeout))
       status <- test(linkResult)(_.status == 200, "vt link external account result status was " + linkResult.status.toString).
         error(Map("body" -> linkResult.body))
     } yield true
   }
 
-  /**
-   * @return A tuple with vtUid, token and token secret, which we also save in the Exerciser table
-   */
-  def login(vtUsername: String, vtPassword: String, npLogin: String): ValidationNEL[String, (String, String, String)] = {
+  def login(emailOrNickname: String, vtPassword: String): ValidationNEL[String, (String, String, String)] = {
 
     implicit val loc = VL("VirtualTrainer.login")
     val tEx = """(.*oauth_token=\")([^\"]*).*""".r
     val tsEx = """(.*oauth_token_secret=\")([^\"]*).*""".r
 
     for {
-      lBody <- validate(loginBody(vtUsername, vtPassword))
+      lBody <- validate(loginBody(emailOrNickname, vtPassword))
       loginResult <- validate(waitVal(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout))
       status <- test(loginResult)(_.status == 200, "vt login account result status was " + loginResult.status.toString).
         error(Map("body" -> loginResult.body))
