@@ -40,7 +40,7 @@ object Blowfish {
       val encoding = cipher.doFinal(encryptMe.getBytes("UTF-8"))
       val n = new BigInt(new java.math.BigInteger(encoding))
       n.toString(16)
-    }.error(Map("msg" -> "Encrytpion Error")).fold(e => "", s => s)
+    }.error(Map("msg" -> "Encryption Error")).fold(e => "", s => s)
   }
 }
 
@@ -64,7 +64,7 @@ class DesEncrypter ( passPhrase: String ) {
   implicit val loc = VL("desEncrypter")
 
   // Constructor
-  try {
+  validate {
     var keySpec: KeySpec = new PBEKeySpec(passPhrase.toCharArray, salt, iterationCount)
     var key: SecretKey = SecretKeyFactory.getInstance("PBEWithMD5AndDES").generateSecret(keySpec)
     ecipher = Cipher.getInstance(key.getAlgorithm)
@@ -72,60 +72,24 @@ class DesEncrypter ( passPhrase: String ) {
     var paramSpec: AlgorithmParameterSpec = new PBEParameterSpec(salt, iterationCount)
     ecipher.init(Cipher.ENCRYPT_MODE, key, paramSpec)
     dcipher.init(Cipher.DECRYPT_MODE, key, paramSpec)
-  }
-  catch {
-    case e: InvalidAlgorithmParameterException => {
-    }
-    case e: InvalidKeySpecException => {
-    }
-    case e: NoSuchPaddingException => {
-    }
-    case e: NoSuchAlgorithmException => {
-    }
-    case e: InvalidKeyException => {
-    }
-  }
+  }.error(Map("msg" -> "Constructor Error"))
 
-  def encrypt(str: String): String = {
-    try {
+
+  def encrypt(str: String): String = validate {
+
       var utf8: Array[Byte] = str.getBytes("UTF8")
       var enc: Array[Byte] = ecipher.doFinal(utf8)
-      return Base64.encode(enc)
-    }
-    catch {
-      case e: BadPaddingException => {
-      }
-      case e: IllegalBlockSizeException => {
-      }
-      case e: UnsupportedEncodingException => {
-      }
-      case e: IOException => {
-      }
-    }
-    return null
-  }
 
-  def decrypt(str: String): String = {
-    try {
+      Base64.encode(enc)
+    }.error(Map("msg" -> "encrypt Error")).fold(e => "", s => s)
+
+
+  def decrypt(str: String): String = validate {
+
       var dec: Array[Byte] = Base64.decode(str)
       var utf8: Array[Byte] = dcipher.doFinal(dec)
 
-      return new String(utf8, "UTF8")
-    }
-    catch {
-      case e: Base64DecodingException => {
-        Logger.debug("Base64DecodingException: "+str+"\n"+e.getMessage)
-      }
-      case e: BadPaddingException => {
-      }
-      case e: IllegalBlockSizeException => {
-      }
-      case e: UnsupportedEncodingException => {
-      }
-      case e: IOException => {
-      }
-    }
-    return null
-  }
+      new String(utf8, "UTF8")
+    }.error(Map("msg" -> "decrypt Error")).fold(e => "", s => s)
 
 }
