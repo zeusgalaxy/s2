@@ -25,7 +25,7 @@ GET     /createRegistration         controllers.Application.createRegistration()
 GET     /testLogin                  controllers.Application.testLogin()
 
 # Reports
-GET     /s2/reports/WorkoutLocations controllers.Report.showWorkoutLocations(p:Int ?= 0, s:Int ?= 1, f ?= "", sd ?= "", ed ?= "")
+GET     /s2/reports/WorkoutLocations controllers.Report.showWorkoutLocations(p:Int ?= 0, s:Int ?= 1, f ?= "", sd ?= "", ed ?= "" )
 
 
 # Map static resources from the /public folder to the /assets URL path

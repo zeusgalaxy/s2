@@ -39,6 +39,8 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
     @helper.form(action=routes.Report.showWorkoutLocations(), args = 'id -> "reportForm") {
     
     <p><input type="submit" value="Go" class="btn primary pull-right">
+
+        @* Don't show this to non-Netpulse Users *@
         <label>Company</label>
         <div class="input">
             <div class="inline-inputs">

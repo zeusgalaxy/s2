@@ -18,10 +18,12 @@ object Auth extends Controller {
       "email" -> text,
       "password" -> text
     ) verifying("Invalid email or password", result => result match {
-      case (email, password) => User.authenticate(email, password).isDefined
+      case (email, password) =>
+        User.authenticate(email, password).isDefined
     })
   )
 
+  
   /**
    * Login page.
    */
@@ -43,7 +45,7 @@ object Auth extends Controller {
             case Some(page) => targetPage = page
             case _ =>
           }
-          Redirect(targetPage).withSession("npadmin" -> user._1)              // COOKIE SET HERE
+          Redirect(targetPage).withSession("npadmin" -> User.createNpadminCookie(user._1))    // npadmin session cookie set here
         }
       )
   }
@@ -67,9 +69,9 @@ object Auth extends Controller {
 trait Secured {
 
   /**
-   * Retrieve the connected user email.
+   * Retrieve the connected user cookie.
    */
-  private def username(request: RequestHeader) = request.session.get("email")
+  private def npAdminCookie(request: RequestHeader) = request.session.get("npadmin")
 
   /**
    * Redirect to login if the user is not authorized.
@@ -82,7 +84,7 @@ trait Secured {
   /**
    * Action for authenticated users.
    */
-  def IsAuthenticated(destPage: String, f: => String => Request[AnyContent] => Result) = Security.Authenticated(username, onUnauthorized(_)(destPage)) {
+  def IsAuthenticated(destPage: String, f: => String => Request[AnyContent] => Result) = Security.Authenticated(npAdminCookie, onUnauthorized(_)(destPage)) {
     user =>
       Action(request => f(user)(request))
   }
