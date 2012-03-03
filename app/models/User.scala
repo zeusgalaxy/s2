@@ -16,7 +16,7 @@ case class User(id: Long, firstName: String, lastName: String, password: String,
 /**
  * Helper for pagination.
  */
-case class Page[A](items: Seq[A], totals: Seq[A], page: Int, offset: Long, total: Long ) {
+case class Page[A](items: Seq[A], totals: Seq[A], page: Int, offset: Long, total: Long, cmpId: Long) {
   lazy val prev = Some(page - 1).filter(_ >= 0)
   lazy val next = Some(page + 1).filter(_ => (offset + items.size) < total)
 }
@@ -147,7 +147,7 @@ object User {
           'filter -> filter
         ).as(scalar[Long].single)
 
-        Page(computers, Seq(), page, offest, totalRows)
+        Page(computers, Seq(), page, offest, totalRows, 0L)
 
     }
 

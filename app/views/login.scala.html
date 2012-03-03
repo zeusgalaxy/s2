@@ -13,9 +13,9 @@
     }
 
     @flash.get("success").map { message =>
-        <p class="success">
-            @message
-        </p>
+        <div class="alert-message warning">
+        <strong>Success!</strong> @message
+        </div>
     }
 
     <div id="actions" class="twipsies well">

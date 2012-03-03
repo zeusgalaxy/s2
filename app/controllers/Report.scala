@@ -6,22 +6,20 @@ import models._
 
 object Report extends Controller with Secured {
 
-  def showWorkoutLocations(page: Int, orderBy: Int, filter: String, startDate: String, endDate: String) =  Action {
+  def showWorkoutLocations(page: Int, orderBy: Int, filter: String, startDate: String, endDate: String) = IsAuthenticated("/s2/reports/WorkoutLocations", username =>
     implicit request => {
         User.parseNpadminCookie(request.cookies.get("npadmin")) match {
-         case Some(u) if (u.compId == 1) =>      // Internal Users
+         case Some(u) =>
            Ok(html.listWorkoutLocations(
-              WorkoutLocation.list(page = page, orderBy = orderBy, filter = filter, startDate = startDate, endDate = endDate ),
-                orderBy, filter, startDate, endDate )
+              WorkoutLocation.list(page = page, orderBy = orderBy, filter = filter, startDate = startDate, endDate = endDate, cmpId = u.compId ),
+                orderBy, filter, startDate, endDate, u.compId )
            )
-          case Some(u) =>                       // External Users
-            Ok(html.listWorkoutLocations(
-              WorkoutLocation.list(page = page, orderBy = orderBy, filter = u.compId.toString, startDate = startDate, endDate = endDate ),
-              orderBy, filter, startDate, endDate )
-            )
+          case _ => Forbidden
       }
     }
-  }
+  )
 
 
 }
+
+

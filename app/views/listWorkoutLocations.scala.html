@@ -1,4 +1,4 @@
-@(currentPage: Page[WorkoutLocation], currentOrderBy: Int, currentFilter: String, startDate: String, endDate: String)(implicit flash: play.api.mvc.Flash)
+@(currentPage: Page[WorkoutLocation], currentOrderBy: Int, currentFilter: String, startDate: String, endDate: String, cmpId: Long)(implicit flash: play.api.mvc.Flash)
 
 @import helper._
 
@@ -25,7 +25,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
 @main("Workouts by Club", 'listUsers) {
 
-@* TODO: figure out how to put company name here..."for "+currentFilter " *@
+@* TODO: figure out how to put company name here... *@
 <h2>@Messages("Workouts by Club", currentPage.total)</h2>
 
 @flash.get("success").map { message =>
@@ -38,20 +38,25 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 <div id="actions" class="twipsies well">
     @helper.form(action=routes.Report.showWorkoutLocations(), args = 'id -> "reportForm") {
     
-    <p><input type="submit" value="Go" class="btn primary pull-right">
+    <p>
+        <input type="submit" value="Go" class="btn primary pull-right">
 
-        @* Don't show this to non-Netpulse Users *@
-        <label>Company</label>
-        <div class="input">
-            <div class="inline-inputs">
-            <select name="f" value="@currentFilter" >
-                <option value="">Select a company</option>
-                @Company.options.map { opt =>
-                    <option value="@opt._1" @if(opt._1.toString == currentFilter){selected="yes"}>@opt._2</option>
-                }
-            </select>
+        @***** Don't show this to non-Netpulse Users ******@
+        @* The company ID was put onto the flash object in the controller *@
+        @* compId=@currentPage.cmpId: *@
+        @if(currentPage.cmpId == 1) {
+            <label>Company</label>
+            <div class="input">
+                <div class="inline-inputs">
+                <select name="f" value="@currentFilter" >
+                    <option value="">Select a company</option>
+                    @Company.options.map { opt =>
+                        <option value="@opt._1" @if(opt._1.toString == currentFilter){selected="yes"}>@opt._2</option>
+                    }
+                </select>
+                </div>
             </div>
-        </div>
+          }
 
     </p>
         <label>From</label>
@@ -63,11 +68,6 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
                     <span class="help-block">Leave blank for all time.</span>
                 </div>
             </div>
-
-@*
-        Start: <input type="search" name="sd" value="@startDate" size= "8" placeholder="yyyymmdd " />
-        End:   <input type="search" name="ed" value="@endDate" placeholder="yyyymmdd " />
-*@
 
     }
 </div>
