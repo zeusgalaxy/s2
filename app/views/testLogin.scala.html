@@ -1,14 +1,19 @@
-@()(implicit flash: play.api.mvc.Flash)
+@(message: String)(implicit flash: play.api.mvc.Flash)
 
-@main("Test Login", 'testLogin) {
+@main("Welcome to our main page", 'home) {
+
+Flash get = :@flash.get("success").toString:
 
 @flash.get("success").map { message =>
 <div class="alert-message warning">
     <strong>Done!</strong> @message
 </div>
-
-}
 }
 
+<div class="container">
 
-<h3>Here is the page you were trying to get to!</h3>
+    <h3>Here is the page you were trying to get to! -  @message</h3>
+
+</div>
+
+}
