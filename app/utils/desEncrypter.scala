@@ -32,7 +32,7 @@ object Blowfish {
   implicit val loc = VL("desEncrypter.Blowfish")
 
   def encrypt (encryptMe: String): String = {
-    validate {
+    vld {
       val key = new SecretKeySpec ("jaas is the way".getBytes("UTF-8"), "Blowfish")
       val cipher: Cipher = Cipher.getInstance ("Blowfish")
 
@@ -40,7 +40,7 @@ object Blowfish {
       val encoding = cipher.doFinal(encryptMe.getBytes("UTF-8"))
       val n = new BigInt(new java.math.BigInteger(encoding))
       n.toString(16)
-    }.error(Map("msg" -> "Encryption Error")).fold(e => "", s => s)
+    }.error.fold(e => "", s => s)
   }
 }
 
@@ -64,7 +64,7 @@ class DesEncrypter ( passPhrase: String ) {
   implicit val loc = VL("desEncrypter")
 
   // Constructor
-  validate {
+  vld {
     var keySpec: KeySpec = new PBEKeySpec(passPhrase.toCharArray, salt, iterationCount)
     var key: SecretKey = SecretKeyFactory.getInstance("PBEWithMD5AndDES").generateSecret(keySpec)
     ecipher = Cipher.getInstance(key.getAlgorithm)
@@ -72,24 +72,24 @@ class DesEncrypter ( passPhrase: String ) {
     var paramSpec: AlgorithmParameterSpec = new PBEParameterSpec(salt, iterationCount)
     ecipher.init(Cipher.ENCRYPT_MODE, key, paramSpec)
     dcipher.init(Cipher.DECRYPT_MODE, key, paramSpec)
-  }.error(Map("msg" -> "Constructor Error"))
+  }.error
 
 
-  def encrypt(str: String): String = validate {
+  def encrypt(str: String): String = vld {
 
       var utf8: Array[Byte] = str.getBytes("UTF8")
       var enc: Array[Byte] = ecipher.doFinal(utf8)
 
       Base64.encode(enc)
-    }.error(Map("msg" -> "encrypt Error")).fold(e => "", s => s)
+    }.error.fold(e => "", s => s)
 
 
-  def decrypt(str: String): String = validate {
+  def decrypt(str: String): String = vld {
 
       var dec: Array[Byte] = Base64.decode(str)
       var utf8: Array[Byte] = dcipher.doFinal(dec)
 
       new String(utf8, "UTF8")
-    }.error(Map("msg" -> "decrypt Error")).fold(e => "", s => s)
+    }.error.fold(e => "", s => s)
 
 }

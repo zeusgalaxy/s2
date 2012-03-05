@@ -11,7 +11,7 @@ object WebApp extends Controller with Secured {
   }
 
   def testLogin = IsAuthenticated("/testLogin", username => implicit request =>
-    Ok(html.testLogin())
+    Ok(html.testLogin("This is a login test"))
   )
 
 }
