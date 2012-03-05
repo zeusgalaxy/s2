@@ -22,7 +22,7 @@ object PageViewModel {
 
   def parseXML(node: scala.xml.NodeSeq): ValidationNEL[String, PageViewModel] =
 
-    validate {
+    vld {
       PageViewModel(
         id = 0L,
         machineId = (node \ "@machine_id").toString().toLong,
@@ -56,7 +56,7 @@ object PageViewModel {
   //
   def insertSQL(pvm: PageViewModel): ValidationNEL[String, Int] = {
 
-    validate {
+    vld {
       DB.withConnection {
         implicit connection => {
           pvm.pageCounts.foreach {

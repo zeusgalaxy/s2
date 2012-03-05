@@ -8,21 +8,17 @@ POST    /login                              controllers.Auth.authenticate()
 GET     /logout                             controllers.Auth.logout
 
 # Home page
-GET     /                           controllers.Application.index()
-GET     /index                      controllers.Application.index()
+GET     /                           controllers.WebApp.index()
+GET     /index                      controllers.WebApp.index()
 
-# Computers list (look at the default values for pagination parameters)
-GET     /listUsers                      controllers.Application.listUsers(p:Int ?= 0, s:Int ?= 2, f ?= "")
+GET     /gigyaLogin                 controllers.Api.gigyaLogin
+POST    /gigyaLogin                 controllers.Api.gigyaLogin
+GET     /n5ilinkvtuser.jsp          controllers.Api.linkVtUser(id: String, vt_password: String, machine_id: Long)
 
-GET     /gigyaLogin                 controllers.ApiWrapper.gigyaLogin
-POST    /gigyaLogin                 controllers.ApiWrapper.gigyaLogin
+GET     /n5iregister.jsp            controllers.DinoWrapper.register
+GET     /n5ilogin.jsp               controllers.DinoWrapper.login
 
-GET     /n5iregister.jsp            controllers.ApiWrapper.register
-GET     /n5ilogin.jsp               controllers.ApiWrapper.login
-GET     /n5ilinkvtuser.jsp          controllers.ApiWrapper.linkVtUser(nplogin: String, vtpwd: String, machineid: Long)
-
-GET     /createRegistration         controllers.Application.createRegistration()
-GET     /testLogin                  controllers.Application.testLogin()
+GET     /testLogin                  controllers.WebApp.testLogin()
 
 # Reports
 GET     /s2/reports/WorkoutLocations controllers.Report.showWorkoutLocations(p:Int ?= 0, s:Int ?= 1, f ?= "", sd ?= "", ed ?= "" )
@@ -34,9 +30,9 @@ GET     /s2/assets/*file               controllers.Assets.at(path="/public", fil
 
 
 # PageViewUpload
-POST    /core/n5iworkout.jsp                   controllers.Dino.pageview
-POST    /n5iworkout.jsp                        controllers.Dino.pageview
-POST    /core/n5iuploader.jsp                  controllers.Dino.pageview
-POST    /uploader.jsp                          controllers.Dino.pageview
-POST    /otherstuff.jsp                        controllers.Dino.passthru
+POST    /core/n5iworkout.jsp                   controllers.DinoWrapper.pageview
+POST    /n5iworkout.jsp                        controllers.DinoWrapper.pageview
+POST    /core/n5iuploader.jsp                  controllers.DinoWrapper.pageview
+POST    /uploader.jsp                          controllers.DinoWrapper.pageview
+POST    /otherstuff.jsp                        controllers.DinoWrapper.passthru
 

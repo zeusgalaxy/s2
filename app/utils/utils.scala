@@ -3,6 +3,8 @@
  */
 
 import java.io.StringWriter
+import org.apache.commons.lang.RandomStringUtils
+import org.joda.time.{DateTimeZone, DateTime}
 import scala.xml._
 import play.api._
 import play.api.mvc._
@@ -33,10 +35,15 @@ package object utils {
       case _ => None
     }
 
-    val qs = {
-      for (k <- r.queryString.keys; v <- r.queryString.get(k).get) yield (k -> v)
-    }.toMap
-    (WSRequestHolder("http://" + switchHosts(r.host) + r.uri, Map("ACCEPT-CHARSET" -> Seq("utf-8")), qs, None, None), newBody)
+////    Logger.debug("toWSRequest new body will be " + newBody.toString)
+//    // It turns out we don't need this (below). The uri already includes the query string.
+//    val qs = {
+//      for (k <- r.queryString.keys; v <- r.queryString.get(k).get) yield (k -> v)
+//    }.toMap
+//    Logger.debug("toWSRequest new query string will be " + qs.toString)
+//    Logger.debug("toWSRequest old uri was " + r.uri.toString)
+//    (WSRequestHolder("http://" + switchHosts(r.host) + r.uri, Map("ACCEPT-CHARSET" -> Seq("utf-8")), qs, None, None), newBody)
+    (WSRequestHolder("http://" + switchHosts(r.host) + r.uri, Map("ACCEPT-CHARSET" -> Seq("utf-8")), Map(), None, None), newBody)
   }
 
   def waitVal(p: Promise[Response], timeout: Int): Response = {
@@ -52,6 +59,11 @@ package object utils {
     }
     (for (k <- keys; v <- source.get(k)) yield (k -> v)).toMap
   }
+
+  def utcNowInMillis = DateTime.now(DateTimeZone.UTC).getMillis
+  def utcNowInSecs = utcNowInMillis / 1000
+  def nonce = utcNowInMillis.toString + RandomStringUtils.randomAlphanumeric(6)
+  lazy val b64Enc = new sun.misc.BASE64Encoder()
 
   def noHdr(xml: String): String = {
 
@@ -76,7 +88,7 @@ package object utils {
     writer.toString
   }
 
-  def test[T](body: => T)(postCond: (T => Boolean) = { _ : T => true }, msg: String = "Failed post condition"): ValidationNEL[String, T] = {
+  def tst[T](body: => T)(postCond: (T => Boolean) = { _ : T => true }, msg: String = "Failed post condition"): ValidationNEL[String, T] = {
 
     try {
       val res = body
@@ -86,9 +98,9 @@ package object utils {
     }
   }
 
-  def validate[T](body: => T): ValidationNEL[String, T] = {
+  def vld[T](body: => T): ValidationNEL[String, T] = {
 
-    test(body)({_: T => true})
+    tst(body)({_: T => true})
   }
 
   class NPOption[T](val o: Option[T]) {
@@ -107,35 +119,41 @@ package object utils {
 
   class NPValidationNEL[T](val v: Validation[NonEmptyList[String], T]) {
 
-    def logTxt(src: String, msgs: ValMsgs) =
-      "\t" + src + "\t" + msgs.mkString(", ") + "\t" + v.fold(e => e.list.mkString(", "), s => "") + "\t"
+    def logTxt(src: String) =
+      "\t" + src + "\t" + v.fold(e => e.list.mkString(", "), s => "") + "\t"
 
     def getOrThrow(prefix: String = "getOrThrow") = v.fold(e => throw new Exception(prefix + ": " + e), s => s)
 
     def getOrThrow = v.fold(e => throw new Exception("Errors: " + e.list.mkString(", ")), s => s)
 
-    def trace(msgs: ValMsgs)(implicit src: VL): Validation[NonEmptyList[String], T] = {
-      if (v.isFailure) Logger.trace("TRACE" + logTxt(src, msgs))
+    // [({type l[a] = ValidationNEL[String, a]})#l, Int]
+    // ({type l[a] = ValidationNEL[String, a]})#l
+    def add(k: String, msg: String): Validation[NonEmptyList[String], T] = {
+      if (v.isFailure) (v <* ("Additional info: " + k + ": " + msg).failNel[T]) else v
+    }
+
+    def trace(implicit src: VL): Validation[NonEmptyList[String], T] = {
+      if (v.isFailure) Logger.trace("TRACE" + logTxt(src))
       v
     }
 
-    def debug(msgs: ValMsgs)(implicit src: VL): Validation[NonEmptyList[String], T] = {
-      if (v.isFailure) Logger.debug("DEBUG" + logTxt(src, msgs))
+    def debug(implicit src: VL): Validation[NonEmptyList[String], T] = {
+      if (v.isFailure) Logger.debug("DEBUG" + logTxt(src))
       v
     }
 
-    def info(msgs: ValMsgs)(implicit src: VL): Validation[NonEmptyList[String], T] = {
-      if (v.isFailure) Logger.info("INFO" + logTxt(src, msgs))
+    def info(implicit src: VL): Validation[NonEmptyList[String], T] = {
+      if (v.isFailure) Logger.info("INFO" + logTxt(src))
       v
     }
 
-    def warn(msgs: ValMsgs)(implicit src: VL): Validation[NonEmptyList[String], T] = {
-      if (v.isFailure) Logger.warn("WARN" + logTxt(src, msgs))
+    def warn(implicit src: VL): Validation[NonEmptyList[String], T] = {
+      if (v.isFailure) Logger.warn("WARN" + logTxt(src))
       v
     }
 
-    def error(msgs: ValMsgs)(implicit src: VL): Validation[NonEmptyList[String], T] = {
-      if (v.isFailure) Logger.error("ERROR" + logTxt(src, msgs))
+    def error(implicit src: VL): Validation[NonEmptyList[String], T] = {
+      if (v.isFailure) Logger.error("ERROR" + logTxt(src))
       v
     }
   }

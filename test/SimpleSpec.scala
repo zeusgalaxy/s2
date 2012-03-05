@@ -8,9 +8,9 @@ import play.api.test.Helpers._
 
 object SimpleSpec extends Specification {
 
-  val v1 = validate { "x".toInt }
-  val v2 = validate { 1.toInt }
-  val v3 = validate { 1.toString }
+  val v1 = vld { "x".toInt }
+  val v2 = vld { 1.toInt }
+  val v3 = vld { 1.toString }
 
   "v1 should be failure" in v1.isFailure
   "v2 should be success" in v2.isSuccess

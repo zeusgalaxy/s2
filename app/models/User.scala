@@ -31,7 +31,9 @@ object User {
    */
   def authenticate(email: String, password: String): Option[User] = {
 
-    val sqlValid = validate {
+    implicit val loc = VL("User.authenticate")
+
+    val sqlValid = vld {
       DB.withConnection {
         implicit connection =>
           SQL(
@@ -48,7 +50,7 @@ object User {
 
     sqlValid.fold(
       e => {
-        sqlValid.error(Map("msg" -> ("Error occurred during sql processing for authentication " + email)))
+        sqlValid.add("email", email).error
         None
       },
       s => s match {
@@ -87,12 +89,12 @@ object User {
 
     implicit val loc = VL("User.findById")
     
-    validate {
+    vld {
       DB.withConnection {
         implicit connection =>
           SQL("select * from admin_user where id = {id}").on('id -> id).as(User.simple.singleOpt)
       }
-    }.error(Map("msg" -> "Error returned from SQL")).fold(e => None, s => s)
+    }.error.fold(e => None, s => s)
   }
   
   /**
@@ -102,12 +104,12 @@ object User {
 
     implicit val loc = VL("User.findEmail")
 
-    validate {
+    vld {
       DB.withConnection {
         implicit connection =>
           SQL("select * from admin_user where email = {email}").on('email -> email).as(User.simple.singleOpt)
       }
-    }.error(Map("msg" -> "Error returned from SQL")).fold(e => None, s => s)
+    }.error.fold(e => None, s => s)
   }
   /**
    * Return a page of users.
@@ -172,12 +174,15 @@ object User {
    * Parse the encrypted admin user cookie previously added onto the session
    */
   def parseNpadminCookie (cookie: Option[Cookie]): Option[User] = {
+
+    implicit val loc = VL("User.parseNpadmin")
+
     cookie match {
       case Some(c) => {
         val xmlStr = new DesEncrypter(DesEncrypter.SESSION_SECRET_KEY).decrypt(c.value.replace("\\r", "\r").replace("\\n", "\n"))
         Logger.info( "npadmin cookie = "+c+"\npassed value="+c.value+"\nresult="+xmlStr)
         
-        validate {
+        vld {
           // replaces (scala.xml.XML.loadString(xmlStr) \ "@email").toString
           def ls(attr: String, s: String = xmlStr) = (scala.xml.XML.loadString(xmlStr) \ attr).toString
 
@@ -187,10 +192,10 @@ object User {
             ls("@email"),
             ls("@compId").toLong,
           // TODO: Come up with a general case for handling "null" values from the DB that will become Longs
-            validate { ls("@oemId").toLong }.trace(Map("msg" -> "null db value")).fold(e=> None, s => Some(s) ),
-            validate { ls("@adId").toLong }.trace(Map("msg" -> "null db value")).fold(e=> None, s => Some(s) )
+            vld { ls("@oemId").toLong }.trace.fold(e=> None, s => Some(s) ),
+            vld { ls("@adId").toLong }.trace.fold(e=> None, s => Some(s) )
           )
-        }.error(Map("msg" -> "Error in parsing npadmin cookie from xml")).fold(e => None, u => Some(u))
+        }.error.fold(e => None, u => Some(u))
       }
       case None => None
     }

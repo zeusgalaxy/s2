@@ -8,7 +8,8 @@ import anorm._
 import anorm.SqlParser._
 import play.api.Logger
 
-case class Exerciser(dbId: Long, login: String, email: String, vtToken: String, vtTokenSecret: String)
+case class Exerciser(dbId: Long, login: String, email: String,
+                     vtUserId: String, vtToken: String, vtTokenSecret: String)
 
 object Exerciser {
 
@@ -18,9 +19,11 @@ object Exerciser {
     get[Long]("exerciser.id") ~
       get[String]("exerciser.login") ~
       get[String]("exerciser.email") ~
+      get[String]("exerciser.vt_user_id") ~
       get[String]("exerciser.vt_token") ~
       get[String]("exerciser.vt_token_secret") map {
-      case dbId ~ login ~ email ~ vtToken ~ vtTokenSecret => Exerciser(dbId, login, email, vtToken, vtTokenSecret)
+      case dbId ~ login ~ email ~ vtUserId  ~ vtToken ~ vtTokenSecret =>
+        Exerciser(dbId, login, email, vtUserId, vtToken, vtTokenSecret)
     }
   }
 
@@ -28,81 +31,46 @@ object Exerciser {
 
     implicit val loc = VL("Exerciser.findById")
 
-    validate {
+    vld {
       DB.withConnection {
         implicit connection =>
           SQL("select * from exerciser where id = {id}").on('id -> dbId).as(Exerciser.simple.singleOpt)
       }
-    }.info(Map("msg" -> "Failure during retrieval")).fold(e => None, s => s)
+    }.info.fold(e => None, s => s)
   }
 
   def findByLogin(login: String): Option[Exerciser] = {
 
     implicit val loc = VL("Exerciser.findByLogin")
 
-    validate {
+    vld {
       DB.withConnection {
         implicit connection =>
           SQL("select * from exerciser where login = {login}").on('login -> login).as(Exerciser.simple.singleOpt)
       }
-    }.info(Map("msg" -> "Failure during retrieval")).fold(e => None, s => s)
+    }.info.fold(e => None, s => s)
   }
 
-  def updateToken(login: String, token: String, tokenSecret: String): Boolean = {
+  def updVT(npLogin: String, vtUserId: String, vtToken: String, vtTokenSecret: String): Boolean = {
 
-    implicit val loc = VL("Exerciser.updateToken")
+    implicit val loc = VL("Exerciser.updateVirtualTrainer")
 
-    validate {
+    vld {
       DB.withConnection {
         implicit connection =>
           SQL(
             """
               update exerciser
-              set vt_token = {vtToken}, vt_token_secret = {vtTokenSecret}
+              set vt_user_id = {vtUserId}, vt_token = {vtToken}, vt_token_secret = {vtTokenSecret}
               where login = {login}
             """
           ).on(
-            'login -> login,
-            'vtToken -> token,
-            'vtTokenSecret -> tokenSecret
+            'login -> npLogin,
+            'vtUserId -> vtUserId,
+            'vtToken -> vtToken,
+            'vtTokenSecret -> vtTokenSecret
           ).executeUpdate()
       }
-    }.info(Map("msg" -> "Failure during update")).fold(e => false, s => true)
+    }.info.fold(e => false, s => true)
   }
-
-  //
-  //  /**
-  //   * Insert a new computer.
-  //   *
-  //   * @param computer The computer values.
-  //   */
-  //  def insert(computer: Computer) = {
-  //    DB.withConnection { implicit connection =>
-  //      SQL(
-  //        """
-  //          insert into computer values (
-  //            (select next value for computer_seq),
-  //            {name}, {introduced}, {discontinued}, {company_id}
-  //          )
-  //        """
-  //      ).on(
-  //        'name -> computer.name,
-  //        'introduced -> computer.introduced,
-  //        'discontinued -> computer.discontinued,
-  //        'company_id -> computer.companyId
-  //      ).executeUpdate()
-  //    }
-  //  }
-  //
-  //  /**
-  //   * Delete a computer.
-  //   *
-  //   * @param id Id of the computer to delete.
-  //   */
-  //  def delete(id: Long) = {
-  //    DB.withConnection { implicit connection =>
-  //      SQL("delete from computer where id = {id}").on('id -> id).executeUpdate()
-  //    }
-  //  }
-
 }
