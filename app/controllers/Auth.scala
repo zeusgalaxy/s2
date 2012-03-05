@@ -57,7 +57,7 @@ object Auth extends Controller {
    * Logout and clean the session.
    */
   def logout = Action {
-    Redirect(routes.Application.index).withNewSession.flashing(
+    Redirect(routes.WebApp.index).withNewSession.flashing(
       "success" -> "You've been logged out"
     )
   }

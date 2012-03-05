@@ -11,10 +11,22 @@ import utils._
 import models._
 import play.api.Logger
 
+/**
+ * Controller for server API functions which "wrap" around old Dino functions.
+ */
 object DinoWrapper extends Controller {
 
   lazy val dinoTimeout = current.configuration.getString("dino.timeout").getOrElse(throw new Exception("dino.timeout not in configuration")).toInt
 
+  /** Forwards a request received by S2 on to Dino for processing. This method is used instead
+   * of DinoWrapper.passthru for
+   * those cases where S2 needs to perform additional processing on the response before returning it
+   * to the caller.
+   *
+   * @param request The API request that was received by S2.
+   * @return A ValidationNEL with error messages if there was a problem, otherwise the response
+   * if successful.
+   */
   def forward(request: Request[AnyContent]): ValidationNEL[String, play.api.libs.ws.Response] = {
 
     vld {
@@ -43,6 +55,13 @@ object DinoWrapper extends Controller {
     }
   }
 
+  /** Sends a request to Dino for processing, without allowing any additional processing on the
+   * response that comes back. If additional processing is required (i.e., the call is "wrapped,")
+   * use DinoWrapper.forward instead.
+   *
+   * @return Http response type 200 (ok) with the Dino response body, else the http response type
+   * 500 (internal server error) with the error text as the body.
+   */
   def passthru = Action {
     implicit request => {
       val r = forward(request)
@@ -52,6 +71,14 @@ object DinoWrapper extends Controller {
   }
 
   // Local test: curl --header "Content-Type: text/xml; charset=UTF-8" -d@pageviews.xml http://localhost:9000/n5iworkout.jsp
+
+  /** Processes "pageviews" as uploaded by clients in XML payloads. Pageviews are just one of the data types
+   * that might appear within this xml payload. For now, only the pageviews type is processed by S2; the other
+   * types are forwarded on to Dino for processing.
+   *
+   * @return Html status 200, if successful, with a message showing the number of inserts as the body;
+   * html status 500 with the error messages as the body, if unsuccessful.
+   */
   def pageview = Action {
 
     implicit request => {
@@ -81,6 +108,13 @@ object DinoWrapper extends Controller {
   // To test a post with curl, passing a file for the body: curl --header "Content-Type: text/xml; charset=UTF-8" -d@asset_history_upload.xml http://localhost:8080/n5iuploader.jsp
   // http://localhost:9000/n5iregister.jsp?machine_id=1070&id=2115180102&membership_id=1&email=sOCClkoE102%40stross.com&pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15
 
+  /** Registers a new exerciser with both Netpulse (via Dino) and with Virtual Trainer.
+   *
+   * @return Html status 200, with a body consisting of some combination of Dino's registration response
+   * (such as the ad units to be displayed), along with the predefined_presets that Virtual
+   * Trainer provides for that machine type. What will actually appear in the body depends
+   * on which of these calls to Dino and Virtual Trainer were successful.
+   */
   def register = Action {
     implicit request =>
 
@@ -111,7 +145,6 @@ object DinoWrapper extends Controller {
               toSuccess(NonEmptyList("Unable to rtrv mach/equip/model"))
 
             vtPredefinedPresets <- VT.predefinedPresets(vtToken, vtTokenSecret, model)
-            vtWorkouts <- VT.workouts(vtToken, vtTokenSecret, model)
 
           } yield {
             XmlMutator(oldXml).add("response",
@@ -131,9 +164,6 @@ object DinoWrapper extends Controller {
                 <vtPredefinedPresets>
                   {vtPredefinedPresets}
                 </vtPredefinedPresets>
-                <vtWorkouts>
-                  {vtWorkouts}
-                </vtWorkouts>
               </vtAccount>
             )
           }
@@ -144,6 +174,14 @@ object DinoWrapper extends Controller {
   // http://qa-ec2.netpulse.ws/core/n5ilogin.jsp?machine_id=18&id=1112925684&pic=22&oem_tos=15
   // http://localhost:9000/n5ilogin.jsp?machine_id=1070&id=2115180111&pic=22&oem_tos=15
 
+  /** Logs a user in to a session with Netpulse (via Dino), and retrieves an appropriate set
+   * of predefined_presets and/or workouts from Virtual Trainer.
+   *
+   * @return Html status 200, with a body consisting of some combination of Dino's login response
+   * (such as the ad units to be displayed), along with the predefined_presets that Virtual
+   * Trainer provides for that machine type. What will actually appear in the body depends
+   * on which of these calls to Dino and Virtual Trainer were successful.
+   */
   def login = Action {
     implicit request =>
 

@@ -8,8 +8,8 @@ POST    /login                              controllers.Auth.authenticate()
 GET     /logout                             controllers.Auth.logout
 
 # Home page
-GET     /                           controllers.Application.index()
-GET     /index                      controllers.Application.index()
+GET     /                           controllers.WebApp.index()
+GET     /index                      controllers.WebApp.index()
 
 GET     /gigyaLogin                 controllers.Api.gigyaLogin
 POST    /gigyaLogin                 controllers.Api.gigyaLogin
@@ -18,7 +18,7 @@ GET     /n5ilinkvtuser.jsp          controllers.Api.linkVtUser(id: String, vt_pa
 GET     /n5iregister.jsp            controllers.DinoWrapper.register
 GET     /n5ilogin.jsp               controllers.DinoWrapper.login
 
-GET     /testLogin                  controllers.Application.testLogin()
+GET     /testLogin                  controllers.WebApp.testLogin()
 
 # Reports
 GET     /s2/reports/WorkoutLocations controllers.Report.showWorkoutLocations(p:Int ?= 0, s:Int ?= 1, f ?= "", sd ?= "", ed ?= "")

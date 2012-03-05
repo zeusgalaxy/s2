@@ -3,7 +3,7 @@ package controllers
 import play.api.mvc._
 import views._
 
-object Application extends Controller with Secured {
+object WebApp extends Controller with Secured {
 
   def index = Action {
     implicit request =>
