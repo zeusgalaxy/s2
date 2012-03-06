@@ -9,6 +9,9 @@
                 <li class="@{if(active == 'home) "active" else "inactive"}"><a href="@routes.WebApp.index()">Home</a></li>
              *@
                 <li class="@{if(active == 'showWorkoutLocations) "active" else "inactive"}"><a href="@routes.Report.showWorkoutLocations()">Reports</a></li>
+                <li class="@{if(active == 'admin) "active" else "inactive"}"><a href="">Admin</a></li>
+                <li class="@{if(active == 'account) "active" else "inactive"}"><a href="">Account</a></li>
+                <li class="@{if(active == 'contact) "active" else "inactive"}"><a href="">Contact</a></li>
                 <li class="@{if(active == 'logout) "active" else "inactive"}"><a href="@routes.Auth.logout()">Logout</a></li>
             </ul>
         </div>

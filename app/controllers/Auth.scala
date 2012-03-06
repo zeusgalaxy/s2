@@ -85,8 +85,9 @@ trait Secured {
    * Action for authenticated users.
    */
   def IsAuthenticated(destPage: String, f: => String => Request[AnyContent] => Result) = Security.Authenticated(npAdminCookie, onUnauthorized(_)(destPage)) {
-    user =>
+    user => {
       Action(request => f(user)(request))
+    }
   }
 
 }
