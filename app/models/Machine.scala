@@ -12,8 +12,14 @@ case class MachineBasic(id: Long, locationId: Long, model: String)
 case class Equipment(id: Long, mfr: Int, model: Int, eType: Option[String],
                      mfrName: Option[String], modelName: Option[String])
 
+/**
+ * Anorm-based model representing machines.
+ */
 object Machine {
 
+  /**
+   * Basic parsing of machine records from the database.
+   */
   val basic = {
     get[Long]("machine.id") ~
       get[Long]("machine.location_id") ~
@@ -22,10 +28,19 @@ object Machine {
     }
   }
 
+  /**
+   * Parsing of basic machine values along with more extensive equipment values associated
+   * with that machine.
+   */
   val withEquip = Machine.basic ~ (Equipment.full ?) map {
     case machine ~ equipment => (machine, equipment)
   }
 
+  /** Retrieves basic machine object based on the machine's database id.
+   *
+   * @param id Machine identifier.
+   * @return Some(MachineBasic) if successful; otherwise None.
+   */
   def getBasic(id: Long): Option[MachineBasic] = {
 
     implicit val loc = VL("Machine.getBasic")
@@ -38,6 +53,12 @@ object Machine {
     }.info.fold(e => None, s => s)
   }
 
+  /** Retrieves basic machine object along with its associated equipment information, if available.
+   *
+   * @param id Machine id.
+   * @return Some tuple of MachineBasic and Some Equipment, if available; else None where not available
+   * of unsuccessful.
+   */
   def getWithEquip(id: Long): Option[(MachineBasic, Option[Equipment])] = {
 
     implicit val loc = VL("Machine.getWithEquip")
@@ -52,6 +73,9 @@ object Machine {
   }
 }
 
+/**
+ * Anorm-based model representing equipment.
+ */
 object Equipment {
 
   val full = {
@@ -64,14 +88,4 @@ object Equipment {
       case id ~ mfr ~ model ~ eType ~ mfrName ~ modelName => Equipment(id, mfr, model, eType, mfrName, modelName)
     }
   }
-//  val full = {
-//    get[Int]("equipment.id") ~
-//      get[Int]("equipment.mfr") ~
-//      get[Int]("equipment.model") ~
-//      get[Option[String]]("equipment.type") ~
-//      get[Option[String]]("equipment.mfr_name") ~
-//      get[Option[String]]("equipment.model_name") map {
-//      case id ~ mfr ~ model ~ eType ~ mfrName ~ modelName => Equipment(id, mfr, model, eType, mfrName, modelName)
-//    }
-//  }
 }

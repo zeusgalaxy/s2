@@ -8,23 +8,32 @@ import anorm.SqlParser._
 
 case class Company(id: Pk[Long] = NotAssigned, name: String)
 
+/** Anorm-based model representation of company. The underlying data for the company
+ * may come from either a reporting data warehouse or the titan transactional
+ * database, depending on the circumstance. Different parsers are provided for the
+ * different requirements.
+ *
+ */
 object Company {
 
-  /**
-   * Parse a Company from a ResultSet
+  /** Basic parsing of companies derived from location table in report data warehouse.
+   *
    */
-  val simple = {
+  val reportBasic = {
     get[Pk[Long]]("location.company_id") ~
       get[String]("location.company_name") map {
       case id~name => Company(id, name)
     }
   }
 
-  /**
-   * Construct the Map[String,String] needed to fill a select options set.
+  /** Yields valid company ids and names from the location table in the reporting data warehouse
+   * for use as options in a pick list.
+   *
+   * @return Map of company ids and company names.
    */
-  def options: Seq[(String,String)] = DB.withConnection("report") { implicit connection =>
-    SQL("select distinct(company_id), company_name from report.location order by company_name").as(Company.simple *).map(c => c.id.toString -> c.name)
+  def reportCompanyOptions: Seq[(String,String)] = DB.withConnection("report") { implicit connection =>
+    SQL("select distinct(company_id), company_name from report.location order by company_name").
+      as(Company.reportBasic *).map(c => c.id.toString -> c.name)
   }
 
 }

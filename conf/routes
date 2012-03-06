@@ -16,7 +16,7 @@ POST    /gigyaLogin                 controllers.Api.gigyaLogin
 GET     /n5ilinkvtuser.jsp          controllers.Api.linkVtUser(id: String, vt_password: String, machine_id: Long)
 
 GET     /n5iregister.jsp            controllers.DinoWrapper.register
-GET     /n5ilogin.jsp               controllers.DinoWrapper.login
+GET     /n5ilogin.jsp               controllers.DinoWrapper.login(id: String, machine_id: Long)
 
 GET     /testLogin                  controllers.WebApp.testLogin()
 
