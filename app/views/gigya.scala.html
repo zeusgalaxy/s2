@@ -1,6 +1,6 @@
-@(request: play.api.mvc.Request[AnyContent])(implicit flash: play.api.mvc.Flash)
+@(user: User, request: play.api.mvc.Request[AnyContent])(implicit flash: play.api.mvc.Flash)
 
-@main("Gigya Test", 'testLogin) {
+@main(user, "Gigya Test", 'testLogin) {
 
 <p>@request.toString</p>
 <p>@request.body.toString</p>

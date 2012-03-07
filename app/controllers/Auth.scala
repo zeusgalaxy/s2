@@ -84,9 +84,16 @@ trait Secured {
   /**
    * Action for authenticated users.
    */
-  def IsAuthenticated(destPage: String, f: => String => Request[AnyContent] => Result) = Security.Authenticated(npAdminCookie, onUnauthorized(_)(destPage)) {
-    user =>
-      Action(request => f(user)(request))
+  def IsAuthenticated(destPage: String, f: => User => Request[AnyContent] => Result) = Security.Authenticated(npAdminCookie, onUnauthorized(_)(destPage)) {
+    npCookieString =>
+      User.parseNpadminCookie(Option(Cookie("npadmin",npCookieString,0,"",None,true,false))) match {
+        case Some(u) =>
+          Action(request => f(u)(request))
+        case _ => {
+          Logger.error("IsAuthenticated: Problem with parsing the npadmin cookie into a User")
+          Action(request => f(new User)(request))
+        }
+      }
   }
 
 }
