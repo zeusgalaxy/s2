@@ -81,7 +81,7 @@ object Exerciser {
    */
   def updVT(npLogin: String, vtUserId: String, vtToken: String, vtTokenSecret: String): Boolean = {
 
-    implicit val loc = VL("Exerciser.updateVirtualTrainer")
+    implicit val loc = VL("Exerciser.updVT")
 
     vld {
       DB.withConnection {
