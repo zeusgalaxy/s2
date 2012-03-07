@@ -31,9 +31,17 @@ object WebApp extends Controller with Secured {
 
   val userForm: Form[User] = Form(
     mapping(
-      "firstName" -> text
-    ){ (firstName) => User(0,firstName,"","","") }
-     {  user => Some(user.firstName ) }
+      "firstName" -> text,
+      "lastName"  -> text,
+      "email"     -> text
+//      "newPass"   -> text,
+//      "newPassConf" -> text
+    ){ // apply
+      (firstName, lastName, email) => User(0,firstName,lastName,"",email)
+    }
+     { // UnApply
+       user => Some(user.firstName, user.lastName, user.email )
+     }
   )
 
   def userEdit = IsAuthenticated("/userEdit", user => implicit request =>

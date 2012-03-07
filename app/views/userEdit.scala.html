@@ -1,7 +1,5 @@
 @(user: User, userForm: Form[User])
 
-user: User,
-
 @import helper._
 @import helper.twitterBootstrap._
 
@@ -16,10 +14,11 @@ Sign Up <small><a href="">Or edit an existing user</a></small>
         <fieldset>
             <legend>Update your account:</legend>
 
-            @inputText(
-            userForm("firstName"),
-            '_label -> "First name"
-            )
+            @inputText( userForm("firstName"),      '_label -> "First name"     )
+            @inputText( userForm("lastName"),       '_label -> "Last name"      )
+            @inputText( userForm("email"),          '_label -> "Email"          )
+            @inputText( userForm("newPass"),        '_label -> "New Password"   )
+            @inputText( userForm("newPassConfirm"),  '_label -> "Confirm Password")
 
         </fieldset>
 
