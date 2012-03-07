@@ -17,8 +17,15 @@ Sign Up <small><a href="">Or edit an existing user</a></small>
             @inputText( userForm("firstName"),      '_label -> "First name"     )
             @inputText( userForm("lastName"),       '_label -> "Last name"      )
             @inputText( userForm("email"),          '_label -> "Email"          )
+TODO: Read the inputText Helper code/ docs for email and password handling
             @inputText( userForm("newPass"),        '_label -> "New Password"   )
             @inputText( userForm("newPassConfirm"),  '_label -> "Confirm Password")
+@*
+            <input type="email" name="email" placeholder="Email" id="email" value="@form("email").value">
+            </p>
+            <p>
+                <input type="password" name="password" id="password" placeholder="Password">
+*@
 
         </fieldset>
 

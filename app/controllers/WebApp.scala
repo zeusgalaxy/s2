@@ -33,19 +33,26 @@ object WebApp extends Controller with Secured {
     mapping(
       "firstName" -> text,
       "lastName"  -> text,
-      "email"     -> text
-//      "newPass"   -> text,
+      "email"     -> nonEmptyText,
+      "newPass"   -> text(6)
 //      "newPassConf" -> text
     ){ // apply
-      (firstName, lastName, email) => User(0,firstName,lastName,"",email)
+      (firstName, lastName, email, newPass) => User(0,firstName,lastName,"",email)
     }
      { // UnApply
-       user => Some(user.firstName, user.lastName, user.email )
+       user => Some(user.firstName, user.lastName, user.email, user.password )
      }
   )
 
   def userEdit = IsAuthenticated("/userEdit", user => implicit request =>
-    Ok(html.userEdit(user, userForm))
+    {
+      val fullUser = User.findById(user.id)
+      fullUser match {
+        case Some(u) => Ok(html.userEdit(user, userForm.fill(user)))
+        case _ =>  Redirect(routes.WebApp.index).flashing("failure" -> ("An error occured."))
+      }
+
+    }
   )
 
 //    def userEdit = Action {
