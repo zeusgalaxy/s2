@@ -121,7 +121,8 @@ object DinoWrapper extends Controller {
       implicit val loc = VL("DinoWrapper.register")
 
       val rp = RegParams(request)
-      val oldXml = forward(request).flatMap { r => vld(r.xml) }.error | <s2Reg>Unable to register</s2Reg>
+      val oldXml = forward(request).flatMap { r => vld(r.xml) }.error |
+        <response code="2" desc="Unable to register. An error occurred when forwarding registration to Dino."></response>
 
       // either error code or object encapsulating vt user
       val rVal: Either[Int, VtUser] = (for {
@@ -227,7 +228,7 @@ object DinoWrapper extends Controller {
 
           case _ => oldXml
         }
-      }).error.fold(e => Ok(<response desc="Login failed" code="1">
+      }).error.fold(e => Ok(<response desc="Login failed." code="5">
         {e.list.mkString(", ")}
       </response>), s => Ok(s))
   }
