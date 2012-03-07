@@ -1,4 +1,4 @@
-@(title: String, activePage: Symbol)(content: Html)
+@(user: User, title: String, activePage: Symbol)(content: Html)
 
 <!DOCTYPE html>
 
@@ -36,11 +36,20 @@
 
     </head>
     <body>
-        @menuBar(activePage)
+        @menuBar(user, activePage)
         <div class="container">
             @content
         </div>
     </body>
+
+    <div class="container"
+    <footer>
+        <p>&copy; Netpulse 2012. All rights reserved</p>
+        <p>@user.toString</p>
+    </footer>
+    </div>
+
+
 </html>
 
 

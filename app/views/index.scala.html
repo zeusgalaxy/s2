@@ -1,6 +1,6 @@
-@(message: String)(implicit flash: play.api.mvc.Flash)
+@(user: User, message: String)(implicit flash: play.api.mvc.Flash)
 
-@main("Welcome to our main page", 'home) {
+@main(user, "Welcome to our main page", 'home) {
 
 @flash.get("success").map { message =>
 <div class="alert-message warning">
@@ -14,8 +14,9 @@
     <div class="hero-unit">
         <h1>Lifescape Manager</h1>
         <p></p>
-        <p><a class="btn primary large" href="@routes.Auth.login()">Login &raquo;</a>
-           <a class="btn primary large" href="@routes.Auth.logout()">Logout &raquo;</a></p>
+        <p> @if(!user.email.isEmpty) {
+            <a class="btn primary large" href="@routes.Auth.logout()">Logout &raquo;</a></p>
+        }
     </div>
 
 
@@ -42,9 +43,6 @@
         </div>
     </div>
 
-    <footer>
-        <p>&copy; Netpulse 2012. All rights reserved</p>
-    </footer>
 
 </div> <!-- /container -->
     

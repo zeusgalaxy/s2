@@ -10,13 +10,13 @@ import play.Logger
 import play.api.mvc.Cookie
 
 // <adminUser id="89" compId="1" oemId="null" adId="null" email="dfaust@netpulse.com"></adminUser>
-case class User(id: Long, firstName: String, lastName: String, password: String, email: String, 
-                compId: Long,  oemId: Option[Long], adId: Option[Long]  )
+case class User(id: Long = 0, firstName: String="", lastName: String="", password: String="", email: String="",
+                compId: Long=0,  oemId: Option[Long]=None, adId: Option[Long]=None  )
 
 /**
  * Helper for pagination.
  */
-case class Page[A](items: Seq[A], totals: Seq[A], page: Int, offset: Long, total: Long, cmpId: Long) {
+case class Page[A](user: User, items: Seq[A], totals: Seq[A], page: Int, offset: Long, total: Long ) {
   lazy val prev = Some(page - 1).filter(_ >= 0)
   lazy val next = Some(page + 1).filter(_ => (offset + items.size) < total)
 }
@@ -119,7 +119,7 @@ object User {
    * @param orderBy firstName for sorting
    * @param filter Filter applied on the firstName column
    */
-  def list(page: Int = 0, pageSize: Int = 25, orderBy: Int = 1, filter: String = "%"): Page[User] = {
+  def list(user: User, page: Int = 0, pageSize: Int = 25, orderBy: Int = 1, filter: String = "%"): Page[User] = {
 
     val offest = pageSize * page
 
@@ -149,7 +149,7 @@ object User {
           'filter -> filter
         ).as(scalar[Long].single)
 
-        Page(computers, Seq(), page, offest, totalRows, 0L)
+        Page(user, computers, Seq(), page, offest, totalRows)
 
     }
 

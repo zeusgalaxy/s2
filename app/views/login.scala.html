@@ -1,6 +1,6 @@
 @(form: Form[(String,String)])(implicit flash: Flash)
 
-@main("Login", 'login) {
+@main( new User, "Login", 'login) {
 
 @helper.form(routes.Auth.authenticate () ) {
 

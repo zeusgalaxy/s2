@@ -23,7 +23,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
 
 
-@main("Workouts by Club", 'listUsers) {
+@main(currentPage.user, "Workouts by Club", 'listUsers) {
 
 @* TODO: figure out how to put company name here... *@
 <h2>@Messages("Workouts by Club", currentPage.total)</h2>
@@ -44,7 +44,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         @***** Don't show this to non-Netpulse Users ******@
         @* The company ID was put onto the flash object in the controller *@
         @* compId=@currentPage.cmpId: *@
-        @if(currentPage.cmpId == 1) {
+        @if(currentPage.user.compId == 1) {
             <label>Company</label>
             <div class="input">
                 <div class="inline-inputs">

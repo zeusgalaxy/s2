@@ -72,6 +72,6 @@ object Api extends Controller {
    */
   def gigyaLogin = Action {
     implicit request =>
-      Ok(html.gigya(request))
+      Ok(html.gigya(User(0,"","","","",0L,None,None), request))
   }
 }

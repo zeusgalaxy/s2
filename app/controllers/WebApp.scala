@@ -5,13 +5,12 @@ import views._
 
 object WebApp extends Controller with Secured {
 
-  def index = Action {
-    implicit request =>
-      Ok(html.index("This is the main page parameter"))
-  }
+  def index = IsAuthenticated("/index", user => implicit request =>
+      Ok(html.index(user, "This is the main page parameter"))
+  )
 
-  def testLogin = IsAuthenticated("/testLogin", username => implicit request =>
-    Ok(html.testLogin("This is a login test"))
+  def testLogin = IsAuthenticated("/testLogin", user => implicit request =>
+    Ok(html.testLogin(user, "test string"))
   )
 
 }

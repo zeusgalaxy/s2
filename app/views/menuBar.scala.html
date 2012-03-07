@@ -1,4 +1,4 @@
-@(active: Symbol)
+@(user: User, active: Symbol)
 
 <div class="topbar">
     <div class="fill">
@@ -12,7 +12,9 @@
                 <li class="@{if(active == 'admin) "active" else "inactive"}"><a href="">Admin</a></li>
                 <li class="@{if(active == 'account) "active" else "inactive"}"><a href="">Account</a></li>
                 <li class="@{if(active == 'contact) "active" else "inactive"}"><a href="">Contact</a></li>
-                <li class="@{if(active == 'logout) "active" else "inactive"}"><a href="@routes.Auth.logout()">Logout</a></li>
+                @if(!user.email.isEmpty) {
+                    <li class="@{if(active == 'logout) "active" else "inactive"}"><a href="@routes.Auth.logout()">Logout</a></li>
+                }
             </ul>
         </div>
     </div>
