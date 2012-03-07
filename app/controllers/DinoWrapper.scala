@@ -97,7 +97,7 @@ object DinoWrapper extends Controller {
             r => Ok(r.toString()))
         else {
 
-          val cnt = PageViewModel.insert(~request.body.asXml).getOrThrow("Dino.pageview call of PageViewModel.insert")
+          val cnt = PageViewModel.insert(~request.body.asXml).getOrThrow
           Ok("PageView load succeeded with " + cnt.toString + "inserts")
         }
       }.add("request body", request.body.toString).error.
@@ -177,18 +177,17 @@ object DinoWrapper extends Controller {
   /** Logs a user in to a session with Netpulse (via Dino), and retrieves an appropriate set
    * of predefined_presets and/or workouts from Virtual Trainer.
    *
+   * @param npLogin The identifier used by the exerciser to log into Netpulse.
+   * @param machineId The machine id of the machine the exerciser is currently on.
    * @return Html status 200, with a body consisting of some combination of Dino's login response
    * (such as the ad units to be displayed), along with the predefined_presets that Virtual
    * Trainer provides for that machine type. What will actually appear in the body depends
    * on which of these calls to Dino and Virtual Trainer were successful.
    */
-  def login = Action {
+  def login(npLogin: String, machineId: Long) = Action {
     implicit request =>
 
       implicit val loc = VL("ApiWrapper.login")
-
-      // Note that what is called "id" in the request is actually "login" in the database (per dino!)
-      val params = postOrGetParams(request, List("id", "machine_id"))
 
       (for {
         dinoResult <- forward(request)
@@ -199,8 +198,6 @@ object DinoWrapper extends Controller {
           case Some(code) if (code.text == "0") => {
 
             for {
-              npLogin <- vld(params("id")(0))
-              machineId <- vld(params("machine_id")(0).toLong)
               model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
                 toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
 
