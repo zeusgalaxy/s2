@@ -1,0 +1,33 @@
+@(user: User, userForm: Form[User])
+
+user: User,
+
+@import helper._
+@import helper.twitterBootstrap._
+
+@title = {
+Sign Up <small><a href="">Or edit an existing user</a></small>
+}
+
+@main(user, "Account Edit", 'userEdit) {
+
+    @helper.form(action = routes.WebApp.userSubmit) {
+
+        <fieldset>
+            <legend>Update your account:</legend>
+
+            @inputText(
+            userForm("firstName"),
+            '_label -> "First name"
+            )
+
+        </fieldset>
+
+        <div class="actions">
+            <input type="submit" class="btn primary" value="Save">
+            <a href="@routes.WebApp.index" class="btn">Cancel</a>
+        </div>
+
+    }
+
+}
