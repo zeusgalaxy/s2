@@ -1,0 +1,56 @@
+copyright=Netpulse 2012. All rights reserved (in messages file)
+
+page.title.index=This is the S2 index page
+page.title.login=Login
+page.title.workouts.location=Workouts by Club
+pagination.previous=Previous
+pagination.next=Next
+
+flash.done=Done!
+
+login.header=Sign in
+login.flash.success=Success!
+login.email.placeholder=Email
+login.password.placeholder=Password
+login.button=Login
+
+menu.home=Home
+menu.reports=Reports
+menu.admin=Admin
+menu.account=Your Account
+menu.contact=Contact Us
+menu.logout=Logout
+
+asset.management.title=Asset Management
+equipment.status.prompt=Get current status of your operating equipment...
+equipment.status.button=Equipment Status
+workouts.activity.title=Workout Activity
+workouts.equipment.button=Workouts by Equipment
+
+workouts.location.button=Workouts by Club
+workouts.location.header=Workouts by Club
+workouts.location.flash.success=Done!
+workouts.location.field.company=Company
+workouts.location.field.company.options=Select a company
+workouts.location.field.from=From
+workouts.location.field.from.help=Leave blank for all time.
+workouts.location.field.club=Club
+workouts.location.field.screens=Screens
+workouts.location.field.newreg=New Reg
+workouts.location.field.totreg=Tot Reg
+workouts.location.field.workouts=Workouts
+workouts.location.field.regwos=Reg WOs
+workouts.location.field.regwosperc=% Reg WOs
+workouts.location.field.wosperscreen=WOs / Screen
+workouts.location.field.wosperscreenday=WOs / Screen / Day
+workouts.location.field.avgdur=Avg Duration Mins
+workouts.location.field.totwohrs=Total WO Hours
+workouts.location.field.totals=Totals:
+workouts.location.msg.nothing=Nothing to display
+
+
+test.login.button=Test Login
+lifescape.header=Lifescape Manager
+lifescape.tagline=Brought to you by Life Fitness. Powered by the intelligence of the Netpulse media network.
+
+logout=Logout

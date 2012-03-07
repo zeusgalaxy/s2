@@ -1,10 +1,10 @@
 @(form: Form[(String,String)])(implicit flash: Flash)
 
-@main( new User, "Login", 'login) {
+@main( new User, Messages("page.title.login"), 'login) {
 
 @helper.form(routes.Auth.authenticate () ) {
 
-    <h1>Sign in</h1>
+    <h1>@Messages("login.header")</h1>
 
     @form.globalError.map { error =>
         <p class="alert-message warning">
@@ -14,19 +14,19 @@
 
     @flash.get("success").map { message =>
         <div class="alert-message warning">
-        <strong>Success!</strong> @message
+        <strong>@Messages("login.flash.success")</strong> @message
         </div>
     }
 
     <div id="actions" class="twipsies well">
         <p>
-            <input type="email" name="email" placeholder="Email" id="email" value="@form("email").value">
+            <input type="email" name="email" placeholder=@Messages("login.email.placeholder") id="email" value="@form("email").value">
         </p>
         <p>
-            <input type="password" name="password" id="password" placeholder="Password">
+            <input type="password" name="password" id="password" placeholder=@Messages("login.password.placeholder")>
         </p>
         <p>
-            <input type="submit" value="Login" class="btn primary">
+            <input type="submit" value=@Messages("login.button") class="btn primary">
         </p>
     </div>
 

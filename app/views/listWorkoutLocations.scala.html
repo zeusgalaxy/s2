@@ -23,14 +23,14 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
 
 
-@main(currentPage.user, "Workouts by Club", 'listUsers) {
+@main(currentPage.user, Messages("page.title.workouts.club"), 'listUsers) {
 
 @* TODO: figure out how to put company name here... *@
-<h2>@Messages("Workouts by Club", currentPage.total)</h2>
+<h2>@Messages("workouts.location.header"), currentPage.total)</h2>
 
 @flash.get("success").map { message =>
 <div class="alert-message warning">
-    <strong>Done!</strong> @message
+    <strong>@Messages("workouts.location.flash.success")</strong> @message
 </div>
 }
 
@@ -45,11 +45,11 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         @* The company ID was put onto the flash object in the controller *@
         @* compId=@currentPage.cmpId: *@
         @if(currentPage.user.compId == 1) {
-            <label>Company</label>
+            <label>@Messages("workouts.location.field.company")</label>
             <div class="input">
                 <div class="inline-inputs">
                 <select name="f" value="@currentFilter" >
-                    <option value="">Select a company</option>
+                    <option value="">@Messages("workouts.location.field.company.options")</option>
                     @Company.reportCompanyOptions.map { opt =>
                         <option value="@opt._1" @if(opt._1.toString == currentFilter){selected="yes"}>@opt._2</option>
                     }
@@ -59,13 +59,13 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
           }
 
     </p>
-        <label>From</label>
+        <label>@Messages("workouts.location.field.from")</label>
             <div class="input">
                 <div class="inline-inputs">
                     <input data-datepicker="sd" name="sd" class="small" type="text" value="@startDate" />
                     to
                     <input data-datepicker="ed" name="ed" class="small" type="text" value="@endDate" />
-                    <span class="help-block">Leave blank for all time.</span>
+                    <span class="help-block">@Messages("workouts.location.field.company.help")</span>
                 </div>
             </div>
 
@@ -79,11 +79,11 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
     <ul>
         @currentPage.prev.map { page =>
         <li class="prev">
-            <a href="@link(page)">&larr; Previous</a>
+            <a href="@link(page)">&larr; @Messages("pagination.previous")</a>
         </li>
         }.getOrElse {
         <li class="prev disabled">
-            <a>&larr; Previous</a>
+            <a>&larr; @Messages("pagination.previous")</a>
         </li>
         }
         <li class="current">
@@ -91,11 +91,11 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         </li>
         @currentPage.next.map { page =>
         <li class="next">
-            <a href="@link(page)">Next &rarr;</a>
+            <a href="@link(page)">@Messages("pagination.next") &rarr;</a>
         </li>
         }.getOrElse {
         <li class="next disabled">
-            <a>Next &rarr;</a>
+            <a>@Messages("pagination.next") &rarr;</a>
         </li>
         }
     </ul>
@@ -105,17 +105,17 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
     <table class="users zebra-striped table-bordered table-condensed">
         <thead>
         <tr>
-            @header(1,  "Club")
-            @header(2,  "Screens")
-            @header(3,  "New Reg")
-            @header(4,  "Tot Reg")
-            @header(5,  "Workouts")
-            @header(6,  "Reg WOs")
-            @header(7,  "% Reg WOs")
-            @header(8,  "WOs / Screen")
-            @header(9, "WOs / Screen / Day")
-            @header(10, "Avg Duration Mins")
-            @header(11, "Total WO Hours")
+            @header(1,  Messages("workouts.location.field.club"))
+            @header(2,  Messages("workouts.location.field.screens"))
+            @header(3,  Messages("workouts.location.field.newreg"))
+            @header(4,  Messages("workouts.location.field.totreg"))
+            @header(5,  Messages("workouts.location.field.workouts"))
+            @header(6,  Messages("workouts.location.field.regwos"))
+            @header(7,  Messages("workouts.location.field.regwosperc"))
+            @header(8,  Messages("workouts.location.field.wosperscreen"))
+            @header(9,  Messages("workouts.location.field.wosperscreenday"))
+            @header(10, Messages("workouts.location.field.avgdur"))
+            @header(11, Messages("workouts.location.field.totwohrs"))
         </tr>
         </thead>
         <tbody>
@@ -125,7 +125,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
             @tmp.map {
               case woLtot =>  {
                 <tr><strong>
-                <th>Totals:</th>
+                <th>Messages("workouts.location.field.totals")</th>
                 <th>@woLtot.screens</th>
                 <th>@woLtot.newReg</th>
                 <th>@woLtot.totReg</th>
@@ -168,11 +168,11 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         <ul>
             @currentPage.prev.map { page =>
             <li class="prev">
-                <a href="@link(page)">&larr; Previous</a>
+                <a href="@link(page)">&larr; @Messages("pagination.previous")</a>
             </li>
             }.getOrElse {
             <li class="prev disabled">
-                <a>&larr; Previous</a>
+                <a>&larr; @Messages("pagination.previous")</a>
             </li>
             }
             <li class="current">
@@ -180,11 +180,11 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
             </li>
             @currentPage.next.map { page =>
             <li class="next">
-                <a href="@link(page)">Next &rarr;</a>
+                <a href="@link(page)">@Messages("pagination.next") &rarr;</a>
             </li>
             }.getOrElse {
             <li class="next disabled">
-                <a>Next &rarr;</a>
+                <a>@Messages("pagination.next") &rarr;</a>
             </li>
             }
         </ul>
@@ -194,7 +194,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 }.getOrElse {
 
 <div class="well">
-    <em>Nothing to display</em>
+    <em>@Messages("workouts.location.msg.nothing")</em>
 </div>
 
 
