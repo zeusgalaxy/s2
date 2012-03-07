@@ -50,7 +50,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
                 <div class="inline-inputs">
                 <select name="f" value="@currentFilter" >
                     <option value="">Select a company</option>
-                    @Company.options.map { opt =>
+                    @Company.reportCompanyOptions.map { opt =>
                         <option value="@opt._1" @if(opt._1.toString == currentFilter){selected="yes"}>@opt._2</option>
                     }
                 </select>

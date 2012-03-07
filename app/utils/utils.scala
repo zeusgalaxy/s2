@@ -20,7 +20,7 @@ import Scalaz._
  */
 package object utils {
 
-  /** Replaces the subdomain portion of a request received by S2 so it may be forwarded
+  /**Replaces the subdomain portion of a request received by S2 so it may be forwarded
    * on for further processing by Dino. The replacement logic is:
    *
    * localhost:9000 --> localhost:8080
@@ -36,11 +36,10 @@ package object utils {
    * @param s The string containing the host value as it arrived here in S2.
    * @return The host string with the above substitutions applied.
    */
-  def switchHosts(s: String): String = s.replaceFirst("localhost:9000", "localhost:8080").
-    replaceFirst("ec2", "s1").replaceFirst("s2", "s1")
+  def switchHosts(s: String) = s.replaceFirst("localhost:9000", "localhost:8080").
+        replaceFirst("ec2", "s1").replaceFirst("s2", "s1")
 
-
-  /** Repackages an incoming request into an outgoing request so it can be sent to Dino
+  /**Repackages an incoming request into an outgoing request so it can be sent to Dino
    * for processing. By the time we are processing the request here, it has already
    * been decomposed out of its raw state, and we thus must rebuild that raw state before it can
    * be executed again. As part of the repackaging, the target host will be modified so that
@@ -61,10 +60,11 @@ package object utils {
       case c@AnyContentAsRaw(raw) => raw.asBytes()
       case _ => None
     }
-    (WSRequestHolder("http://" + switchHosts(r.host) + r.uri, Map("ACCEPT-CHARSET" -> Seq("utf-8")), Map(), None, None), newBody)
+    val pth = r.host.isEmpty ? switchHosts(r.uri) | "http://" + switchHosts(r.host) + r.uri // Weirdness with specs2 FakeRequest
+    (WSRequestHolder(pth, Map("ACCEPT-CHARSET" -> Seq("utf-8")), Map(), None, None), newBody)
   }
 
-  /** Executes a Promise of a Response with a specified wait value, since the default timeout of
+  /**Executes a Promise of a Response with a specified wait value, since the default timeout of
    * five seconds may not be adequate in all situations.
    *
    * @param p The Promise of the Reponse.
@@ -76,19 +76,19 @@ package object utils {
     p.value.get
   }
 
-  /** Expresses the current time in the UTC timezone in milliseconds.
+  /**Expresses the current time in the UTC timezone in milliseconds.
    *
    * @return Now in the UTC timezone in milliseconds.
    */
   def utcNowInMillis = DateTime.now(DateTimeZone.UTC).getMillis
 
-  /** Expresses the current time in the local timezone in milliseconds.
+  /**Expresses the current time in the local timezone in milliseconds.
    *
    * @return Now in the local timezone in milliseconds.
    */
   def utcNowInSecs = utcNowInMillis / 1000
 
-  /** Calculates a pseudo-nonce. The probability of a collision (i.e., the nonce has already been used)
+  /**Calculates a pseudo-nonce. The probability of a collision (i.e., the nonce has already been used)
    * is a maximum of 1 in 36^6, and that's assuming multiple requests made per millisecond. At
    * lower request rates, likelihood of uniqueness is even higher.
    *
@@ -102,7 +102,7 @@ package object utils {
   lazy val b64Enc = new sun.misc.BASE64Encoder()
 
 
-  /** Strips an xml string of its header (such as: <?xml version="1.0" encoding="UTF-8" standalone="yes"?>)
+  /**Strips an xml string of its header (such as: <?xml version="1.0" encoding="UTF-8" standalone="yes"?>)
    *
    * @param xml The xml string to be stripped.
    * @return The input xml minus any header like <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -114,7 +114,7 @@ package object utils {
     body
   }
 
-  /** Strips an xml string of any occurrences of a specified tag.
+  /**Strips an xml string of any occurrences of a specified tag.
    *
    * @param xml The xml string to be stripped.
    * @param tag The tag name to be stripped out of the xml string.
@@ -128,7 +128,7 @@ package object utils {
     p1 + p2 + p3
   }
 
-  /** Produces a textual representation of an xml structure, in utf-8 encoding, and including
+  /**Produces a textual representation of an xml structure, in utf-8 encoding, and including
    * the xml prologue.
    *
    * @param root The root node of an xml structure.
@@ -141,7 +141,7 @@ package object utils {
     writer.toString
   }
 
-  /** Executes a given block of code and then applies a predicate expression to that block's result value.
+  /**Executes a given block of code and then applies a predicate expression to that block's result value.
    * If the predicate fails, the result will be a ValidationNEL, with the error message either a default
    * that indicates the condition failed, or a message passed in as part of the construct. The predicate
    * is only applied if the block was a success, of course.
@@ -151,7 +151,9 @@ package object utils {
    * @param msg The text to use as the validation failure, if the predicate yields false.
    * @return A ValidationNEL that will be success if both the block and the predicate were successful.
    */
-  def tst[T](body: => T)(postCond: (T => Boolean) = { _ : T => true }, msg: String = "Failed post condition"): ValidationNEL[String, T] = {
+  def tst[T](body: => T)(postCond: (T => Boolean) = {
+    _: T => true
+  }, msg: String = "Failed post condition"): ValidationNEL[String, T] = {
 
     try {
       val res = body
@@ -161,7 +163,7 @@ package object utils {
     }
   }
 
-  /** Executes a give block of code and returns the result as a ValidationNEL success if no problems, otherwise
+  /**Executes a give block of code and returns the result as a ValidationNEL success if no problems, otherwise
    * as a failure. The value of using this "wrapper" function is that it automatically catches any exceptions
    * that may be thrown, and transforms them into Validation failures.
    *
@@ -170,7 +172,9 @@ package object utils {
    */
   def vld[T](body: => T): ValidationNEL[String, T] = {
 
-    tst(body)({_: T => true})
+    tst(body)({
+      _: T => true
+    })
   }
 
   /**
@@ -179,7 +183,7 @@ package object utils {
    */
   class NPOption[T](val o: Option[T]) {
 
-    /** Promotes the result of a get operation to a ValidationNEL, so that even unsafe Option "gets" can be
+    /**Promotes the result of a get operation to a ValidationNEL, so that even unsafe Option "gets" can be
      * performed. If the Option is a None, the result will be a ValidationNEL failure instead of a success.
      * This is convenient for accessing Options within a for comprehension who's container is a ValidationNEL.
      *
@@ -202,7 +206,7 @@ package object utils {
   }
 
 
-  /** String wrapper to allow code location to be passed implicitly to [[utils.NPValidationNEL]].
+  /**String wrapper to allow code location to be passed implicitly to [[utils.NPValidationNEL]].
    *
    * @param loc Description of code location, to appear along with error text when a Validation is logged.
    */
@@ -226,17 +230,17 @@ package object utils {
    */
   class NPValidationNEL[T](val v: Validation[NonEmptyList[String], T]) {
 
-    /** Yields a properly formatted string for purpose of writing a log entry; includes
+    /**Yields a properly formatted string for purpose of writing a log entry; includes
      * all failure strings that have been accumulated. The log entry format is (tab separated)
      * log level, source code location, failure messages (comma separated).
-     * 
+     *
      * @param src The source code location associated with this validation block.
      * @return A property formatted failure string, suitable for logging.
      */
     def logTxt(src: String) =
       "\t" + src + "\t" + v.fold(e => e.list.mkString(", "), s => "") + "\t"
 
-    /** Retrieves the success value, or throws an error if a failure. This is intended to be used within
+    /**Retrieves the success value, or throws an error if a failure. This is intended to be used within
      * a "vld" or "tst" construct, so the error can be caught converted into a ValidationNEL. This is a form
      * of shortcircuiting, and is not recommended. Using for comprehensions or mapping/folding techniques is preferred.
      *
@@ -244,7 +248,7 @@ package object utils {
      */
     def getOrThrow = v.fold(e => throw new Exception("Error(s): " + e.list.mkString(", ")), s => s)
 
-    /** Appends additional text into the NonEmptyList of failure messages, if the validation is a
+    /**Appends additional text into the NonEmptyList of failure messages, if the validation is a
      * failure. If it's a success, the operation has no effect.
      *
      * @param k A descriptive "key" that can be inserted along with the actual message text.
@@ -256,7 +260,7 @@ package object utils {
       if (v.isFailure) (v <* ("Additional info: " + k + ": " + msg).failNel[T]) else v
     }
 
-    /** Log any failure messages to the logger, using the trace logging level, if this validation
+    /**Log any failure messages to the logger, using the trace logging level, if this validation
      * is a failure. If a success, do nothing.
      *
      * @param src A textual description of where the operation is coming from in the source code.
@@ -268,7 +272,7 @@ package object utils {
     }
 
 
-    /** Log any failure messages to the logger, using the debug logging level, if this validation
+    /**Log any failure messages to the logger, using the debug logging level, if this validation
      * is a failure. If a success, do nothing.
      *
      * @param src A textual description of where the operation is coming from in the source code.
@@ -280,7 +284,7 @@ package object utils {
     }
 
 
-    /** Log any failure messages to the logger, using the ifno logging level, if this validation
+    /**Log any failure messages to the logger, using the ifno logging level, if this validation
      * is a failure. If a success, do nothing.
      *
      * @param src A textual description of where the operation is coming from in the source code.
@@ -292,7 +296,7 @@ package object utils {
     }
 
 
-    /** Log any failure messages to the logger, using the warn logging level, if this validation
+    /**Log any failure messages to the logger, using the warn logging level, if this validation
      * is a failure. If a success, do nothing.
      *
      * @param src A textual description of where the operation is coming from in the source code.
@@ -304,7 +308,7 @@ package object utils {
     }
 
 
-    /** Log any failure messages to the logger, using the error logging level, if this validation
+    /**Log any failure messages to the logger, using the error logging level, if this validation
      * is a failure. If a success, do nothing.
      *
      * @param src A textual description of where the operation is coming from in the source code.
@@ -316,14 +320,14 @@ package object utils {
     }
   }
 
-  /** Implicit conversion from [[scalaz.Validation]] to [[utils.NPValidationNEL]].
-   * 
+  /**Implicit conversion from [[scalaz.Validation]] to [[utils.NPValidationNEL]].
+   *
    */
   implicit def vToNPValidationNEL[T](v: Validation[String, T]): NPValidationNEL[T] = {
     new NPValidationNEL(v.liftFailNel)
   }
 
-  /** Implicit conversion from [[utils.NPValidationNEL]] to [[scalaz.Validation]]
+  /**Implicit conversion from [[utils.NPValidationNEL]] to [[scalaz.Validation]]
    *
    */
   implicit def nelToValidationNEL[T](np: ValidationNEL[String, T]): NPValidationNEL[T] = {
