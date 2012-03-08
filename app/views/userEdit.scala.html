@@ -31,13 +31,13 @@ Sign Up <small><a href="">Or edit an existing user</a></small>
 
             <div id="actions" class="twipsies well">
 
-                <p>First Name <input type="text" name="firstName" id="firstName" placeholder="Your first name" value="@userForm("firstName").value"></p>
+                <p>@*First Name *@<input type="text" name="firstName" id="firstName" placeholder="First name" value="@userForm("firstName").value"></p>
 
-                <p>Last Name <input type="text" name="lastName" id="lastName" placeholder="Your last name" value="@userForm("lastName").value"></p>
+                <p>@*Last Name *@<input type="text" name="lastName" id="lastName" placeholder="Last name" value="@userForm("lastName").value"></p>
 
-                <p>Email Address <input type="email" name="email" placeholder="Email" id="email" value="@userForm("email").value"></p>
+                <p>@*Email Address *@<input type="email" name="email" placeholder="Email" id="email" value="@userForm("email").value"></p>
 
-                <p>New Password <input type="password" name="password" id="password" placeholder="Optional new password"></p>
+                <p>@*New Password *@<input type="password" name="password" id="password" placeholder="Optional new password"></p>
                 <p class="note">
                     A new password is optional. Leave this blank to keep your current password.
                 </p>

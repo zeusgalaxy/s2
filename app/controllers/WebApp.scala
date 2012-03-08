@@ -67,9 +67,12 @@ object WebApp extends Controller with Secured {
   def userSubmit = IsAuthenticated("/userEdit", implicit request =>
     userForm.bindFromRequest.fold(
       errors => BadRequest(html.userEdit(errors)),
-      user =>  Redirect(routes.WebApp.index).flashing(
-        "success" -> ("User information updated: "+user.toString)
-      )
+      user =>  {
+        // TODO: Update the DB and session here.
+        Redirect(routes.WebApp.index).flashing(
+          "success" -> ("User information updated: "+user.toString)
+        )
+      }
         // Ok(html.userEdit(user, userForm))
     )
   )
