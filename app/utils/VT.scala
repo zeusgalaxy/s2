@@ -270,6 +270,21 @@ object VT {
       s => s
     }
   }
+  
+  def insertIntoXml(x: Elem, parent: String, presets: NodeSeq, workouts: NodeSeq = NodeSeq.Empty) = {
+
+    XmlMutator(x).add(parent,
+      <virtualTrainer>
+        <vtPredefinedPresets>
+          {presets}
+        </vtPredefinedPresets>
+        <vtWorkouts>
+          {workouts}
+        </vtWorkouts>
+      </virtualTrainer>
+    )
+
+  }
 
   lazy val vtPathPrefix = current.configuration.getString("vt.path.prefix").getOrElse(throw new Exception("vt.path.prefix not in configuration"))
   lazy val vtPathValidate = current.configuration.getString("vt.path.validate").getOrElse(throw new Exception("vt.path.validate not in configuration"))
