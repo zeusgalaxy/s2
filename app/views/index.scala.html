@@ -1,10 +1,10 @@
 @(message: String)(implicit flash: play.api.mvc.Flash, session: play.api.mvc.Session)
 
-@main("Welcome to our main page", 'home) {
+@main(Messages("page.title.index"), 'home) {
 
 @flash.get("success").map { message =>
 <div class="alert-message warning">
-    <strong>Done!</strong> @message
+    <strong>Messages("flash.done")</strong> @message
 </div>
 }
 
@@ -12,12 +12,11 @@
 
     <!-- Main hero unit for a primary marketing message or call to action -->
     <div class="hero-unit">
-        <h1>Lifescape Manager</h1>
-        <p>Brought to you by Life Fitness. Powered by the intelligence of the Netpulse media network.</p>
-        <p>
-            @if(!session.get("email").isEmpty) {
-                <a class="btn primary large" href="@routes.Auth.logout()">Logout &raquo;</a></p>
-            }
+        <h1>@Messages("lifescape.header")</h1>
+        <p>@Messages("lifescape.tagline")</p>
+        <p> @if(!session.get("email").isEmpty) {
+            <a class="btn primary large" href="@routes.Auth.logout()">@Messages("logout") &raquo;</a></p>
+        }
     </div>
 
 
@@ -26,20 +25,20 @@
     <div class="row">
         <div class="span8"  class="twipsies well">
             <div>
-                <h2>Asset Management</h2>
-                <p>Get current status of your operating equipment...</p>
-                <p><a class="btn" href="">Equipment Status &raquo;</a></p>
+                <h2>@Messages("asset.management.title")</h2>
+                <p>@Messages("equipment.status.prompt")</p>
+                <p><a class="btn" href="">@Messages("equipment.status.button") &raquo;</a></p>
             </div>
         </div>
         <div class="span8"  class="twipsies well">
             <div>
-                <h2>Workout Activity</h2>
+                <h2>@Messages("workouts.activity.title")</h2>
                 <p> </p>
-                <p><a class="btn" href="">Workouts by Equipment &raquo;</a></p>
+                <p><a class="btn" href="">@Messages("workouts.equipment.button") &raquo;</a></p>
                 <p> </p>
-                <p><a class="btn primary" href="@routes.Report.showWorkoutLocations()">Workouts by Club &raquo;</a></p>
+                <p><a class="btn primary" href="@routes.Report.showWorkoutLocations()">@Messages("workouts.location.button") &raquo;</a></p>
                 <p> </p>
-                <p><a class="btn" href="@routes.WebApp.testLogin()">Test Login &raquo;</a></p>
+                <p><a class="btn" href="@routes.WebApp.testLogin()">@Messages("test.login.button") &raquo;</a></p>
             </div>
         </div>
     </div>

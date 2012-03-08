@@ -21,7 +21,7 @@ object ApiSpec extends Specification {
 
       status(result) must equalTo(OK)
       contentAsString(result) must contain("adunit")
-      contentAsString(result) must contain("vtAccount")
+      contentAsString(result) must contain("virtualTrainer")
       contentAsString(result) must contain("workoutSegments")
     }
   }
@@ -35,7 +35,7 @@ object ApiSpec extends Specification {
 
       status(result) must equalTo(OK)
       contentAsString(result) must contain("adunit")
-      contentAsString(result) must contain("vtAccount")
+      contentAsString(result) must contain("virtualTrainer")
       contentAsString(result) must contain("workoutSegments")
     }
   }

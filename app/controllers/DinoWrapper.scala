@@ -15,7 +15,7 @@ import play.api.Logger
  * Controller for server API functions which "wrap" around old Dino functions.
  */
 object DinoWrapper extends Controller {
-
+  
   lazy val dinoTimeout = current.configuration.getString("dino.timeout").getOrElse(throw new Exception("dino.timeout not in configuration")).toInt
 
   /** Forwards a request received by S2 on to Dino for processing. This method is used instead
@@ -121,7 +121,8 @@ object DinoWrapper extends Controller {
       implicit val loc = VL("DinoWrapper.register")
 
       val rp = RegParams(request)
-      val oldXml = forward(request).flatMap { r => vld(r.xml) }.error | <s2Reg>Unable to register</s2Reg>
+      val oldXml = forward(request).flatMap { r => vld(r.xml) }.error |
+        <response code="2" desc="Unable to register. An error occurred when forwarding registration to Dino."></response>
 
       // either error code or object encapsulating vt user
       val rVal: Either[Int, VtUser] = (for {
@@ -134,7 +135,7 @@ object DinoWrapper extends Controller {
       val finalResult = rVal match {
 
         case Left(err) =>
-          vld(XmlMutator(oldXml).add("response", <vtAccount status={err.toString}></vtAccount>))
+          vld(XmlMutator(oldXml).add("response", <virtualTrainer status={err.toString}></virtualTrainer>))
         case Right(vtUser) =>
           for {
             vtAuth <- VT.login(vtUser.vtNickname, vtUser.vtNickname)
@@ -146,27 +147,7 @@ object DinoWrapper extends Controller {
 
             vtPredefinedPresets <- VT.predefinedPresets(vtToken, vtTokenSecret, model)
 
-          } yield {
-            XmlMutator(oldXml).add("response",
-              <vtAccount status="0">
-                <vtUid>
-                  {vtUid}
-                </vtUid>
-                <vtNickName>
-                  {vtUser.vtNickname}
-                </vtNickName>
-                <vtToken>
-                  {vtToken}
-                </vtToken>
-                <vtTokenSecret>
-                  {vtTokenSecret}
-                </vtTokenSecret>
-                <vtPredefinedPresets>
-                  {vtPredefinedPresets}
-                </vtPredefinedPresets>
-              </vtAccount>
-            )
-          }
+          } yield VT.insertIntoXml(oldXml, "response", vtPredefinedPresets)
       }
       finalResult.error.fold(e => Ok(e.list.mkString(", ")), s => Ok(s))
   }
@@ -205,29 +186,12 @@ object DinoWrapper extends Controller {
               vtPredefinedPresets <- VT.predefinedPresets(ex.vtToken, ex.vtTokenSecret, model)
               vtWorkouts <- VT.workouts(ex.vtToken, ex.vtTokenSecret, model)
 
-            } yield
-
-              XmlMutator(oldXml).add("response",
-                <vtAccount>
-                  <vtToken>
-                    {ex.vtToken}
-                  </vtToken>
-                  <vtTokenSecret>
-                    {ex.vtTokenSecret}
-                  </vtTokenSecret>
-                  <vtPredefinedPresets>
-                    {vtPredefinedPresets}
-                  </vtPredefinedPresets>
-                  <vtWorkouts>
-                    {vtWorkouts}
-                  </vtWorkouts>
-                </vtAccount>
-              )
+            } yield VT.insertIntoXml(oldXml, "response", vtPredefinedPresets, vtWorkouts)
           }.error.toOption.getOrElse(XmlMutator(oldXml).add("response", <vtAccount></vtAccount>))
 
           case _ => oldXml
         }
-      }).error.fold(e => Ok(<response desc="Login failed" code="1">
+      }).error.fold(e => Ok(<response desc="Login failed." code="5">
         {e.list.mkString(", ")}
       </response>), s => Ok(s))
   }

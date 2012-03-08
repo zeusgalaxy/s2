@@ -2,6 +2,8 @@
  * Package object with misc. utility functions, et. al.
  */
 
+import models._
+
 import java.io.StringWriter
 import org.apache.commons.lang.RandomStringUtils
 import org.joda.time.{DateTimeZone, DateTime}
@@ -37,7 +39,7 @@ package object utils {
    * @return The host string with the above substitutions applied.
    */
   def switchHosts(s: String) = s.replaceFirst("localhost:9000", "localhost:8080").
-        replaceFirst("ec2", "s1").replaceFirst("s2", "s1")
+    replaceFirst("ec2", "s1").replaceFirst("s2", "s1")
 
   /**Repackages an incoming request into an outgoing request so it can be sent to Dino
    * for processing. By the time we are processing the request here, it has already

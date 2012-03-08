@@ -6,14 +6,14 @@
             <a class="brand" href="@routes.WebApp.index()">S2</a>
             <ul class="nav">
              @* Don't show any menu items for now...
-                <li class="@{if(active == 'home) "active" else "inactive"}"><a href="@routes.WebApp.index()">Home</a></li>
-                <li class="@{if(active == 'showWorkoutLocations) "active" else "inactive"}"><a href="@routes.Report.showWorkoutLocations()">Reports</a></li>
+                <li class="@{if(active == 'home) "active" else "inactive"}"><a href="@routes.WebApp.index()">@Messages("menu.home")</a></li>
+                <li class="@{if(active == 'showWorkoutLocations) "active" else "inactive"}"><a href="@routes.Report.showWorkoutLocations()">@Messages("menu.reports")</a></li>
              *@
-                <li class="@{if(active == 'admin) "active" else "inactive"}"><a href="">Admin</a></li>
-                <li class="@{if(active == 'account) "active" else "inactive"}"><a href="@routes.WebApp.userEdit">Your Account</a></li>
-                <li class="@{if(active == 'contact) "active" else "inactive"}"><a href="">Contact Us</a></li>
+                <li class="@{if(active == 'admin) "active" else "inactive"}"><a href="">@Messages("menu.admin")</a></li>
+                <li class="@{if(active == 'account) "active" else "inactive"}"><a href="@routes.WebApp.userEdit">@Messages("menu.account")</a></li>
+                <li class="@{if(active == 'contact) "active" else "inactive"}"><a href="">@Messages("menu.contact")</a></li>
                 @if(!session.get("email").isEmpty) {
-                    <li class="@{if(active == 'logout) "active" else "inactive"}"><a href="@routes.Auth.logout()">Logout</a></li>
+                    <li class="@{if(active == 'logout) "active" else "inactive"}"><a href="@routes.Auth.logout()">@Messages("menu.logout")</a></li>
                 }
             </ul>
         </div>
