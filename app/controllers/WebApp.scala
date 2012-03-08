@@ -33,14 +33,14 @@ object WebApp extends Controller with Secured {
     mapping(
       "firstName" -> text,
       "lastName"  -> text,
-      "email"     -> nonEmptyText,
-      "newPass"   -> text(6)
+      "email"     -> text,
+      "newPass"   -> optional(text)
 //      "newPassConf" -> text
     ){ // apply
       (firstName, lastName, email, newPass) => User(0,firstName,lastName,"",email)
     }
      { // UnApply
-       user => Some(user.firstName, user.lastName, user.email, "" )
+       user => Option(user.firstName, user.lastName, user.email, Option("") )
      }
   )
 
