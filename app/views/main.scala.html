@@ -1,4 +1,4 @@
-@(user: User, title: String, activePage: Symbol)(content: Html)
+@(title: String, activePage: Symbol)(content: Html)(implicit session: play.api.mvc.Session)
 
 <!DOCTYPE html>
 
@@ -36,7 +36,7 @@
 
     </head>
     <body>
-        @menuBar(user, activePage)
+        @menuBar(activePage)
         <div class="container">
             @content
         </div>
@@ -45,7 +45,7 @@
     <div class="container"
     <footer>
         <p>&copy; Netpulse 2012. All rights reserved</p>
-        <p>@user.toString</p>
+        <p>Session: @session.toString</p>
     </footer>
     </div>
 

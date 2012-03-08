@@ -13,12 +13,12 @@ import models._
 
 object WebApp extends Controller with Secured {
 
-  def index = IsAuthenticated("/index", user => implicit request =>
-      Ok(html.index(user, "This is the main page parameter"))
+  def index = IsAuthenticated("/index",  implicit request =>
+      Ok(html.index("This is the main page parameter"))
   )
 
-  def testLogin = IsAuthenticated("/testLogin", user => implicit request =>
-    Ok(html.testLogin(user, "test string"))
+  def testLogin = IsAuthenticated("/testLogin", implicit request =>
+    Ok(html.testLogin("test string"))
   )
 
 
@@ -40,18 +40,20 @@ object WebApp extends Controller with Secured {
       (firstName, lastName, email, newPass) => User(0,firstName,lastName,"",email)
     }
      { // UnApply
-       user => Some(user.firstName, user.lastName, user.email, user.password )
+       user => Some(user.firstName, user.lastName, user.email, "" )
      }
   )
 
-  def userEdit = IsAuthenticated("/userEdit", user => implicit request =>
+  def userEdit = IsAuthenticated("/userEdit", implicit request =>
     {
-      val fullUser = User.findById(user.id)
-      fullUser match {
-        case Some(u) => Ok(html.userEdit(user, userForm.fill(user)))
+      session.get("id") match {
+        case Some(id) =>
+          User.findById(id.toLong)match {
+            case Some(u) => Ok(html.userEdit(userForm.fill(u)))
+            case _ =>  Redirect(routes.WebApp.index).flashing("failure" -> ("An error occured."))
+          }
         case _ =>  Redirect(routes.WebApp.index).flashing("failure" -> ("An error occured."))
       }
-
     }
   )
 
@@ -62,9 +64,9 @@ object WebApp extends Controller with Secured {
   /**
    * Handle form submission.
    */
-  def userSubmit = IsAuthenticated("/userEdit", user => implicit request =>
+  def userSubmit = IsAuthenticated("/userEdit", implicit request =>
     userForm.bindFromRequest.fold(
-      errors => BadRequest(html.userEdit(user, errors)),
+      errors => BadRequest(html.userEdit(errors)),
       user =>  Redirect(routes.WebApp.index).flashing(
         "success" -> ("User information updated: "+user.toString)
       )

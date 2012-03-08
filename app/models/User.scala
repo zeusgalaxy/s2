@@ -10,13 +10,13 @@ import play.Logger
 import play.api.mvc.Cookie
 
 // <adminUser id="89" compId="1" oemId="null" adId="null" email="dfaust@netpulse.com"></adminUser>
-case class User(id: Long = 0, firstName: String="", lastName: String="", password: String="", email: String="",
-                compId: Long=0,  oemId: Option[Long]=None, adId: Option[Long]=None  )
+case class User(id: Long = 0, firstName: String = "", lastName: String = "", password: String = "", email: String = "",
+                compId: Long = 0, oemId: Option[Long] = None, adId: Option[Long] = None)
 
 /**
  * Helper for pagination.
  */
-case class Page[A](user: User, items: Seq[A], totals: Seq[A], page: Int, offset: Long, total: Long ) {
+case class Page[A](items: Seq[A], totals: Seq[A], page: Int, offset: Long, total: Long) {
   lazy val prev = Some(page - 1).filter(_ >= 0)
   lazy val next = Some(page + 1).filter(_ => (offset + items.size) < total)
 }
@@ -43,7 +43,7 @@ object User {
             """
           ).on(
             'email -> email,
-            'password ->  Blowfish.encrypt (password)
+            'password -> Blowfish.encrypt(password)
           ).as(User.simple.singleOpt)
       }
     }
@@ -67,7 +67,7 @@ object User {
    * Parse a User from a ResultSet
    */
   val simple = {
-      get[Long]("admin_user.id") ~
+    get[Long]("admin_user.id") ~
       get[String]("admin_user.first_name") ~
       get[String]("admin_user.last_name") ~
       get[String]("admin_user.password") ~
@@ -75,9 +75,9 @@ object User {
       get[Long]("admin_user.company_id") ~
       get[Option[Long]]("admin_user.oem_id") ~
       get[Option[Long]]("admin_user.advertiser_id") map {
-          case id ~ firstName ~ lastName ~ password ~ email ~ compId ~ oemId ~ adId =>
-            User(id, firstName, lastName, password, email, compId, oemId, adId )
-        }
+      case id ~ firstName ~ lastName ~ password ~ email ~ compId ~ oemId ~ adId =>
+        User(id, firstName, lastName, password, email, compId, oemId, adId)
+    }
   }
 
   // -- Queries
@@ -88,7 +88,7 @@ object User {
   def findById(id: Long): Option[User] = {
 
     implicit val loc = VL("User.findById")
-    
+
     vld {
       DB.withConnection {
         implicit connection =>
@@ -96,7 +96,7 @@ object User {
       }
     }.error.fold(e => None, s => s)
   }
-  
+
   /**
    * Retrieve a user by their email address 
    */
@@ -111,6 +111,7 @@ object User {
       }
     }.error.fold(e => None, s => s)
   }
+
   /**
    * Return a page of users.
    *
@@ -149,7 +150,7 @@ object User {
           'filter -> filter
         ).as(scalar[Long].single)
 
-        Page(user, computers, Seq(), page, offest, totalRows)
+        Page(computers, Seq(), page, offest, totalRows)
 
     }
 
@@ -164,43 +165,45 @@ object User {
     findByEmail(email) match {
       case Some(user) =>
         val xmlStr = new DesEncrypter(DesEncrypter.SESSION_SECRET_KEY).encrypt(
-          "<adminUser id=\""+user.id.toString + "\" compId=\""+user.compId+ "\" oemId=\""+user.oemId+
-            "\" adId=\""+user.adId+ "\" email=\""+user.email+ "\"></adminUser>" )
+          "<adminUser id=\"" + user.id.toString + "\" compId=\"" + user.compId + "\" oemId=\"" + user.oemId +
+            "\" adId=\"" + user.adId + "\" email=\"" + user.email + "\"></adminUser>")
         xmlStr
       case _ => ""
     }
   }
+
   /**
    * Parse the encrypted admin user cookie previously added onto the session
+   *
+   *     npCookieString =>
+   *   User.parseNpadminCookie(Cookie("npadmin",npCookieString,0,"",None,true,false)) match {
    */
-  def parseNpadminCookie (cookie: Option[Cookie]): Option[User] = {
+  def parseNpadminCookie(c: Cookie): Option[User] = {
 
     implicit val loc = VL("User.parseNpadmin")
 
-    cookie match {
-      case Some(c) => {
-        val xmlStr = new DesEncrypter(DesEncrypter.SESSION_SECRET_KEY).decrypt(c.value.replace("\\r", "\r").replace("\\n", "\n"))
-        Logger.info( "npadmin cookie = "+c+"\npassed value="+c.value+"\nresult="+xmlStr)
-        
+    val xmlStr = new DesEncrypter(DesEncrypter.SESSION_SECRET_KEY).decrypt(c.value.replace("\\r", "\r").replace("\\n", "\n"))
+    Logger.info("npadmin cookie = " + c + "\npassed value=" + c.value + "\nresult=" + xmlStr)
+
+    vld {
+      // replaces (scala.xml.XML.loadString(xmlStr) \ "@email").toString
+      def ls(attr: String, s: String = xmlStr) = (scala.xml.XML.loadString(xmlStr) \ attr).toString
+
+      new User(
+        ls("@id").toLong,
+        "", "", "",
+        ls("@email"),
+        ls("@compId").toLong,
+        // TODO: Come up with a general case for handling "null" values from the DB that will become Longs
         vld {
-          // replaces (scala.xml.XML.loadString(xmlStr) \ "@email").toString
-          def ls(attr: String, s: String = xmlStr) = (scala.xml.XML.loadString(xmlStr) \ attr).toString
-
-          new User(
-            ls("@id").toLong,
-            "", "","",
-            ls("@email"),
-            ls("@compId").toLong,
-          // TODO: Come up with a general case for handling "null" values from the DB that will become Longs
-            vld { ls("@oemId").toLong }.trace.fold(e=> None, s => Some(s) ),
-            vld { ls("@adId").toLong }.trace.fold(e=> None, s => Some(s) )
-          )
-        }.error.fold(e => None, u => Some(u))
-      }
-      case None => None
-    }
+          ls("@oemId").toLong
+        }.trace.fold(e => None, s => Some(s)),
+        vld {
+          ls("@adId").toLong
+        }.trace.fold(e => None, s => Some(s))
+      )
+    }.error.fold(e => None, u => Some(u))
   }
-
 
 
 }

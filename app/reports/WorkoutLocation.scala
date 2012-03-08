@@ -94,7 +94,7 @@ object WorkoutLocation {
    * @param orderBy firstName for sorting
    * @param filter Filter applied on the firstName column
    */
-  def list(user: User,  page: Int = 0, pageSize: Int = pageLength, orderBy: Int = 1,
+  def list(page: Int = 0, pageSize: Int = pageLength, orderBy: Int = 1,
            filter: String = "%", startDate: String = "0", endDate: String = "0"): Page[WorkoutLocation] = {
 
     val offset = pageSize * page
@@ -211,7 +211,7 @@ object WorkoutLocation {
         'eDate -> eDate
       ).as(scalar[Long].single)
 
-      Page(user, woL, Seq(comboTotal), page, offset, totalRows)
+      Page(woL, Seq(comboTotal), page, offset, totalRows)
     }
 
   }

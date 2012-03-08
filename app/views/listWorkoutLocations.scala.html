@@ -1,4 +1,4 @@
-@(currentPage: Page[WorkoutLocation], currentOrderBy: Int, currentFilter: String, startDate: String, endDate: String, cmpId: Long)(implicit flash: play.api.mvc.Flash)
+@(currentPage: Page[WorkoutLocation], currentOrderBy: Int, currentFilter: String, startDate: String, endDate: String)(implicit flash: play.api.mvc.Flash, session: play.api.mvc.Session)
 
 @import helper._
 
@@ -23,7 +23,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
 
 
-@main(currentPage.user, "Workouts by Club", 'listUsers) {
+@main("Workouts by Club", 'listUsers) {
 
 @* TODO: figure out how to put company name here... *@
 <h2>@Messages("Workouts by Club", currentPage.total)</h2>
@@ -44,7 +44,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         @***** Don't show this to non-Netpulse Users ******@
         @* The company ID was put onto the flash object in the controller *@
         @* compId=@currentPage.cmpId: *@
-        @if(currentPage.user.compId == 1) {
+        @if(session.get("cmpId").getOrElse("0").toInt == 1) {
             <label>Company</label>
             <div class="input">
                 <div class="inline-inputs">

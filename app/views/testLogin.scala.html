@@ -1,6 +1,6 @@
-@(user: User, message: String)(implicit flash: play.api.mvc.Flash)
+@(message: String)(implicit flash: play.api.mvc.Flash, session: play.api.mvc.Session)
 
-@main(user, "Welcome to our main page", 'home) {
+@main("Welcome to our main page", 'home) {
 
 Flash get = :@flash.get("success").toString:
 
@@ -14,7 +14,7 @@ Flash get = :@flash.get("success").toString:
 
     <h3>Here is the page you were trying to get to! -  @message</h3>
 
-    <h4>User = @user.toString</h4>
+    <h4>User = @session.("email").getOrElse("")</h4>
 
 </div>
 
