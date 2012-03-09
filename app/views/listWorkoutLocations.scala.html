@@ -62,10 +62,10 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         <label>@Messages("workouts.location.field.from")</label>
             <div class="input">
                 <div class="inline-inputs">
-                    <input id="datepicker1" data-datepicker="sd" name="sd" class="small" type="text" value="@startDate" />
+                    <input name="sd" class="datepicker small" type="text" value="@startDate" />
                     to
-                    <input id="datepicker2" data-datepicker="ed" name="ed" class="small" type="text" value="@endDate" />
-                    <span class="help-block">@Messages("workouts.location.field.company.help")</span>
+                    <input name="ed" class="datepicker small" type="text" value="@endDate" />
+                    <span class="help-block">@Messages("workouts.location.field.from.help")</span>
                 </div>
             </div>
 
@@ -125,7 +125,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
             @tmp.map {
               case woLtot =>  {
                 <tr><strong>
-                <th>Messages("workouts.location.field.totals")</th>
+                <th>@Messages("workouts.location.field.totals")</th>
                 <th>@woLtot.screens</th>
                 <th>@woLtot.newReg</th>
                 <th>@woLtot.totReg</th>
