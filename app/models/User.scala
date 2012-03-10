@@ -9,9 +9,11 @@ import anorm.SqlParser._
 import play.Logger
 import play.api.mvc.Cookie
 
+
 // <adminUser id="89" compId="1" oemId="null" adId="null" email="dfaust@netpulse.com"></adminUser>
-case class User(id: Long = 0, firstName: String = "", lastName: String = "", password: String = "", email: String = "",
-                compId: Long = 0, oemId: Option[Long] = None, adId: Option[Long] = None)
+case class User(id: Long = 0, firstName: Option[String], lastName: Option[String],
+                password: String = "", email: String = "", compId: Option[Long] = None,
+                oemId: Option[Long] = None, adId: Option[Long] = None)
 
 /**
  * Helper for pagination.
@@ -67,17 +69,17 @@ object User {
    * Parse a User from a ResultSet
    */
   val simple = {
-    get[Long]("admin_user.id") ~
-      get[String]("admin_user.first_name") ~
-      get[String]("admin_user.last_name") ~
+      get[Long]("admin_user.id") ~
+      get[Option[String]]("admin_user.first_name") ~
+      get[Option[String]]("admin_user.last_name") ~
       get[String]("admin_user.password") ~
       get[String]("admin_user.email") ~
-      get[Long]("admin_user.company_id") ~
+      get[Option[Long]]("admin_user.company_id") ~
       get[Option[Long]]("admin_user.oem_id") ~
       get[Option[Long]]("admin_user.advertiser_id") map {
       case id ~ firstName ~ lastName ~ password ~ email ~ compId ~ oemId ~ adId =>
         User(id, firstName, lastName, password, email, compId, oemId, adId)
-    }
+        }
   }
 
   // -- Queries
@@ -120,40 +122,44 @@ object User {
    * @param orderBy firstName for sorting
    * @param filter Filter applied on the firstName column
    */
-  def list(user: User, page: Int = 0, pageSize: Int = 25, orderBy: Int = 1, filter: String = "%"): Page[User] = {
+  def list(page: Int = 0, pageSize: Int = 15, orderBy: Int = 1, filter: String = "%"): Page[User] = {
+    
+    implicit val loc = VL("User.list")
+    
+    val offset = pageSize * page
 
-    val offest = pageSize * page
+    vld {
+      DB.withConnection {
+        implicit connection =>
 
-    DB.withConnection {
-      implicit connection =>
+          val u = SQL(
+            """
+              select * from admin_user
+              where oem_id = 1 AND ifnull(last_name,'') like {filter}
+              order by {orderBy}
+              limit {pageSize} offset {offset}
+            """
+          ).on(
+            'pageSize -> pageSize,
+            'offset -> offset,
+            'filter -> filter,
+            'orderBy -> orderBy
+          ).as(User.simple *)
+  
+          val totalRows = SQL(
+            """
+              select count(*) from admin_user
+              where oem_id =1 and ifnull(last_name,'') like {filter}
+            """
+          ).on(
+            'filter -> filter
+          ).as(scalar[Long].single)
 
-        val computers = SQL(
-          """
-            select * from admin_user
-            where admin_user.first_name like {filter}
-            order by {orderBy}
-            limit {pageSize} offset {offset}
-          """
-        ).on(
-          'pageSize -> pageSize,
-          'offset -> offest,
-          'filter -> filter,
-          'orderBy -> orderBy
-        ).as(User.simple *)
+Logger.debug("User list = "+u.toString)
 
-        val totalRows = SQL(
-          """
-            select count(*) from admin_user
-            where admin_user.first_name like {filter}
-          """
-        ).on(
-          'filter -> filter
-        ).as(scalar[Long].single)
-
-        Page(computers, Seq(), page, offest, totalRows)
-
-    }
-
+          Page(u, Seq(), page, offset, totalRows)
+      }
+    }.error.fold(e => Page(Seq(),Seq(),0,0,0), s => s)
   }
 
   /**
@@ -191,9 +197,9 @@ object User {
 
       new User(
         ls("@id").toLong,
-        "", "", "",
+        None, None, "",
         ls("@email"),
-        ls("@compId").toLong,
+        Some(ls("@compId").toLong),
         // TODO: Come up with a general case for handling "null" values from the DB that will become Longs
         vld {
           ls("@oemId").toLong

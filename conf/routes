@@ -10,15 +10,18 @@ GET     /logout                             controllers.Auth.logout
 # Home page
 GET     /                                   controllers.WebApp.index()
 GET     /index                              controllers.WebApp.index()
+
+# User admin
 GET     /userEdit                           controllers.WebApp.userEdit
 POST    /userSubmit                         controllers.WebApp.userSubmit
+GET     /userList                           controllers.WebApp.userList(p:Int ?= 0, s:Int ?= 1, f ?= "" )
 
 GET     /gigyaLogin                         controllers.Api.gigyaLogin
 POST    /gigyaLogin                         controllers.Api.gigyaLogin
 GET     /n5ilinkvtuser.jsp                  controllers.Api.linkVtUser(id: String, vt_password: String, machine_id: Long)
 
-GET     /n5iregister.jsp            controllers.DinoWrapper.register
-GET     /n5ilogin.jsp               controllers.DinoWrapper.login(id: String, machine_id: Long)
+GET     /n5iregister.jsp                    controllers.DinoWrapper.register
+GET     /n5ilogin.jsp                       controllers.DinoWrapper.login(id: String, machine_id: Long)
 
 GET     /testLogin                          controllers.WebApp.testLogin()
 

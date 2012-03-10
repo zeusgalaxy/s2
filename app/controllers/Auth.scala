@@ -54,7 +54,7 @@ object Auth extends Controller {
           // Add User & Auth items to session
           User.findByEmail(user._1) match {
             case Some(u) => {
-              val ss = session + ("id" -> u.id.toString) + ("fname" -> u.firstName) + ("lname" -> u.lastName) + ("email" -> u.email) + ("cmpId" -> u.compId.toString) +("oemId" -> u.oemId.toString)
+              val ss = session + ("id" -> u.id.toString) + ("fname" -> u.firstName.getOrElse("") ) + ("lname" -> u.lastName.getOrElse("")) + ("email" -> u.email) + ("cmpId" -> u.compId.toString) +("oemId" -> u.oemId.toString)
               Redirect(targetPage).withSession(ss)              
             }
             case _ => Redirect(routes.Auth.login("/index")).withNewSession.flashing(
