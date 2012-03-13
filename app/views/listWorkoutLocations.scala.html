@@ -44,7 +44,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         @***** Don't show this to non-Netpulse Users ******@
         @* The company ID was put onto the flash object in the controller *@
         @* compId=@currentPage.cmpId: *@
-        @if(session.get("cmpId").getOrElse("0").toInt == 1) {
+@* TODO:        @if(session.get("cmpId").getOrElse("0").toInt == 1) {        *@
             <label>@Messages("workouts.location.field.company")</label>
             <div class="input">
                 <div class="inline-inputs">
@@ -56,7 +56,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
                 </select>
                 </div>
             </div>
-          }
+@* TODO:          }             *@
 
     </p>
 

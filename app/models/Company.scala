@@ -29,7 +29,7 @@ object Company {
   /** Yields valid company ids and names from the location table in the reporting data warehouse
    * for use as options in a pick list.
    *
-   * @return Map of company ids and company names.
+   * @return List of tuples of company ids and company names.
    */
   def reportCompanyOptions: Seq[(String,String)] = DB.withConnection("report") { implicit connection =>
     SQL("select distinct(company_id), company_name from report.location order by company_name").

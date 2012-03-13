@@ -23,13 +23,19 @@ case class Page[A](items: Seq[A], totals: Seq[A], page: Int, offset: Long, total
   lazy val next = Some(page + 1).filter(_ => (offset + items.size) < total)
 }
 
-
+/** Anorm-based model representing an admin user.
+ *
+ */
 object User {
 
   implicit val loc = VL("User")
 
   /**
-   * Authenticate a User.
+   * Authenticate a User based on email and password
+   *
+   * @param email user email
+   * @param  password, unencrypted user password
+   * @return Some(User) if the email and encrypted password are found in the DB, None otherwise.
    */
   def authenticate(email: String, password: String): Option[User] = {
 
@@ -66,7 +72,7 @@ object User {
   // -- Parsers
 
   /**
-   * Parse a User from a ResultSet
+   * Parse a User from a SQL ResultSet
    */
   val simple = {
       get[Long]("admin_user.id") ~
@@ -85,7 +91,9 @@ object User {
   // -- Queries
 
   /**
-   * Retrieve a user from the id.
+   * Retrieve a user by ID from the DB.
+   * @param dbId of the user
+   * @return Some(User) if the user is found, None if not.
    */
   def findById(id: Long): Option[User] = {
 
@@ -100,7 +108,9 @@ object User {
   }
 
   /**
-   * Retrieve a user by their email address 
+   * Retrieve a user by their email address from the DB
+   * @param email string
+   * @return Some(User) if user found. None it not.
    */
   def findByEmail(email: String): Option[User] = {
 
@@ -114,6 +124,19 @@ object User {
     }.error.fold(e => None, s => s)
   }
 
+  // -- DB Updates
+
+
+  /** 
+   * Create a new user record 
+   * 
+   * @param u
+   * @return user id of added User on success, 
+   */
+  def create(u: User): Option[User] = {
+    None
+  }
+  
   /**
    * Return a page of users.
    *
@@ -121,6 +144,7 @@ object User {
    * @param pageSize Number of users per page
    * @param orderBy firstName for sorting
    * @param filter Filter applied on the firstName column
+   * @return a list of users to display a page with
    */
   def list(page: Int = 0, pageSize: Int = 15, orderBy: Int = 1, filter: String = "%"): Page[User] = {
     
@@ -164,6 +188,9 @@ Logger.debug("User list = "+u.toString)
 
   /**
    * Create an encrypted admin user cookie to be added onto the session
+   *
+   * This is for interoperability with Dino. Pass this to Dino (and write some code on that side)
+   * if you want to send an existing S2 session to Dino.
    * <adminUser id="89" compId="1" oemId="null" adId="null" email="dfaust@netpulse.com"></adminUser>
    */
   def createNpadminCookie(email: String): String = {
@@ -179,10 +206,12 @@ Logger.debug("User list = "+u.toString)
   }
 
   /**
-   * Parse the encrypted admin user cookie previously added onto the session
-   *
+   * Parse the encrypted admin user cookie previously added onto the session by Dino
+   *  Usage:
    *     npCookieString =>
    *   User.parseNpadminCookie(Cookie("npadmin",npCookieString,0,"",None,true,false)) match {
+   *   @param Cookie, a 3DES encrypted xml string with adminUser data in it. Example above
+   *   @return User case class with xml string attributes parsed and placed into it. None on failure.
    */
   def parseNpadminCookie(c: Cookie): Option[User] = {
 
