@@ -35,14 +35,14 @@ object Api extends Controller {
   def linkVtUser(npLogin: String, vtPassword: String, machineId: Long) = Action {
     implicit request =>
 
-      val rp = RegParams(request)
       val genFailElem = <vtAccount status="1">Unable to complete account linkage</vtAccount>
       implicit val loc = VL("Api.linkVtUser")
 
       val finalResult =
         for {
 
-          model <- Machine.getWithEquip(machineId).flatMap(_._2.map (e => e.model.toString)).toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
+          model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
+            toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
           ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found")
           vtAuth <- VT.login(ex.email, vtPassword) // tuple(token, tokenSecret)
           (vtUid, vtToken, vtTokenSecret) = vtAuth
@@ -53,16 +53,8 @@ object Api extends Controller {
           vtPredefinedPresets <- VT.predefinedPresets(ex.vtToken, ex.vtTokenSecret, model)
           vtWorkouts <- VT.workouts(ex.vtToken, ex.vtTokenSecret, model)
 
-        } yield {
-          <vtAccount status="0">
-            <vtPredefinedPresets>
-              {vtPredefinedPresets}
-            </vtPredefinedPresets>
-            <vtWorkouts>
-              {vtWorkouts}
-            </vtWorkouts>
-          </vtAccount>
-        }
+        } yield VT.asXml(vtPredefinedPresets, vtWorkouts)
+
       finalResult.error.fold(e => Ok(genFailElem), s => Ok(s))
   }
 

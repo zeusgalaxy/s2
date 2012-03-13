@@ -21,7 +21,6 @@ object WebApp extends Controller with Secured {
     Ok(html.testLogin("test string"))
   )
 
-
   /*
   *
   *  User CRUD controllers, form etc.
