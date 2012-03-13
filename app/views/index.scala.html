@@ -15,7 +15,7 @@
         <h1>@Messages("lifescape.header")</h1>
         <p>@Messages("lifescape.tagline")</p>
         <p> @if(!session.get("email").isEmpty) {
-            <a class="btn primary large" href="@routes.Auth.logout()">@Messages("logout") &raquo;</a></p>
+            <a class="btn btn-primary  btn-large" href="@routes.Auth.logout()">@Messages("logout") &raquo;</a></p>
         }
     </div>
 
@@ -23,20 +23,20 @@
     <!-- Example row of columns -->
 
     <div class="row">
-        <div class="span8"  class="twipsies well">
+        <div class="span6"  class="twipsies well">
             <div>
                 <h2>@Messages("asset.management.title")</h2>
                 <p>@Messages("equipment.status.prompt")</p>
                 <p><a class="btn" href="">@Messages("equipment.status.button") &raquo;</a></p>
             </div>
         </div>
-        <div class="span8"  class="twipsies well">
+        <div class="span6"  class="twipsies well">
             <div>
                 <h2>@Messages("workouts.activity.title")</h2>
                 <p> </p>
                 <p><a class="btn" href="">@Messages("workouts.equipment.button") &raquo;</a></p>
                 <p> </p>
-                <p><a class="btn primary" href="@routes.Report.showWorkoutLocations()">@Messages("workouts.location.button") &raquo;</a></p>
+                <p><a class="btn btn-primary" href="@routes.Report.showWorkoutLocations()">@Messages("workouts.location.button") &raquo;</a></p>
                 <p> </p>
                 <p><a class="btn" href="@routes.WebApp.testLogin()">@Messages("test.login.button") &raquo;</a></p>
             </div>

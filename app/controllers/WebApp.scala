@@ -36,10 +36,10 @@ object WebApp extends Controller with Secured {
       "newPass"   -> optional(text)
 //      "newPassConf" -> text
     ){ // apply
-      (firstName, lastName, email, newPass) => User(0,firstName,lastName,"",email)
+      (firstName, lastName, email, newPass) => User(0,Some(firstName),Some(lastName),"",email)
     }
      { // UnApply
-       user => Option(user.firstName, user.lastName, user.email, Option("") )
+       user => Option(user.firstName.getOrElse(""), user.lastName.getOrElse(""), user.email, Option(""))
      }
   )
 
@@ -75,6 +75,15 @@ object WebApp extends Controller with Secured {
         // Ok(html.userEdit(user, userForm))
     )
   )
+
+  def userList(page: Int, orderBy: Int, filter: String) = Action { implicit request =>
+    Ok(html.userList(
+      User.list(page = page, orderBy = orderBy, filter = ("%"+filter+"%")),
+      orderBy, filter
+    ))
+  }
+
+
 
   //  "id" -> Long,
   //    (

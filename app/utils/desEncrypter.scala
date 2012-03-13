@@ -11,16 +11,10 @@ import javax.management.openmbean.InvalidKeyException
 import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException
 import play.api.Logger
 
-// A version of the old way of encrypting the admin passwords. Doesn't match so let's move on.
-//
-//import org.mortbay.jetty.security.Credential;
-//import java.security.MessageDigest
-//def md5(s: String) = {
-// MessageDigest.getInstance("MD5").digest(s.getBytes)
-//}
 
-/**
- *  Encrypt the specified string.
+
+/** Digest encrypt the specified string. Can not be decrypted later. Used for comparison.
+ * 
  *  This interoperates with the web password on Dino. It does not work with the MD5 Digest passwords
  *  Be very careful about the charset. If they are different on Dino or here then the interop won't
  *  work!
@@ -31,6 +25,11 @@ object Blowfish {
 
   implicit val loc = VL("desEncrypter.Blowfish")
 
+  /** encrypt a passed in string with a blowfish cipher.
+   * 
+   * @param encryptMe string to encrypt
+   * @return encrypted string or empty string on error.
+   */
   def encrypt (encryptMe: String): String = {
     vld {
       val key = new SecretKeySpec ("jaas is the way".getBytes("UTF-8"), "Blowfish")
@@ -44,9 +43,8 @@ object Blowfish {
   }
 }
 
-/**
+/** Contain the secret keys for the companion object
  *
- * @author
  * Adapted from http://exampledepot.com/egs/javax.crypto/PassKey.html
  *
  */
@@ -54,6 +52,13 @@ object DesEncrypter {
   final val PASSPHRASE_API_KEY: String = "Netpulse API Key passphrase"
   final val SESSION_SECRET_KEY: String = "The muni trains noisily pass by."
 }
+
+/**
+ * Encrypt/Decrypt the passed in string using a 3DES cipher.
+ *
+ * Interoperates with the DesEncrypter on Dino. To be used when data needs to be encrypted on either
+ * side and later decrypted on the other.
+ */
 
 class DesEncrypter ( passPhrase: String ) {
   private var ecipher: Cipher = null
@@ -63,18 +68,25 @@ class DesEncrypter ( passPhrase: String ) {
 
   implicit val loc = VL("desEncrypter")
 
-  // Constructor
+  /** Constructor can encounter secret key and Cipher creation errors **/
   vld {
     var keySpec: KeySpec = new PBEKeySpec(passPhrase.toCharArray, salt, iterationCount)
     var key: SecretKey = SecretKeyFactory.getInstance("PBEWithMD5AndDES").generateSecret(keySpec)
+
     ecipher = Cipher.getInstance(key.getAlgorithm)
     dcipher = Cipher.getInstance(key.getAlgorithm)
+
     var paramSpec: AlgorithmParameterSpec = new PBEParameterSpec(salt, iterationCount)
+
     ecipher.init(Cipher.ENCRYPT_MODE, key, paramSpec)
     dcipher.init(Cipher.DECRYPT_MODE, key, paramSpec)
   }.error
 
-
+  /** encrypt the passed string
+   *
+   * @param str
+   * @return encrypted string or empty string on failure
+   */
   def encrypt(str: String): String = vld {
 
       var utf8: Array[Byte] = str.getBytes("UTF8")
@@ -83,7 +95,11 @@ class DesEncrypter ( passPhrase: String ) {
       Base64.encode(enc)
     }.error.fold(e => "", s => s)
 
-
+  /** decrypt the passed string
+   *
+   * @param str
+   * @return encrypted string or empty string on failure
+   */
   def decrypt(str: String): String = vld {
 
       var dec: Array[Byte] = Base64.decode(str)

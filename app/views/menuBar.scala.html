@@ -9,7 +9,7 @@
                 <li class="@{if(active == 'home) "active" else "inactive"}"><a href="@routes.WebApp.index()">@Messages("menu.home")</a></li>
                 <li class="@{if(active == 'showWorkoutLocations) "active" else "inactive"}"><a href="@routes.Report.showWorkoutLocations()">@Messages("menu.reports")</a></li>
              *@
-                <li class="@{if(active == 'admin) "active" else "inactive"}"><a href="">@Messages("menu.admin")</a></li>
+                <li class="@{if(active == 'admin) "active" else "inactive"}"><a href="@routes.WebApp.userList()">@Messages("menu.admin")</a></li>
                 <li class="@{if(active == 'account) "active" else "inactive"}"><a href="@routes.WebApp.userEdit">@Messages("menu.account")</a></li>
                 <li class="@{if(active == 'contact) "active" else "inactive"}"><a href="">@Messages("menu.contact")</a></li>
                 @if(!session.get("email").isEmpty) {

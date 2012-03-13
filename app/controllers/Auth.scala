@@ -1,6 +1,5 @@
 package controllers
 
-import play.api.mvc.Controller
 import play.api._
 import play.api.mvc._
 import play.api.data._
@@ -8,11 +7,21 @@ import play.api.data.Forms._
 
 import views._
 import models._
-import utils._
 
-
+/** Login form and actions
+ *
+ * Routed here whenever an action in a controller that extends secured is called and the user
+ * is not yet logged in. When the user goes through login and is authorized, a session and context
+ * are created for them.
+  */
 object Auth extends Controller {
 
+  /** Authenticate against the DB the user's entry for email and password.
+   *
+   * email, User's email address
+   * password, User's existing password in unencrypted text form
+   * @return form verified boolean
+   */
   val loginForm = Form(
     tuple(
       "email" -> text,
@@ -22,18 +31,22 @@ object Auth extends Controller {
         User.authenticate(email, password).isDefined
     })
   )
-
   
-  /**
-   * Login page.
+  /** Present the Login page to the user
+   *
+   * @param destPage The page the user requested. They were routed here because they weren't logged in.
+   * This allows us to redirect to that desired page after they log in.
    */
   def login(destPage: String = "") = Action {
     implicit request =>
       Ok(html.login(loginForm)).withSession(session + ("page" -> destPage))
   }
 
-  /**
-   * Handle login form submission.
+  /** Handle login form submission.
+   *
+   * Authenticate the user by accepting their login form data. If it checks out add auth to their session. Remove
+   * the auth items on login failure. Redirect them to their originally desired page after auth success.
+   * @return side effect - route the user either to their requested page or back to index()
    */
   def authenticate() = Action {
     implicit request =>
@@ -50,11 +63,12 @@ object Auth extends Controller {
           session.get("page") match {
             case Some(page) => targetPage = page
             case _ =>
+
           }
           // Add User & Auth items to session
           User.findByEmail(user._1) match {
             case Some(u) => {
-              val ss = session + ("id" -> u.id.toString) + ("fname" -> u.firstName) + ("lname" -> u.lastName) + ("email" -> u.email) + ("cmpId" -> u.compId.toString) +("oemId" -> u.oemId.toString)
+              val ss = session + ("id" -> u.id.toString) + ("fname" -> u.firstName.getOrElse("") ) + ("lname" -> u.lastName.getOrElse("")) + ("email" -> u.email) + ("cmpId" -> u.compId.toString) +("oemId" -> u.oemId.toString)
               Redirect(targetPage).withSession(ss)              
             }
             case _ => Redirect(routes.Auth.login("/index")).withNewSession.flashing(
@@ -64,9 +78,9 @@ object Auth extends Controller {
       )
   }
 
-
-  /**
-   * Logout and clean the session.
+  /** Logout and clean the session.
+   *
+   * @return side effect route to /index with a nice success message.
    */
   def logout = Action {
     Redirect(routes.Auth.login("/index")).withNewSession.flashing(
@@ -74,11 +88,10 @@ object Auth extends Controller {
     )
   }
 
-}
+}  // End of Auth
 
 
-/**
- * Provide security features
+/** Provide security features - TODO: ScalaDoc when complete.
  */
 trait Secured {
 
@@ -112,16 +125,5 @@ trait Secured {
       }
     }
 
-  // WAS:
-//  def IsAuthenticated(destPage: String, f: => User => Request[AnyContent] => Result) = Security.Authenticated(npAdminCookie, onUnauthorized(_)(destPage)) {
-//     npCookieString =>
-//       User.parseNpadminCookie(Option(Cookie("npadmin",npCookieString,0,"",None,true,false))) match {
-//         case Some(u) =>
-//             Action(request => f(u)(request))
-//         case _ => {
-//             Logger.error("IsAuthenticated: Problem with parsing the npadmin cookie into a User")
-//             Action(request => f(new User)(request))
-//           }
-//        }
 
 }
