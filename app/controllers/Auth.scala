@@ -18,8 +18,8 @@ object Auth extends Controller {
 
   /** Authenticate against the DB the user's entry for email and password.
    *
-   * @param email User's email address
-   * @param password User's existing password in unencrypted text form
+   * email, User's email address
+   * password, User's existing password in unencrypted text form
    * @return form verified boolean
    */
   val loginForm = Form(
@@ -63,6 +63,7 @@ object Auth extends Controller {
           session.get("page") match {
             case Some(page) => targetPage = page
             case _ =>
+
           }
           // Add User & Auth items to session
           User.findByEmail(user._1) match {
