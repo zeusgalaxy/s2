@@ -1,6 +1,7 @@
 package models
 
 import utils._
+import scalaz._
 import play.api.db._
 import play.api.Play.current
 
@@ -23,7 +24,7 @@ case class Page[A](items: Seq[A], totals: Seq[A], page: Int, offset: Long, total
   lazy val next = Some(page + 1).filter(_ => (offset + items.size) < total)
 }
 
-/** Anorm-based model representing an admin user.
+/**Anorm-based model representing an admin user.
  *
  */
 object User {
@@ -34,7 +35,7 @@ object User {
    * Authenticate a User based on email and password
    *
    * @param email user email
-   * @param  password, unencrypted user password
+   * @param password, unencrypted user password
    * @return Some(User) if the email and encrypted password are found in the DB, None otherwise.
    */
   def authenticate(email: String, password: String): Option[User] = {
@@ -75,7 +76,7 @@ object User {
    * Parse a User from a SQL ResultSet
    */
   val simple = {
-      get[Long]("admin_user.id") ~
+    get[Long]("admin_user.id") ~
       get[Option[String]]("admin_user.first_name") ~
       get[Option[String]]("admin_user.last_name") ~
       get[String]("admin_user.password") ~
@@ -85,14 +86,14 @@ object User {
       get[Option[Long]]("admin_user.advertiser_id") map {
       case id ~ firstName ~ lastName ~ password ~ email ~ compId ~ oemId ~ adId =>
         User(id, firstName, lastName, password, email, compId, oemId, adId)
-        }
+    }
   }
 
   // -- Queries
 
   /**
    * Retrieve a user by ID from the DB.
-   * @param dbId of the user
+   * @param id of the user
    * @return Some(User) if the user is found, None if not.
    */
   def findById(id: Long): Option[User] = {
@@ -102,7 +103,7 @@ object User {
     vld {
       DB.withConnection {
         implicit connection =>
-          SQL("select * from admin_user where id = {id}").on('id -> id).as(User.simple.singleOpt)
+          SQL("select * from admin_user where id = {id} and status = 1").on('id -> id).as(User.simple.singleOpt)
       }
     }.error.fold(e => None, s => s)
   }
@@ -116,27 +117,18 @@ object User {
 
     implicit val loc = VL("User.findEmail")
 
-    vld {
+    val result = vld {
       DB.withConnection {
         implicit connection =>
-          SQL("select * from admin_user where email = {email}").on('email -> email).as(User.simple.singleOpt)
+          SQL("select * from admin_user where email = {email} and status = 1").on('email -> email).as(User.simple.singleOpt)
       }
     }.error.fold(e => None, s => s)
+    result
   }
 
   // -- DB Updates
 
 
-  /** 
-   * Create a new user record 
-   * 
-   * @param u
-   * @return user id of added User on success, 
-   */
-  def create(u: User): Option[User] = {
-    None
-  }
-  
   /**
    * Return a page of users.
    *
@@ -147,9 +139,9 @@ object User {
    * @return a list of users to display a page with
    */
   def list(page: Int = 0, pageSize: Int = 15, orderBy: Int = 1, filter: String = "%"): Page[User] = {
-    
+
     implicit val loc = VL("User.list")
-    
+
     val offset = pageSize * page
 
     vld {
@@ -159,7 +151,7 @@ object User {
           val u = SQL(
             """
               select * from admin_user
-              where oem_id = 1 AND ifnull(last_name,'') like {filter}
+              where oem_id = 1 AND ifnull(last_name,'') like {filter} AND status = 1
               order by {orderBy}
               limit {pageSize} offset {offset}
             """
@@ -169,7 +161,7 @@ object User {
             'filter -> filter,
             'orderBy -> orderBy
           ).as(User.simple *)
-  
+
           val totalRows = SQL(
             """
               select count(*) from admin_user
@@ -179,12 +171,107 @@ object User {
             'filter -> filter
           ).as(scalar[Long].single)
 
-Logger.debug("User list = "+u.toString)
+          Logger.debug("User list = " + u.toString)
 
           Page(u, Seq(), page, offset, totalRows)
       }
-    }.error.fold(e => Page(Seq(),Seq(),0,0,0), s => s)
+    }.error.fold(e => Page(Seq(), Seq(), 0, 0, 0), s => s)
   }
+
+  /**
+   * Update a user.
+   *
+   * Password not encrypted here. Decrypt it only when needed.
+   *
+   * @param id The user id
+   * @param user, The user values.
+   * @return int the number of rows updated
+   */
+    def update(id: Long, user: User) = {
+
+
+      // TODO: NOT TESTED OR VALIDATED IN ANY WAY. WAS PULLED FROM SPRINT
+
+
+      implicit val loc = VL("User.update")
+
+      val result = vld {
+        DB.withConnection { implicit connection =>
+          SQL(
+            """
+              update user
+              set name = {name}, introduced = {introduced}, discontinued = {discontinued}, company_id = {company_id}
+              where id = {id}
+            """
+          ).on(
+            'id -> id,
+            'firstName -> user.firstName,
+            'lastName -> user.lastName,
+            'password -> user.password,
+            'email -> user.email,
+            'compId -> user.compId,
+            'oemId -> user.oemId,
+            'adId -> user.adId
+          ).executeUpdate()
+        }
+      }.error.fold(e => None, s => s)
+      Logger.debug("update :"+result)
+      result
+    }
+
+  /**
+   * Insert a new User.
+   *
+   * @param user The user values.
+   * @return Optional Long ID
+   */
+  def insert(user: User): Option[Long] = {
+
+    implicit val loc = VL("User.insert")
+
+    val result = vld {
+      DB.withConnection {
+        implicit connection =>
+          SQL(
+            """
+              insert into admin_user values ( 0, {compId}, {oemId}, {adId}, {email}, {firstName}, {lastName},
+                "", {password}, NOW(), NULL, 1
+              )
+            """
+          ).on(
+            'firstName -> user.firstName,
+            'lastName -> user.lastName,
+            'password -> Blowfish.encrypt(user.password),
+            'email -> user.email,
+            'compId -> user.compId,
+            'oemId -> user.oemId,
+            'adId -> user.adId
+          ).executeInsert()
+        }
+    }.error.fold(e => None, s => s)
+    Logger.debug("Insert :"+result)
+    result       //  you can println your vld left side (with the error part) by calling the "either" method to turn it into an Either and access it as a "left"
+  }
+
+  /**
+   * Delete a user by setting their status to 3.
+   *
+   * @param id Id of the computer to delete.
+   * @return int, number of rows affected - should be 1
+   */
+  def delete(id: Long) = {
+
+    implicit val loc = VL("User.delete")
+
+    vld {
+      DB.withConnection {
+        implicit connection =>
+          SQL("update admin_user set status = 3 where id = {id}").
+            on('id -> id).executeUpdate()
+        }
+     }.error.fold(e => None, s => s)
+  }
+
 
   /**
    * Create an encrypted admin user cookie to be added onto the session
@@ -210,8 +297,8 @@ Logger.debug("User list = "+u.toString)
    *  Usage:
    *     npCookieString =>
    *   User.parseNpadminCookie(Cookie("npadmin",npCookieString,0,"",None,true,false)) match {
-   *   @param Cookie, a 3DES encrypted xml string with adminUser data in it. Example above
-   *   @return User case class with xml string attributes parsed and placed into it. None on failure.
+   * @param c, a 3DES encrypted xml string with adminUser data in it. Example above
+   * @return User case class with xml string attributes parsed and placed into it. None on failure.
    */
   def parseNpadminCookie(c: Cookie): Option[User] = {
 
