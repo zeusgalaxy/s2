@@ -2,9 +2,9 @@
 
 @main(Messages("page.title.index"), 'home) {
 
-@flash.get("success").map { message =>
+@flash.get("success").map { m =>
 <div class="alert-message warning">
-    <strong>Messages("flash.done")</strong> @message
+    <strong>@Messages("flash.done")</strong> @m
 </div>
 }
 

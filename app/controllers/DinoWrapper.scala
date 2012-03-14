@@ -153,7 +153,7 @@ object DinoWrapper extends Controller {
   }
 
   // http://qa-ec2.netpulse.ws/core/n5ilogin.jsp?machine_id=18&id=1112925684&pic=22&oem_tos=15
-  // http://localhost:9000/n5ilogin.jsp?machine_id=1070&id=2115180111&pic=22&oem_tos=15
+  // http://localhost:9000/n5ilogin.jsp?machine_id=1070&id=2115180443&pic=22&oem_tos=15
 
   /** Logs a user in to a session with Netpulse (via Dino), and retrieves an appropriate set
    * of predefined_presets and/or workouts from Virtual Trainer.

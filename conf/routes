@@ -10,6 +10,8 @@ GET     /logout                             controllers.Auth.logout
 # Home page
 GET     /                                   controllers.WebApp.index()
 GET     /index                              controllers.WebApp.index()
+GET     /restrictedHello                    controllers.WebApp.restrictedHello()
+GET     /unrestrictedHello                  controllers.WebApp.unrestrictedHello()
 
 # User admin
 GET     /userEdit                           controllers.WebApp.userEdit

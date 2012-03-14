@@ -9,9 +9,21 @@ import anorm._
 
 import views._
 import models._
-
+import security._
 
 object WebApp extends Controller with Secured {
+
+  def restrictedHello = Readable(parse.anyContent)(Target("targetHello")) { implicit request =>
+    Ok(html.index("restrictedHello")).flashing("success" -> ("Hello " + request.context.user.get.firstName.get))
+  }
+
+  def unrestrictedHello = Action { implicit request =>
+    Ok(html.index("unrestrictedHello")).withSession("x"->"y").flashing("success" -> "Hello anybody")
+  }
+//
+//  def unrestrictedHello = Unrestricted(parse.anyContent)(tgNone) { implicit request =>
+//    Ok(html.index("unrestrictedHello")).flashing("success" -> "Hello anybody")
+//  }
 
   def index = IsAuthenticated("/index",  implicit request =>
       Ok(html.index("This is the main page parameter"))
