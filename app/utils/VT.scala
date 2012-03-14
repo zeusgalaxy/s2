@@ -279,12 +279,12 @@ object VT {
   def asXml(presets: NodeSeq, workouts: NodeSeq = NodeSeq.Empty) = {
 
       <virtualTrainer>
-        <vtPredefinedPresets>
+        <predefinedPresets>
           {presets}
-        </vtPredefinedPresets>
-        <vtWorkouts>
+        </predefinedPresets>
+        <workouts>
           {workouts}
-        </vtWorkouts>
+        </workouts>
       </virtualTrainer>
   }
 
