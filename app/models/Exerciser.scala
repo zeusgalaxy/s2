@@ -4,11 +4,14 @@ import utils._
 import play.api.db._
 import play.api.Play.current
 
+import org.joda.time._
 import anorm._
 import anorm.SqlParser._
 import play.api.Logger
 
-case class Exerciser(dbId: Long, login: String, email: String,
+case class Exerciser(dbId: Long, login: String, email: String, pic: Int,
+                     membershipId: Option[String], gender: Boolean, dob: DateTime,
+                     emailPrefs: Int, weight: Long,
                      vtUserId: String, vtToken: String, vtTokenSecret: String)
 
 /** Anorm-based model representing an exerciser.
@@ -21,15 +24,27 @@ object Exerciser {
   /** Basic parsing of an exerciser from the database.
    *
    */
+
+  val selectFields = " id, login, email, pic, membership_id, gender," +
+    "date(date_of_birth) as dob, email_prefs, weight, vt_user_id, vt_token, vt_token_secret "
+
   val simple = {
     get[Long]("exerciser.id") ~
       get[String]("exerciser.login") ~
       get[String]("exerciser.email") ~
+      get[Int]("exerciser.pic") ~
+      get[Option[String]]("exerciser.membership_id") ~
+      get[Boolean]("exerciser.gender") ~
+      get[java.util.Date]("dob") ~
+      get[Int]("exerciser.email_prefs") ~
+      get[Long]("exerciser.weight") ~
       get[String]("exerciser.vt_user_id") ~
       get[String]("exerciser.vt_token") ~
       get[String]("exerciser.vt_token_secret") map {
-      case dbId ~ login ~ email ~ vtUserId  ~ vtToken ~ vtTokenSecret =>
-        Exerciser(dbId, login, email, vtUserId, vtToken, vtTokenSecret)
+      case dbId ~ login ~ email ~ pic ~ membershipId ~ gender ~ dob ~ emailPrefs ~
+        weight ~ vtUserId ~ vtToken ~ vtTokenSecret =>
+        Exerciser(dbId, login, email, pic, membershipId, gender, new DateTime(dob.toString), emailPrefs,
+          weight, vtUserId, vtToken, vtTokenSecret)
     }
   }
 
@@ -45,7 +60,7 @@ object Exerciser {
     vld {
       DB.withConnection {
         implicit connection =>
-          SQL("select * from exerciser where id = {id}").on('id -> dbId).as(Exerciser.simple.singleOpt)
+          SQL("select "+selectFields+" from exerciser where id = {id}").on('id -> dbId).as(Exerciser.simple.singleOpt)
       }
     }.info.fold(e => None, s => s)
   }
@@ -62,7 +77,7 @@ object Exerciser {
     vld {
       DB.withConnection {
         implicit connection =>
-          SQL("select * from exerciser where login = {login}").on('login -> login).as(Exerciser.simple.singleOpt)
+          SQL("select"+selectFields+" from exerciser where login = {login}").on('login -> login).as(Exerciser.simple.singleOpt)
       }
     }.info.fold(e => None, s => s)
   }

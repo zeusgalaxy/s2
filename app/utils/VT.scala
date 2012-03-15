@@ -13,8 +13,7 @@ import play.api.libs.ws._
 import play.api.libs.ws.WS._
 import xml.{Elem, NodeSeq}
 import play.api.mvc._
-import scalaz._
-import Scalaz._
+import play.api.Logger
 
 // http://localhost:9000/n5iregister.jsp?machine_id=1070&id=2115180102&membership_id=1&email=sOCClkoE102%40stross.com&
 // pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15
@@ -34,6 +33,8 @@ case class RegParams(npLogin: String, email: String, pic: String, dob: String, m
                      oemTos: String, vtNickname: String, vtPassword: String)
 
 object RegParams {
+
+  val jodaMMDDYYYY = org.joda.time.format.DateTimeFormat.forPattern("MMddyyyy")
   def apply(rq: Request[AnyContent]): RegParams = {
 
     implicit val source = rq.body.asFormUrlEncoded match {
@@ -59,6 +60,14 @@ object RegParams {
     val vtp = getS("vt_password")
     val vtPassword = if (vtp == "") email else vtp
     RegParams(npLogin, email, pic, dob, machineId, membershipId, gender, enableMail, weight, oemTos, vtNickname, vtPassword)
+  }
+  def apply(ex: Exerciser, machineId: Long): RegParams = {
+
+    val gender = ex.gender ? "M" | "F"
+    val enableMail = (ex.emailPrefs == 1) ? "true" | "false"
+    val oemTos = "15"
+    RegParams(ex.login, ex.email, ex.pic.toString, ex.dob.toString(jodaMMDDYYYY), machineId.toString, ex.membershipId.getOrElse("1"),
+      gender, enableMail, ex.weight.toString, oemTos, ex.email, ex.email)
   }
 }
 
@@ -88,15 +97,15 @@ object VT {
          }) yield w
   }
 
-  private def registerBody(rp: RegParams): Validation[String, String] = {
+  private def registerBody(rp: RegParams): ValidationNEL[String, String] = {
 
-    for {
+    implicit val loc = VL("VT.registerBody")
 
-      locationId <- Machine.getBasic(rp.machineId.toLong).
-        toSuccess("machine_id " + rp.machineId + " not found in database").map(_.locationId)
+    Logger.debug("VT registerBody params = " + rp.toString)
 
-    } yield {
+    vld {
 
+      val locationId = Machine.getBasic(rp.machineId.toLong).get.locationId
       val json = ("age" -> age(rp.dob)) ~
         ("nickName" -> rp.vtNickname) ~
         ("password" -> b64Enc.encode(rp.vtPassword.getBytes("UTF-8"))) ~
@@ -108,7 +117,7 @@ object VT {
         ("locationId" -> locationId)
 
       Printer.compact(JsonAST.render(json))
-    }
+    }.error
   }
 
   private def linkBody(npLogin: String, vtUid: String) = {
@@ -152,18 +161,16 @@ object VT {
     waitVal(vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret)).get(), vtTimeout)
   }
 
-  val regVtUserExists = 1
-  val regVtUnableToGetStatus = 2
-  val regVtOtherError = 3
-
   def register(rp: RegParams): Either[Int, VtUser] = {
 
     implicit val loc = VL("VT.register")
 
     val rVal: Option[(String, Int)] = for {
 
-      rBody <- registerBody(rp).toOption
-      valResult <- vld(waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)).toOption
+    //      d0 <- vld({throw new Exception("at d0 in VT.register"); "d0"}).error.toOption
+      rBody <- registerBody(rp).error.toOption
+      //      d1 <- vld({throw new Exception("at d1 in VT.register"); "d1"}).error.toOption
+      valResult <- vld(waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)).error.toOption
       valStatus = valResult.status
 
     } yield {
@@ -171,9 +178,9 @@ object VT {
     }
 
     rVal match {
-      case None => Left(regVtUnableToGetStatus)
-      case Some((_, status)) if (status == 500) => Left(regVtUserExists)
-      case Some((_, status)) if (status != 200) => Left(regVtOtherError)
+      case None => Left(apiVtRegistrationUnableToGetStatus)
+      case Some((_, status)) if (status == 500) => Left(apiVtRegistrationUserExists)
+      case Some((_, status)) if (status != 200) => Left(apiVtRegistrationOtherError)
       case Some((rBody, _)) =>
         val result: Validation[NonEmptyList[String], VtUser] =
           for {
@@ -190,7 +197,7 @@ object VT {
 
           } yield vtUser
 
-        result.add("Result", "Failure").error.fold(e => Left(regVtOtherError), s => Right(s))
+        result.add("Result", "Failure").error.fold(e => Left(apiVtRegistrationOtherError), s => Right(s))
     }
   }
 
@@ -270,7 +277,7 @@ object VT {
       s => s
     }
   }
-  
+
   def insertIntoXml(x: Elem, parent: String, presets: NodeSeq, workouts: NodeSeq = NodeSeq.Empty) = {
 
     XmlMutator(x).add(parent, asXml(presets, workouts))
@@ -278,14 +285,14 @@ object VT {
 
   def asXml(presets: NodeSeq, workouts: NodeSeq = NodeSeq.Empty) = {
 
-      <virtualTrainer>
-        <predefinedPresets>
-          {presets}
-        </predefinedPresets>
-        <workouts>
-          {workouts}
-        </workouts>
-      </virtualTrainer>
+    <virtualTrainer>
+      <predefinedPresets>
+        {presets}
+      </predefinedPresets>
+      <workouts>
+        {workouts}
+      </workouts>
+    </virtualTrainer>
   }
 
   lazy val vtPathPrefix = current.configuration.getString("vt.path.prefix").getOrElse(throw new Exception("vt.path.prefix not in configuration"))
