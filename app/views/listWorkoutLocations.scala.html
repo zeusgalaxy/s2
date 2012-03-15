@@ -6,7 +6,7 @@
 * Helper generating navigation links    *
 ****************************************@
 @link(newPage: Int, newOrderBy: Option[Int] = None) = @{
-routes.Report.showWorkoutLocations(newPage, newOrderBy.map { orderBy =>
+    routes.Report.showWorkoutLocations(newPage, newOrderBy.map { orderBy =>
 if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 }.getOrElse(currentOrderBy), currentFilter)
 
@@ -16,52 +16,59 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 * Helper generating table headers *
 ***********************************@
 @header(orderBy: Int, title: String) = {
-<th class="col@orderBy header @if(scala.math.abs(currentOrderBy) == orderBy) @{if(currentOrderBy < 0) "headerSortDown" else "headerSortUp"}">
-<a href="@link(0, Some(orderBy))">@title</a>
-</th>
+    <th class="col@orderBy header @if(scala.math.abs(currentOrderBy) == orderBy) @{if(currentOrderBy < 0) "headerSortDown" else "headerSortUp"}">
+    <a href="@link(0, Some(orderBy))">@title</a>
+    </th>
 }
 
 
+@main((Messages("page.title.workouts.club")).toString, 'listUsers) {
 
-@main(Messages("page.title.workouts.club"), 'listUsers) {
+    @* TODO: figure out how to put company name here... *@
+    <h2>@Messages("workouts.location.header")</h2>
 
-@* TODO: figure out how to put company name here... *@
-<h2>@Messages("workouts.location.header")</h2>
+    @flash.get("success").map { message =>
+    <div class="alert-message warning">
+        <strong>@Messages("workouts.location.flash.success")</strong> @message
+    </div>
+    }
 
-@flash.get("success").map { message =>
-<div class="alert-message warning">
-    <strong>@Messages("workouts.location.flash.success")</strong> @message
-</div>
-}
+    @*****  Form for report filters etc. *******@
+    <div id="actions" class="twipsies well">
+    <form action="@routes.Report.showWorkoutLocations()" class="form-horizontal">
+        <fieldset>
+            <input type="submit" value="Go" class="btn btn-primary btn-large pull-right">
 
-@*****  Form for report filters etc. *******@
-<div id="actions" class="twipsies well">
-    @helper.form(action=routes.Report.showWorkoutLocations(), args = 'id -> "reportForm") {
-    
-    <p>
-        <input type="submit" value="Go" class="btn btn-primary btn-large pull-right">
-
-        @***** Don't show this to non-Netpulse Users ******@
-        @* The company ID was put onto the flash object in the controller *@
-        @* compId=@currentPage.cmpId: *@
-@* TODO:        @if(session.get("cmpId").getOrElse("0").toInt == 1) {        *@
-            <label>@Messages("workouts.location.field.company")</label>
-            <div class="input">
-                <div class="inline-inputs">
-                <select name="f" value="@currentFilter" >
-                    <option value="">@Messages("workouts.location.field.company.options")</option>
-                    @Company.reportCompanyOptions.map { opt =>
-                        <option value="@opt._1" @if(opt._1.toString == currentFilter){selected="yes"}>@opt._2</option>
-                    }
-                </select>
+            @*  Input template
+            <div class="control-group">
+                <label class="control-label" for="input01">Text input</label>
+                <div class="controls">
+                    <input type="text" class="input-xlarge" id="input01">
+                    <p class="help-block">Supporting help text</p>
                 </div>
             </div>
-@* TODO:          }             *@
+            *@
 
-    </p>
+            @***** Don't show this to non-Netpulse Users ******@
+            @* The company ID was put onto the flash object in the controller *@
+            @* compId=@currentPage.cmpId: *@
+            @* TODO:        @if(session.get("cmpId").getOrElse("0").toInt == 1) {        *@
+            <div class="control-group">
+                <label class="control-label" for="input01">@Messages("workouts.location.field.company")</label>
+                <div class="controls">
+                    <select name="f" value="@currentFilter" class="span3">
+                        <option value="">@Messages("workouts.location.field.company.options")</option>
+                        @Company.reportCompanyOptions.map { opt =>
+                        <option value="@opt._1" @if(opt._1.toString == currentFilter){selected="yes"}>@opt._2</option>
+                        }
+                    </select>
+                    <p class="help-block"></p>
+                </div>
+            </div>
+            @* TODO:          }             *@
 
             <div class="control-group">
-                <label class="control-label" for="input01">@Messages("workouts.location.field.from")</label>
+                <label class="control-label" for="input02">@Messages("workouts.location.field.from")</label>
                 <div class="controls">
                     <input name="sd" class="datepicker small" type="text" value="@startDate" />
                     to
@@ -70,102 +77,15 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
                 </div>
             </div>
 
-    }
-</div>
-
-@Option(currentPage.items).filterNot(_.isEmpty).map { woL =>
-
-@if(currentPage.total >= WorkoutLocation.pageLength ) {
-    <div id="pagination_top" class="pagination">
-    <ul>
-        @currentPage.prev.map { page =>
-        <li class="prev">
-            <a href="@link(page)">&larr; @Messages("pagination.previous")</a>
-        </li>
-        }.getOrElse {
-        <li class="prev disabled">
-            <a>&larr; @Messages("pagination.previous")</a>
-        </li>
-        }
-        <li class="current">
-            <a>Displaying @(currentPage.offset + 1) to @(currentPage.offset + woL.size) of @currentPage.total</a>
-        </li>
-        @currentPage.next.map { page =>
-        <li class="next">
-            <a href="@link(page)">@Messages("pagination.next") &rarr;</a>
-        </li>
-        }.getOrElse {
-        <li class="next disabled">
-            <a>@Messages("pagination.next") &rarr;</a>
-        </li>
-        }
-    </ul>
-</div>
-}
-
-    <table class="table table-striped table-bordered table-condensed">
-        <thead>
-        <tr>
-            @header(1,  Messages("workouts.location.field.club"))
-            @header(2,  Messages("workouts.location.field.screens"))
-            @header(3,  Messages("workouts.location.field.newreg"))
-            @header(4,  Messages("workouts.location.field.totreg"))
-            @header(5,  Messages("workouts.location.field.workouts"))
-            @header(6,  Messages("workouts.location.field.regwos"))
-            @header(7,  Messages("workouts.location.field.regwosperc"))
-            @header(8,  Messages("workouts.location.field.wosperscreen"))
-            @header(9,  Messages("workouts.location.field.wosperscreenday"))
-            @header(10, Messages("workouts.location.field.avgdur"))
-            @header(11, Messages("workouts.location.field.totwohrs"))
-        </tr>
-        </thead>
-        <tbody>
+        </fieldset>
+    </form>
+    </div>
 
 
-        @Option(currentPage.totals).filterNot(_.isEmpty).map { tmp =>
-            @tmp.map {
-              case woLtot =>  {
-                <tr><strong>
-                <th>@Messages("workouts.location.field.totals")</th>
-                <th>@woLtot.screens</th>
-                <th>@woLtot.newReg</th>
-                <th>@woLtot.totReg</th>
-                <th>@woLtot.woCnt.formatted("%.0f")</th>
-                <th>@woLtot.woReg</th>
-                <th>@woLtot.woPercReg.formatted("%.2f")</th>
-                <th>@woLtot.woPerScreen.formatted("%.2f")</th>
-                <th>@woLtot.woScreenDay.formatted("%.2f")</th>
-                <th>@woLtot.durAvg.formatted("%.2f")</th>
-                <th>@woLtot.durTot.formatted("%.0f")</th>
-                </strong></tr>
-              }
-            }
-        }
+    @Option(currentPage.items).filterNot(_.isEmpty).map { woL =>
 
-
-        @woL.map {
-            case woLx => {
-            <tr>
-                <td><strong>@woLx.clubName</strong></td>
-                <td>@woLx.screens</td>
-                <td>@woLx.newReg</td>
-                <td>@woLx.totReg</td>
-                <td>@woLx.woCnt.formatted("%.0f")</td>
-                <td>@woLx.woReg</td>
-                <td>@woLx.woPercReg.formatted("%.2f")</td>
-                <td>@woLx.woPerScreen.formatted("%.2f")</td>
-                <td>@woLx.woScreenDay.formatted("%.2f")</td>
-                <td>@woLx.durAvg.formatted("%.2f")</td>
-                <td>@woLx.durTot.formatted("%.0f")</td>
-            </tr>
-            }
-        }
-
-        </tbody>
-    </table>
-
-      @if(currentPage.total >= WorkoutLocation.pageLength ) {
-        <div id="pagination" class="pagination">
+    @if(currentPage.total >= WorkoutLocation.pageLength ) {
+        <div id="pagination_top" class="pagination">
         <ul>
             @currentPage.prev.map { page =>
             <li class="prev">
@@ -189,8 +109,97 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
             </li>
             }
         </ul>
-        </div>
+    </div>
     }
+
+        <table class="table table-striped table-bordered table-condensed">
+            <thead>
+            <tr>
+                @header(1,  Messages("workouts.location.field.club"))
+                @header(2,  Messages("workouts.location.field.screens"))
+                @header(3,  Messages("workouts.location.field.newreg"))
+                @header(4,  Messages("workouts.location.field.totreg"))
+                @header(5,  Messages("workouts.location.field.workouts"))
+                @header(6,  Messages("workouts.location.field.regwos"))
+                @header(7,  Messages("workouts.location.field.regwosperc"))
+                @header(8,  Messages("workouts.location.field.wosperscreen"))
+                @header(9,  Messages("workouts.location.field.wosperscreenday"))
+                @header(10, Messages("workouts.location.field.avgdur"))
+                @header(11, Messages("workouts.location.field.totwohrs"))
+            </tr>
+            </thead>
+            <tbody>
+
+
+            @Option(currentPage.totals).filterNot(_.isEmpty).map { tmp =>
+                @tmp.map {
+                  case woLtot =>  {
+                    <tr><strong>
+                    <th>@Messages("workouts.location.field.totals")</th>
+                    <th>@woLtot.screens</th>
+                    <th>@woLtot.newReg</th>
+                    <th>@woLtot.totReg</th>
+                    <th>@woLtot.woCnt.formatted("%.0f")</th>
+                    <th>@woLtot.woReg</th>
+                    <th>@woLtot.woPercReg.formatted("%.2f")</th>
+                    <th>@woLtot.woPerScreen.formatted("%.2f")</th>
+                    <th>@woLtot.woScreenDay.formatted("%.2f")</th>
+                    <th>@woLtot.durAvg.formatted("%.2f")</th>
+                    <th>@woLtot.durTot.formatted("%.0f")</th>
+                    </strong></tr>
+                  }
+                }
+            }
+
+
+            @woL.map {
+                case woLx => {
+                <tr>
+                    <td><strong>@woLx.clubName</strong></td>
+                    <td>@woLx.screens</td>
+                    <td>@woLx.newReg</td>
+                    <td>@woLx.totReg</td>
+                    <td>@woLx.woCnt.formatted("%.0f")</td>
+                    <td>@woLx.woReg</td>
+                    <td>@woLx.woPercReg.formatted("%.2f")</td>
+                    <td>@woLx.woPerScreen.formatted("%.2f")</td>
+                    <td>@woLx.woScreenDay.formatted("%.2f")</td>
+                    <td>@woLx.durAvg.formatted("%.2f")</td>
+                    <td>@woLx.durTot.formatted("%.0f")</td>
+                </tr>
+                }
+            }
+
+            </tbody>
+        </table>
+
+          @if(currentPage.total >= WorkoutLocation.pageLength ) {
+            <div id="pagination" class="pagination">
+            <ul>
+                @currentPage.prev.map { page =>
+                <li class="prev">
+                    <a href="@link(page)">&larr; @Messages("pagination.previous")</a>
+                </li>
+                }.getOrElse {
+                <li class="prev disabled">
+                    <a>&larr; @Messages("pagination.previous")</a>
+                </li>
+                }
+                <li class="current">
+                    <a>Displaying @(currentPage.offset + 1) to @(currentPage.offset + woL.size) of @currentPage.total</a>
+                </li>
+                @currentPage.next.map { page =>
+                <li class="next">
+                    <a href="@link(page)">@Messages("pagination.next") &rarr;</a>
+                </li>
+                }.getOrElse {
+                <li class="next disabled">
+                    <a>@Messages("pagination.next") &rarr;</a>
+                </li>
+                }
+            </ul>
+            </div>
+        }
 
 }.getOrElse {
 

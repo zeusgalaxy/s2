@@ -91,8 +91,10 @@ object WorkoutLocation {
    *
    * @param page Page to display
    * @param pageSize Number of WorkoutLocations per page
-   * @param orderBy firstName for sorting
-   * @param filter Filter applied on the firstName column
+   * @param orderBy for sorting defaults to first column
+   * @param filter Filter applied on the Company column
+   * @param startDate starting date in form yyyy-mm-dd that is converted into a date_int
+   * @param endDate ending date converted to a date_int
    */
   def list(page: Int = 0, pageSize: Int = pageLength, orderBy: Int = 1,
            filter: String = "%", startDate: String = "0", endDate: String = "0"): Page[WorkoutLocation] = {
