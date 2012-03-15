@@ -37,7 +37,7 @@ object Auth extends Controller {
    * @param destPage The page the user requested. They were routed here because they weren't logged in.
    * This allows us to redirect to that desired page after they log in.
    */
-  def login(destPage: String = "") = Action {
+  def login(destPage: String = "/index") = Action {
     implicit request =>
       Ok(html.login(loginForm)).withSession(session + ("page" -> destPage))
   }

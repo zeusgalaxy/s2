@@ -2,38 +2,51 @@
 
 @main( Messages("page.title.login"), 'login) {
 
-    @helper.form(routes.Auth.authenticate () ) {
+    <h1>@Messages("login.header")</h1>
 
-        <h1>@Messages("login.header")</h1>
-
-        @form.globalError.map { error =>
-            <p class="alert alert-error">
-                @error.message
-            </p>
-        }
-
-        @flash.get("success").map { message =>
-            <div class="alert alert-success">
-            <strong>@Messages("login.flash.success")</strong> @message
-            </div>
-        }
-
-        <div id="actions" class="well">
-            <p>
-                <input type="email" name="email" placeholder=@Messages("login.email.placeholder") id="email" value="@form("email").value">
-            </p>
-            <p>
-                <input type="password" name="password" id="password" placeholder=@Messages("login.password.placeholder")>
-            </p>
-            <p>
-                <input type="submit" value=@Messages("login.button") class="btn primary">
-            </p>
-        </div>
-
+    @form.globalError.map { error =>
+        <p class="alert alert-error">
+            @error.message
+        </p>
     }
 
+    @flash.get("success").map { message =>
+        <div class="alert alert-success">
+            <strong>@Messages("login.flash.success")</strong> @message
+        </div>
+    }
+
+    <div class="row">
+        <div class="span8">
+            <form action="@routes.Auth.authenticate()"  method="POST" class="form-horizontal">
+                <fieldset>
+                    <legend></legend>
+                    <div class="control-group">
+                        <label class="control-label" for="email"></label>
+                        <div class="controls">
+                            <input type="email" name="email" id="email" class="input-xlarge" placeholder=@Messages("login.email.placeholder")  value="@form("email").value">
+                            <p class="help-block"></p>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label" for="password"></label>
+                        <div class="controls">
+                            <input type="password" name="password" id="password" class="input-xlarge" placeholder=@Messages("login.password.placeholder") >
+                            <p class="help-block"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">@Messages("login.button")</button>
+                    </div>
+
+                </fieldset>
+            </form>
+        </div>
+    </div>
+
 <p class="note">
-    Note.
 </p>
 
 }
