@@ -13,11 +13,11 @@ import security._
 
 object WebApp extends Controller with Secured {
 
-  def restrictedHello = IfCanRead(Target("targetHello")) { implicit request =>
+  def restrictedHello = IfCanRead(Target("hello")) { implicit request =>
     Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
   }
 
-  def unrestrictedHello = Unrestricted(tgNone) { implicit request =>
+  def unrestrictedHello = Unrestricted { implicit request =>
     Ok(html.kenner("Hello Everybody!"))
   }
 
