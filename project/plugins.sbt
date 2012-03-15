@@ -6,4 +6,4 @@ resolvers ++= Seq(
   Resolver.file("Ivy Cache", file("/Users/kenner/.ivy2/cache"))( Resolver.ivyStylePatterns)
 )
 
-addSbtPlugin("play" % "sbt-plugin" % "2.0-SNAPSHOT")
+addSbtPlugin("play" % "sbt-plugin" % "2.1-SNAPSHOT")
