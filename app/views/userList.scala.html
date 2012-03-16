@@ -21,9 +21,9 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 </th>
 }
 
-@main("User List", 'userList)  {
+@main(Messages("userlist.title"), 'userList)  {
 
-    <h1>@Messages("User List", currentPage.total)</h1>
+    <h1>@Messages("userlist.title", currentPage.total)</h1>
 
     @flash.get("success").map { message =>
     <div class="alert alert-success">
@@ -35,11 +35,11 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         <div class="span12">
             <form action="@routes.WebApp.userList()" class="well form-search">
 
-                <button id="add" class="btn btn-success pull-right" href="@routes.WebApp.userEdit()">@Messages("user.add.button")</button>
+                <button id="add" class="btn btn-success pull-right" href="@routes.WebApp.userEdit()">@Messages("button.add.user")</button>
 
-                <input type="search" name="f" id="searchbox" value="@currentFilter" class="input-medium search-query" placeholder="Filter by last name..."  >
+                <input type="search" name="f" id="searchbox" value="@currentFilter" class="input-medium search-query" placeholder="@Messages("userlist.filter.lastname")"  >
 
-                <button type="submit" id="searchsubmit" class="btn btn-primary">@Messages("go.button")</button>
+                <button type="submit" id="searchsubmit" class="btn btn-primary">@Messages("button.go")</button>
 
             </form>
         </div>
@@ -62,16 +62,14 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
             @users.map {
             case (u) => {
             <tr>
-                <td>@*<a href="@routes.WebApp.userEdit()">*@ @u.lastName</a></td>
-                <td>
-                    @u.firstName
-                </td>
-                <td>
-                    @u.email
-                </td>
-                <td>
-                    Admin
-                </td>
+                <td>@u.lastName</td>
+
+                <td>@u.firstName</td>
+
+                <td><a href="@routes.WebApp.userEdit()">@u.email</a></td>
+
+                <td>Admin</td>
+                </a>
             </tr>
             }
             }

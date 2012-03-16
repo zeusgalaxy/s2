@@ -37,10 +37,10 @@ object WebApp extends Controller with Secured {
       "newPass"   -> optional(text)
 //      "newPassConf" -> text
     ){ // apply
-      (firstName, lastName, email, newPass) => User(0,Some(firstName),Some(lastName),"",email)
+      (firstName:String, lastName:String, email:String, newPass:Option[String]) => User(0,Some(firstName),Some(lastName),"",email)
     }
      { // UnApply
-       user => Option(user.firstName.getOrElse(""), user.lastName.getOrElse(""), user.email, Option(""))
+       user:User => Option(user.firstName.getOrElse(""), user.lastName.getOrElse(""), user.email, Option(""))
      }
   )
 

@@ -1,8 +1,8 @@
 @(form: Form[User])(implicit flash: Flash, session: play.api.mvc.Session)
 
-@main("Account Edit", 'userEdit) {
+@main("useredit.title", 'userEdit) {
 
-    <h1>@Messages("login.header") - Update Your Account</h1>
+    <h1>@Messages("useredit.title")</h1>
 
     @form.globalError.map { error =>
     <p class="alert alert-error">
@@ -54,8 +54,8 @@
                     </div>
 
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">@Messages("save.button")</button>
-                        @* <button type="cancel" class="btn btn-primary">@Messages("cancel.button")</button> *@
+                        <button type="submit" class="btn btn-primary">@Messages("button.save")</button>
+                        @* <button type="cancel" class="btn btn-primary">@Messages("button.cancel")</button> *@
                     </div>
 
                 </fieldset>
