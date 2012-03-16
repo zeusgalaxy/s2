@@ -8,11 +8,24 @@ import org.joda.time._
 import anorm._
 import anorm.SqlParser._
 import play.api.Logger
+import xml._
 
 case class Exerciser(dbId: Long, login: String, email: String, pic: Int,
                      membershipId: Option[String], gender: Boolean, dob: DateTime,
                      emailPrefs: Int, weight: Long,
-                     vtUserId: String, vtToken: String, vtTokenSecret: String)
+                     vtUserId: String, vtToken: String, vtTokenSecret: String) {
+
+  def hasVtConnection = (!vtUserId.isEmpty && !vtToken.isEmpty && !vtTokenSecret.isEmpty)
+
+  def insertVtDetails(x: Node, parent: String) = {
+    XmlMutator(x).add(parent,
+      <exerciser>
+      <email>{email}</email>
+      <isConnectedToVt>{hasVtConnection.toString}</isConnectedToVt>
+      </exerciser>
+    )
+  }
+}
 
 /** Anorm-based model representing an exerciser.
  *
@@ -94,9 +107,9 @@ object Exerciser {
    * @param vtTokenSecret The token secret associated with the token, above.
    * @return True if successful, else False.
    */
-  def updVT(npLogin: String, vtUserId: String, vtToken: String, vtTokenSecret: String): Boolean = {
+  def linkVT(npLogin: String, vtUserId: String, vtToken: String, vtTokenSecret: String): Boolean = {
 
-    implicit val loc = VL("Exerciser.updVT")
+    implicit val loc = VL("Exerciser.linkVT")
 
     vld {
       DB.withConnection {
@@ -116,4 +129,33 @@ object Exerciser {
       }
     }.info.fold(e => false, s => true)
   }
-}
+
+  /** Clears the Virtual Trainer token fields in the exerciser record to reflect the fact that they
+   * are not currently logged in with VT; although that represents being "unlinked" in the eyes of the
+   * user, we still maintain the link with VT under the covers (in the form of still having their
+   * user id). The reason we maintain that vt user id is so that we don't attempt to relink the two
+   * accounts in future, when they decide to reactivate the connection; we need to know that they
+   * have previously been tied together.
+   *
+   * @param npLogin The exerciser's login identifier.
+   * @return True if successful, else False.
+   */
+  def logoutVT(npLogin: String): Boolean = {
+
+    implicit val loc = VL("Exerciser.logoutVT")
+
+    vld {
+      DB.withConnection {
+        implicit connection =>
+          SQL(
+            """
+              update exerciser
+              set vt_token = "", vt_token_secret = ""
+              where login = {login}
+            """
+          ).on(
+            'login -> npLogin
+          ).executeUpdate()
+      }
+    }.info.fold(e => false, s => true)
+  }}

@@ -29,6 +29,8 @@ object DinoWrapper extends Controller {
    */
   def forward(request: Request[AnyContent]): ValidationNEL[String, play.api.libs.ws.Response] = {
 
+    implicit val loc = VL("DinoWrapper.forward")
+
     vld {
 
       val (newRequest, newBody) = toWSRequest(request)
@@ -52,7 +54,7 @@ object DinoWrapper extends Controller {
         case "DELETE" => newRequest.delete().value.get
         case m => throw new Exception("Unexpected method in Dino.forward: " + m)
       }
-    }
+    }.error
   }
 
   /** Sends a request to Dino for processing, without allowing any additional processing on the
@@ -83,7 +85,7 @@ object DinoWrapper extends Controller {
 
     implicit request => {
 
-      implicit val loc = VL("Dino.pageView")
+      implicit val loc = VL("DinoWrapper.pageView")
 
       vld {
 
@@ -130,17 +132,17 @@ object DinoWrapper extends Controller {
         vtUser <- vld(VT.register(rp))
       } yield {
         vtUser
-      }).error.fold(e => Left(99), s => s)
+      }).error.fold(e => Left(apiGeneralError), s => s)
 
       val finalResult = rVal match {
 
         case Left(err) =>
-          vld(XmlMutator(oldXml).add("response", <virtualTrainer status={err.toString}></virtualTrainer>))
+          vld(XmlMutator(oldXml).add("response", <api error={err.toString}></api>))
         case Right(vtUser) =>
           for {
             vtAuth <- VT.login(vtUser.vtNickname, vtUser.vtNickname)
             (vtUid, vtToken, vtTokenSecret) = vtAuth
-            updResult <- vld(Exerciser.updVT(rp.npLogin, vtUid, vtToken, vtTokenSecret))
+            updResult <- vld(Exerciser.linkVT(rp.npLogin, vtUid, vtToken, vtTokenSecret))
             machineId <- vld(rp.machineId.toLong)
             model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
               toSuccess(NonEmptyList("Unable to rtrv mach/equip/model"))
@@ -167,10 +169,9 @@ object DinoWrapper extends Controller {
    */
   def login(npLogin: String, machineId: Long) = Action {
     implicit request =>
-
       implicit val loc = VL("ApiWrapper.login")
 
-      (for {
+      val responseXml = (for {
         dinoResult <- forward(request)
         oldXml <- vld(dinoResult.xml)
       } yield {
@@ -187,12 +188,15 @@ object DinoWrapper extends Controller {
               vtWorkouts <- VT.workouts(ex.vtToken, ex.vtTokenSecret, model)
 
             } yield VT.insertIntoXml(oldXml, "response", vtPredefinedPresets, vtWorkouts)
-          }.error.toOption.getOrElse(XmlMutator(oldXml).add("response", <vtAccount></vtAccount>))
+          }.error.toOption.getOrElse(XmlMutator(oldXml).add("response", <api error={apiGeneralError.toString}/>))
 
           case _ => oldXml
         }
-      }).error.fold(e => Ok(<response desc="Login failed." code="5">
+      }).error.fold(e => <response desc="Login failed." code="5">
         {e.list.mkString(", ")}
-      </response>), s => Ok(s))
+      </response>, s => s)
+
+      var exer: Option[Exerciser] = Exerciser.findByLogin(npLogin)
+      Ok(exer.isDefined ? exer.get.insertVtDetails(responseXml, "api") | responseXml)
   }
 }

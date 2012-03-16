@@ -16,7 +16,7 @@ import Scalaz._
  */
 object Api extends Controller {
 
-  // http://localhost:9000/vtLinkUser?machine_id=1070&id=2115180102&vt_password=sOCClkoE103%40stross.com
+  // http://localhost:9000/vtLinkUser?machine_id=1070&id=2115180443&vt_password=sOCClkoE443%40stross.com
 
   /**Links a Netpulse user with their Virtual Trainer account in those situations where the
    * exerciser had created the Virtual Trainer account prior to creating their Netpulse account. The
@@ -35,7 +35,6 @@ object Api extends Controller {
   def vtLinkUser(npLogin: String, vtPassword: String, machineId: Long) = Action {
     implicit request =>
 
-      val genFailElem = <vtLinkUser error="1">Unable to complete Virtual Trainer account linkage</vtLinkUser>
       implicit val loc = VL("Api.vtLinkUser")
 
       val finalResult =
@@ -46,16 +45,38 @@ object Api extends Controller {
           ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found")
           vtAuth <- VT.login(ex.email, vtPassword) // tuple(token, tokenSecret)
           (vtUid, vtToken, vtTokenSecret) = vtAuth
-          linkStatus <- VT.link(npLogin, vtUid)
 
-          updResult <- vld(Exerciser.updVT(npLogin, vtUid, vtToken, vtTokenSecret))
+          // Only notify them if never linked before
+          linkStatus <- if (ex.vtUserId.isEmpty) VT.link(npLogin, vtUid) else true.successNel[String]
 
-          vtPredefinedPresets <- VT.predefinedPresets(ex.vtToken, ex.vtTokenSecret, model)
-          vtWorkouts <- VT.workouts(ex.vtToken, ex.vtTokenSecret, model)
+          updResult <- vld(Exerciser.linkVT(npLogin, vtUid, vtToken, vtTokenSecret))
+
+          vtPredefinedPresets <- VT.predefinedPresets(vtToken, vtTokenSecret, model)
+          vtWorkouts <- VT.workouts(vtToken, vtTokenSecret, model)
 
         } yield VT.asXml(vtPredefinedPresets, vtWorkouts)
 
-      finalResult.error.fold(e => Ok(genFailElem), s => Ok(s))
+      finalResult.error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
+  }
+
+  // http://localhost:9000/vtUnlinkUser?id=2115180443
+  def vtUnlinkUser(npLogin: String) = Action {
+
+    implicit request =>
+
+      implicit val loc = VL("Api.vtUnlinkUser")
+
+      val finalResult =
+        for {
+
+          ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found")
+          logoutStatus <- VT.logout(ex.vtToken, ex.vtTokenSecret)
+
+          updResult <- vld(Exerciser.logoutVT(npLogin))
+
+        } yield <api error={apiNoError.toString}/>
+
+      finalResult.error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
 
   // http://localhost:9000/vtStatus?id=2115180443
@@ -63,18 +84,10 @@ object Api extends Controller {
   def vtStatus(npLogin: String) = Action {
     implicit request =>
 
-      val genFailElem = <vtStatus error="true">Unable to retrieve Virtual Trainer account status</vtStatus>
       implicit val loc = VL("Api.vtStatus")
-
-      val finalResult =
-        for {
-          ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found")
-          status = (!ex.vtUserId.isEmpty || !ex.vtToken.isEmpty || !ex.vtTokenSecret.isEmpty).toString
-        } yield
-          <vtStatus linkedToVt={status}>
-          </vtStatus>
-
-      finalResult.error.fold(e => Ok(genFailElem), s => Ok(s))
+      val ex = Exerciser.findByLogin(npLogin)
+      Ok(ex.isDefined ? ex.get.insertVtDetails(<api error={apiNoError.toString}></api>, "api") |
+                                                <api error={apiUnableToRetrieveExerciser.toString}/>)
   }
 
   // http://localhost:9000/vtRegister?machine_id=1070&id=2020
@@ -82,7 +95,6 @@ object Api extends Controller {
   def vtRegister(npLogin: String, machineId: Long) = Action {
     implicit request =>
 
-      val genFailElem = <vtRegister error="true">Unable to complete Virtual Trainer account linkage</vtRegister>
       implicit val loc = VL("Api.vtRegister")
 
       // either error code or object encapsulating vt user
@@ -102,14 +114,14 @@ object Api extends Controller {
           for {
             vtAuth <- VT.login(vtUser.vtNickname, vtUser.vtNickname)
             (vtUid, vtToken, vtTokenSecret) = vtAuth
-            updResult <- vld(Exerciser.updVT(npLogin, vtUid, vtToken, vtTokenSecret))
+            updResult <- vld(Exerciser.linkVT(npLogin, vtUid, vtToken, vtTokenSecret))
             model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
               toSuccess(NonEmptyList("Unable to rtrv mach/equip/model"))
 
             vtPredefinedPresets <- VT.predefinedPresets(vtToken, vtTokenSecret, model)
 
           } yield VT.asXml(vtPredefinedPresets)
-      }).error.fold(e => Ok(genFailElem), s => Ok(s))
+      }).error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
 
   /**Landing page to give to Gigya so they can call back to Netpulse after completing social login.

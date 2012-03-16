@@ -11,7 +11,7 @@ import net.liftweb.json._
 import net.liftweb.json.JsonDSL._
 import play.api.libs.ws._
 import play.api.libs.ws.WS._
-import xml.{Elem, NodeSeq}
+import xml._
 import play.api.mvc._
 import play.api.Logger
 
@@ -35,6 +35,7 @@ case class RegParams(npLogin: String, email: String, pic: String, dob: String, m
 object RegParams {
 
   val jodaMMDDYYYY = org.joda.time.format.DateTimeFormat.forPattern("MMddyyyy")
+
   def apply(rq: Request[AnyContent]): RegParams = {
 
     implicit val source = rq.body.asFormUrlEncoded match {
@@ -61,6 +62,7 @@ object RegParams {
     val vtPassword = if (vtp == "") email else vtp
     RegParams(npLogin, email, pic, dob, machineId, membershipId, gender, enableMail, weight, oemTos, vtNickname, vtPassword)
   }
+
   def apply(ex: Exerciser, machineId: Long): RegParams = {
 
     val gender = ex.gender ? "M" | "F"
@@ -149,6 +151,10 @@ object VT {
     waitVal(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout)
   }
 
+  private def doVtLogout(token: String, tokenSecret: String) = {
+    waitVal(vtRequest(vtPathLogout, headerWithToken(token, tokenSecret)).post(""), vtTimeout)
+  }
+
   private def doVtLink(npLogin: String, vtUid: String) = {
     waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npLogin, vtUid)), vtTimeout)
   }
@@ -205,12 +211,12 @@ object VT {
 
     implicit val loc = VL("VT.link")
 
-    for {
+    (for {
       linkResult <- vld(doVtLink(npLogin, vtUid))
       status <- tst(linkResult)(_.status == 200).
         add("vt link external account result status", linkResult.status.toString).
         add("body", linkResult.body).error
-    } yield true
+    } yield true).error
   }
 
   def login(emailOrNickname: String, vtPassword: String): ValidationNEL[String, (String, String, String)] = {
@@ -219,11 +225,11 @@ object VT {
     val tEx = """(.*oauth_token=\")([^\"]*).*""".r
     val tsEx = """(.*oauth_token_secret=\")([^\"]*).*""".r
 
-    for {
+    (for {
       lBody <- vld(loginBody(emailOrNickname, vtPassword))
       loginResult <- vld(doVtLogin(lBody))
       status <- tst(loginResult)(_.status == 200).
-        add("vt login account result status", loginResult.status.toString).
+        add("vt login result status", loginResult.status.toString).
         add("body", loginResult.body).error
       hdr <- loginResult.header("Authorization").toSuccess("Authorization header not found").liftFailNel
 
@@ -238,7 +244,19 @@ object VT {
       }).add("Auth header", hdr)
       id <- vld((loginResult.xml \\ "userId" head).text).add("vt login xml", loginResult.xml.toString())
 
-    } yield (id, token, secret)
+    } yield (id, token, secret)).error
+  }
+
+  def logout(token: String, tokenSecret: String): ValidationNEL[String, Boolean] = {
+
+    implicit val loc = VL("VT.logout")
+
+    (for {
+      logoutResult <- vld(doVtLogout(token, tokenSecret))
+      status <- tst(logoutResult)(_.status == 200).
+        add("vt logout result status", logoutResult.status.toString).error
+
+    } yield true).error
   }
 
   /**
@@ -248,16 +266,16 @@ object VT {
 
     implicit val loc = VL("VT.predefinedPresets")
 
-    for {
+    (for {
       ppResult <- vld(doVtPredefineds(token, tokenSecret))
       status <- tst(ppResult)(_.status == 200).add("vt result status", ppResult.status.toString)
       segs <- vld(ppResult.xml \\ "workoutSegments").add("pp result xml", ppResult.xml.toString())
 
     } yield segs.withFilter(s => (s \\ "deviceType").exists {
-      _.text == model
-    }).map {
-      s => s
-    }
+        _.text == model
+      }).map {
+        s => s
+      }).error
   }
 
   /**
@@ -267,32 +285,34 @@ object VT {
 
     implicit val loc = VL("VT.workouts")
 
-    for {
+    (for {
       ppResult <- vld(doVtWorkouts(token, tokenSecret))
       status <- tst(ppResult)(_.status == 200).add("vt result status", ppResult.status.toString)
       segs <- vld(ppResult.xml \\ "workoutSegments")
     } yield segs.withFilter(s => (s \\ "deviceType").exists {
-      _.text == model
-    }).map {
-      s => s
-    }
+        _.text == model
+      }).map {
+        s => s
+      }).error
   }
 
-  def insertIntoXml(x: Elem, parent: String, presets: NodeSeq, workouts: NodeSeq = NodeSeq.Empty) = {
+  def insertIntoXml(x: Node, parent: String, presets: NodeSeq, workouts: NodeSeq = NodeSeq.Empty) = {
 
     XmlMutator(x).add(parent, asXml(presets, workouts))
   }
 
   def asXml(presets: NodeSeq, workouts: NodeSeq = NodeSeq.Empty) = {
 
-    <virtualTrainer>
-      <predefinedPresets>
-        {presets}
-      </predefinedPresets>
-      <workouts>
-        {workouts}
-      </workouts>
-    </virtualTrainer>
+    <api error={apiNoError.toString}>
+      <virtualTrainer>
+        <predefinedPresets>
+          {presets}
+        </predefinedPresets>
+        <workouts>
+          {workouts}
+        </workouts>
+      </virtualTrainer>
+    </api>
   }
 
   lazy val vtPathPrefix = current.configuration.getString("vt.path.prefix").getOrElse(throw new Exception("vt.path.prefix not in configuration"))

@@ -21,6 +21,7 @@ GET     /userList                           controllers.WebApp.userList(p:Int ?=
 GET     /gigyaLogin                         controllers.Api.gigyaLogin
 POST    /gigyaLogin                         controllers.Api.gigyaLogin
 GET     /vtLinkUser                         controllers.Api.vtLinkUser(id: String, vt_password: String, machine_id: Long)
+GET     /vtUnlinkUser                       controllers.Api.vtUnlinkUser(id: String)
 GET     /vtStatus                           controllers.Api.vtStatus(id: String)
 GET     /vtRegister                         controllers.Api.vtRegister(id: String, machine_id: Long)
 
