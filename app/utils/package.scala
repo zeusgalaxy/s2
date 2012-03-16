@@ -22,6 +22,13 @@ import Scalaz._
  */
 package object utils {
 
+  val apiNoError = 0
+  val apiGeneralError = 1
+  val apiVtRegistrationUserExists = 2
+  val apiVtRegistrationUnableToGetStatus = 3
+  val apiVtRegistrationOtherError = 4
+  val apiUnableToRetrieveExerciser = 5
+
   /**Replaces the subdomain portion of a request received by S2 so it may be forwarded
    * on for further processing by Dino. The replacement logic is:
    *

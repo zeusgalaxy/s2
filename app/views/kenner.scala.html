@@ -1,0 +1,14 @@
+@(text: String)(implicit flash: play.api.mvc.Flash, session: play.api.mvc.Session)
+
+@main("Kenner's Test Page", 'home) {
+
+@flash.get("success").map { m =>
+<div class="alert-message warning">
+    <strong>@Messages("flash.done")</strong> @m
+</div>
+}
+<div>
+@text
+</div>
+
+}
