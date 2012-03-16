@@ -68,10 +68,8 @@ object Api extends Controller {
 
       val finalResult =
         for {
-
           ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found")
           logoutStatus <- VT.logout(ex.vtToken, ex.vtTokenSecret)
-
           updResult <- vld(Exerciser.logoutVT(npLogin))
 
         } yield <api error={apiNoError.toString}/>
@@ -104,12 +102,12 @@ object Api extends Controller {
         vtUser <- vld(VT.register(rp))
       } yield {
         vtUser
-      }).error.fold(e => Left(99), s => s)
+      }).error.fold(e => Left(apiGeneralError), s => s)
 
       (rVal match {
 
         case Left(err) =>
-          vld(<virtualTrainer status={err.toString}></virtualTrainer>)
+          vld(<api error={err.toString}></api>)
         case Right(vtUser) =>
           for {
             vtAuth <- VT.login(vtUser.vtNickname, vtUser.vtNickname)

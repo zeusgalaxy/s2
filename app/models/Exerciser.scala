@@ -9,10 +9,12 @@ import anorm._
 import anorm.SqlParser._
 import play.api.Logger
 import xml._
+import scalaz.{Node => _, _}
+import Scalaz._
 
 case class Exerciser(dbId: Long, login: String, email: String, pic: Int,
                      membershipId: Option[String], gender: Boolean, dob: DateTime,
-                     emailPrefs: Int, weight: Long,
+                     emailPrefs: Int, weight: Long, homeClubId: Option[Long], homeClubName: Option[String],
                      vtUserId: String, vtToken: String, vtTokenSecret: String) {
 
   def hasVtConnection = (!vtUserId.isEmpty && !vtToken.isEmpty && !vtTokenSecret.isEmpty)
@@ -22,6 +24,10 @@ case class Exerciser(dbId: Long, login: String, email: String, pic: Int,
       <exerciser>
       <email>{email}</email>
       <isConnectedToVt>{hasVtConnection.toString}</isConnectedToVt>
+      <homeClub>
+        <id>{homeClubId.getOrElse("").toString}</id>
+        <name>{homeClubName.getOrElse("")}</name>
+        </homeClub>
       </exerciser>
     )
   }
@@ -38,8 +44,10 @@ object Exerciser {
    *
    */
 
-  val selectFields = " id, login, email, pic, membership_id, gender," +
-    "date(date_of_birth) as dob, email_prefs, weight, vt_user_id, vt_token, vt_token_secret "
+  val selectFields = " exerciser.id, exerciser.login, exerciser.email, exerciser.pic, " +
+    " exerciser.membership_id, exerciser.gender," +
+    " date(exerciser.date_of_birth) as dob, exerciser.email_prefs, exerciser.weight, exerciser.location_id," +
+    " exerciser.vt_user_id, exerciser.vt_token, exerciser.vt_token_secret "
 
   val simple = {
     get[Long]("exerciser.id") ~
@@ -51,13 +59,15 @@ object Exerciser {
       get[java.util.Date]("dob") ~
       get[Int]("exerciser.email_prefs") ~
       get[Long]("exerciser.weight") ~
+      get[Option[Long]]("exerciser.location_id") ~
       get[String]("exerciser.vt_user_id") ~
       get[String]("exerciser.vt_token") ~
-      get[String]("exerciser.vt_token_secret") map {
+      get[String]("exerciser.vt_token_secret") ~
+      get[Option[String]]("location.name") map {
       case dbId ~ login ~ email ~ pic ~ membershipId ~ gender ~ dob ~ emailPrefs ~
-        weight ~ vtUserId ~ vtToken ~ vtTokenSecret =>
+        weight ~ homeClubId ~ vtUserId ~ vtToken ~ vtTokenSecret ~ homeClubName =>
         Exerciser(dbId, login, email, pic, membershipId, gender, new DateTime(dob.toString), emailPrefs,
-          weight, vtUserId, vtToken, vtTokenSecret)
+          weight, homeClubId, homeClubName, vtUserId, vtToken, vtTokenSecret)
     }
   }
 
@@ -73,7 +83,8 @@ object Exerciser {
     vld {
       DB.withConnection {
         implicit connection =>
-          SQL("select "+selectFields+" from exerciser where id = {id}").on('id -> dbId).as(Exerciser.simple.singleOpt)
+          SQL("select "+selectFields+" , location.name from exerciser left join location on (exerciser.location_id = location.id)" +
+            " where id = {id}").on('id -> dbId).as(Exerciser.simple.singleOpt)
       }
     }.info.fold(e => None, s => s)
   }
@@ -90,7 +101,8 @@ object Exerciser {
     vld {
       DB.withConnection {
         implicit connection =>
-          SQL("select"+selectFields+" from exerciser where login = {login}").on('login -> login).as(Exerciser.simple.singleOpt)
+          SQL("select"+selectFields+" , location.name from exerciser left join location on (exerciser.location_id = location.id)" +
+            " where login = {login}").on('login -> login).as(Exerciser.simple.singleOpt)
       }
     }.info.fold(e => None, s => s)
   }

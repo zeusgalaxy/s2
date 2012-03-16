@@ -171,32 +171,32 @@ object DinoWrapper extends Controller {
     implicit request =>
       implicit val loc = VL("ApiWrapper.login")
 
+      val ex: Option[Exerciser] = Exerciser.findByLogin(npLogin)
+
       val responseXml = (for {
         dinoResult <- forward(request)
         oldXml <- vld(dinoResult.xml)
       } yield {
         (oldXml \\ "response" \ "@code").find(n => true) match {
 
-          case Some(code) if (code.text == "0") => {
+          case Some(code) if (code.text == "0" && ex.isDefined && ex.get.hasVtConnection) => {
 
             for {
               model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
                 toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
 
-              ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found in ApiWrapper.login")
-              vtPredefinedPresets <- VT.predefinedPresets(ex.vtToken, ex.vtTokenSecret, model)
-              vtWorkouts <- VT.workouts(ex.vtToken, ex.vtTokenSecret, model)
+              vtPredefinedPresets <- VT.predefinedPresets(ex.get.vtToken, ex.get.vtTokenSecret, model)
+              vtWorkouts <- VT.workouts(ex.get.vtToken, ex.get.vtTokenSecret, model)
 
             } yield VT.insertIntoXml(oldXml, "response", vtPredefinedPresets, vtWorkouts)
           }.error.toOption.getOrElse(XmlMutator(oldXml).add("response", <api error={apiGeneralError.toString}/>))
 
-          case _ => oldXml
+          case _ => XmlMutator(oldXml).add("response", <api error={apiNoError.toString}/>)
         }
       }).error.fold(e => <response desc="Login failed." code="5">
         {e.list.mkString(", ")}
       </response>, s => s)
 
-      var exer: Option[Exerciser] = Exerciser.findByLogin(npLogin)
-      Ok(exer.isDefined ? exer.get.insertVtDetails(responseXml, "api") | responseXml)
+      Ok(ex.isDefined ? ex.get.insertVtDetails(responseXml, "api") | responseXml)
   }
 }
