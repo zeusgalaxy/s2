@@ -31,6 +31,8 @@ object User {
 
   implicit val loc = VL("User")
 
+  val pageLength = 15
+
   /**
    * Authenticate a User based on email and password
    *
