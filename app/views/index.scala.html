@@ -3,8 +3,8 @@
 @main(Messages("page.title.index"), 'home) {
 
 @flash.get("success").map { message =>
-<div class="alert-message warning">
-    <strong>Messages("flash.done")</strong> @message
+<div class="alert alert-success">
+    <strong>@Messages("flash.done")</strong> @message
 </div>
 }
 
