@@ -10,6 +10,8 @@ GET     /logout                             controllers.Auth.logout
 # Home page
 GET     /                                   controllers.WebApp.index()
 GET     /index                              controllers.WebApp.index()
+GET     /restrictedHello                    controllers.WebApp.restrictedHello()
+GET     /unrestrictedHello                  controllers.WebApp.unrestrictedHello()
 
 # User admin
 GET     /userEdit                           controllers.WebApp.userEdit
@@ -18,7 +20,16 @@ GET     /userList                           controllers.WebApp.userList(p:Int ?=
 
 GET     /gigyaLogin                         controllers.Api.gigyaLogin
 POST    /gigyaLogin                         controllers.Api.gigyaLogin
-GET     /n5ilinkvtuser.jsp                  controllers.Api.linkVtUser(id: String, vt_password: String, machine_id: Long)
+GET     /s2/gigyaLogin                      controllers.Api.gigyaLogin
+POST    /s2/gigyaLogin                      controllers.Api.gigyaLogin
+GET     /vtLinkUser                         controllers.Api.vtLinkUser(id: String, vt_password: String, machine_id: Long)
+GET     /s2/vtLinkUser                      controllers.Api.vtLinkUser(id: String, vt_password: String, machine_id: Long)
+GET     /vtUnlinkUser                       controllers.Api.vtUnlinkUser(id: String)
+GET     /s2/vtUnlinkUser                    controllers.Api.vtUnlinkUser(id: String)
+GET     /vtStatus                           controllers.Api.vtStatus(id: String)
+GET     /s2/vtStatus                        controllers.Api.vtStatus(id: String)
+GET     /vtRegister                         controllers.Api.vtRegister(id: String, machine_id: Long)
+GET     /s2/vtRegister                      controllers.Api.vtRegister(id: String, machine_id: Long)
 
 GET     /n5iregister.jsp                    controllers.DinoWrapper.register
 GET     /n5ilogin.jsp                       controllers.DinoWrapper.login(id: String, machine_id: Long)
