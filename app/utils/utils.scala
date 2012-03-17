@@ -335,4 +335,14 @@ package object utils {
   implicit def nelToValidationNEL[T](np: ValidationNEL[String, T]): NPValidationNEL[T] = {
     new NPValidationNEL(np)
   }
+
+  /**dateToInt - convert a date string to an int
+   *
+   * @param dateStr  String formatted thusly - yyyy-mm-dd
+   * @param default  If there is an error what value do you want returned?
+   * @return an integer date e.g. 20120319 or the default
+   */
+  def dateToInt(dateStr: String,  default: Int = 0) = {
+    try{ (dateStr filter (_ != '-'  )).toInt } catch { case _ => default }
+  }
 }

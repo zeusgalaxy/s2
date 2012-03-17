@@ -91,8 +91,8 @@ object WorkoutLocation {
     
     val offset = pageSize * page
 
-    val sDate = try{ (startDate filter (_ != '-'  )).toInt } catch { case _ => 0 }
-    val eDate = try{ (endDate filter (_ != '-'  )).toInt }   catch { case _ => 99999999 }
+    val sDate = dateToInt(startDate, 0)
+    val eDate = dateToInt(endDate, 99999999 )
 
     Logger.info("Date range =" + sDate.toString + " to "+eDate.toString)
 
