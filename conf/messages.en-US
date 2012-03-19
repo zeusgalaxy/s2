@@ -1,5 +1,9 @@
 copyright=Netpulse 2012. All rights reserved
 
+button.go=Go
+button.save=Save
+button.add.user=Add User
+
 page.title.index=This is the S2 index page
 page.title.login=Login
 page.title.workouts.location=Workouts by Club
@@ -24,9 +28,14 @@ menu.logout=Logout
 asset.management.title=Asset Management
 equipment.status.prompt=Get current status of your operating equipment...
 equipment.status.button=Equipment Status
+
+useredit.title=Update Account
+
+userlist.title=User List
+userlist.filter.lastname=Filter by last name...
+
 workouts.activity.title=Workout Activity
 workouts.equipment.button=Workouts by Equipment
-
 workouts.location.button=Workouts by Club
 workouts.location.header=Workouts by Club
 workouts.location.flash.success=Done!
