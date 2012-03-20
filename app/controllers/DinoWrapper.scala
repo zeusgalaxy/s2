@@ -142,7 +142,7 @@ object DinoWrapper extends Controller {
           for {
             vtAuth <- VT.login(vtUser.vtNickname, vtUser.vtNickname)
             (vtUid, vtToken, vtTokenSecret) = vtAuth
-            updResult <- vld(Exerciser.linkVT(rp.npLogin, vtUid, vtToken, vtTokenSecret))
+            updResult <- vld(Exerciser.loginVt(rp.npLogin, vtUid, vtToken, vtTokenSecret))
             machineId <- vld(rp.machineId.toLong)
             model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
               toSuccess(NonEmptyList("Unable to rtrv mach/equip/model"))

@@ -29,6 +29,11 @@ package object utils {
   val apiVtRegistrationOtherError = 4
   val apiUnableToRetrieveExerciser = 5
 
+  val vtStatusLoggedIn = 3
+  val vtStatusLinked = 2
+  val vtStatusUnlinked = 1
+  val vtStatusUnknown = 0
+
   /**Replaces the subdomain portion of a request received by S2 so it may be forwarded
    * on for further processing by Dino. The replacement logic is:
    *

@@ -24,8 +24,10 @@ GET     /s2/gigyaLogin                      controllers.Api.gigyaLogin
 POST    /s2/gigyaLogin                      controllers.Api.gigyaLogin
 GET     /vtLinkUser                         controllers.Api.vtLinkUser(id: String, vt_password: String, machine_id: Long)
 GET     /s2/vtLinkUser                      controllers.Api.vtLinkUser(id: String, vt_password: String, machine_id: Long)
-GET     /vtUnlinkUser                       controllers.Api.vtUnlinkUser(id: String)
-GET     /s2/vtUnlinkUser                    controllers.Api.vtUnlinkUser(id: String)
+GET     /vtLogin                            controllers.Api.vtLogin(id: String, vt_password: String, machine_id: Long)
+GET     /s2/vtLogin                         controllers.Api.vtLogin(id: String, vt_password: String, machine_id: Long)
+GET     /vtLogout                           controllers.Api.vtLogout(id: String)
+GET     /s2/vtLogout                        controllers.Api.vtLogout(id: String)
 GET     /vtStatus                           controllers.Api.vtStatus(id: String)
 GET     /s2/vtStatus                        controllers.Api.vtStatus(id: String)
 GET     /vtRegister                         controllers.Api.vtRegister(id: String, machine_id: Long)

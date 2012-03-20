@@ -29,8 +29,8 @@ object VtUser {
 }
 
 case class RegParams(npLogin: String, email: String, pic: String, dob: String, machineId: String,
-                     membershipId: String, gender: String, enableMail: String, weight: String,
-                     oemTos: String, vtNickname: String, vtPassword: String)
+                     membershipId: String, gender: String, weight: String,
+                     vtNickname: String, vtPassword: String)
 
 object RegParams {
 
@@ -54,22 +54,18 @@ object RegParams {
     val machineId = getS("machine_id")
     val membershipId = getS("membership_id")
     val gender = getS("gender")
-    val enableMail = getS("enableMail")
     val weight = getS("weight")
-    val oemTos = getS("oem_tos")
     val vtNickname = email
     val vtp = getS("vt_password")
     val vtPassword = if (vtp == "") email else vtp
-    RegParams(npLogin, email, pic, dob, machineId, membershipId, gender, enableMail, weight, oemTos, vtNickname, vtPassword)
+    RegParams(npLogin, email, pic, dob, machineId, membershipId, gender, weight, vtNickname, vtPassword)
   }
 
   def apply(ex: Exerciser, machineId: Long): RegParams = {
 
     val gender = ex.gender ? "M" | "F"
-    val enableMail = (ex.emailPrefs == 1) ? "true" | "false"
-    val oemTos = "15"
-    RegParams(ex.login, ex.email, ex.pic.toString, ex.dob.toString(jodaMMDDYYYY), machineId.toString, ex.membershipId.getOrElse("1"),
-      gender, enableMail, ex.weight.toString, oemTos, ex.email, ex.email)
+    RegParams(ex.login, ex.email, ex.pic.toString, ex.dob.toString(jodaMMDDYYYY), machineId.toString,
+      ex.membershipId.getOrElse("1"), gender, ex.weight.toString, ex.email, ex.email)
   }
 }
 
