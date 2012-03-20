@@ -10,11 +10,20 @@ import anorm._
 import views._
 import models._
 
-
 object WebApp extends Controller with Secured {
 
-  def index = IsAuthenticated("/index",  implicit request =>
-      Ok(html.index("This is the main page parameter"))
+  def restrictedHello = IfCanRead(Target("hello")) {
+    implicit request =>
+      Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
+  }
+
+  def unrestrictedHello = Unrestricted {
+    implicit request =>
+      Ok(html.kenner("Hello Everybody!"))
+  }
+
+  def index = IsAuthenticated("/index", implicit request =>
+    Ok(html.index("This is the main page parameter"))
   )
 
   def testLogin = IsAuthenticated("/testLogin", implicit request =>
@@ -32,34 +41,25 @@ object WebApp extends Controller with Secured {
   val userForm: Form[User] = Form(
     mapping(
       "firstName" -> text,
-      "lastName"  -> text,
-      "email"     -> text,
-      "newPass"   -> optional(text)
-//      "newPassConf" -> text
-    ){ // apply
-      (firstName:String, lastName:String, email:String, newPass:Option[String]) => User(0,Some(firstName),Some(lastName),"",email)
+      "lastName" -> text,
+      "email" -> text,
+      "newPass" -> optional(text)
+      //      "newPassConf" -> text
+    ) {
+      // apply
+      (firstName: String, lastName: String, email: String, newPass: Option[String]) => User(0, Some(firstName), Some(lastName), "", email)
+    } {
+      // UnApply
+      user: User => Option(user.firstName.getOrElse(""), user.lastName.getOrElse(""), user.email, Option(""))
     }
-     { // UnApply
-       user:User => Option(user.firstName.getOrElse(""), user.lastName.getOrElse(""), user.email, Option(""))
-     }
   )
 
-  def userEdit = IsAuthenticated("/userEdit", implicit request =>
-    {
-      session.get("id") match {
-        case Some(id) =>
-          User.findById(id.toLong)match {
-            case Some(u) => Ok(html.userEdit(userForm.fill(u)))
-            case _ =>  Redirect(routes.WebApp.index).flashing("failure" -> ("An error occured."))
-          }
-        case _ =>  Redirect(routes.WebApp.index).flashing("failure" -> ("An error occured."))
+  def userEdit(id: Long) = IsAuthenticated("/userEdit", implicit request =>
+      User.findById(id) match {
+        case Some(u) => Ok(html.userEdit(userForm.fill(u)))
+        case _ => Redirect(routes.WebApp.index()).flashing("failure" -> ("An error occured."))
       }
-    }
   )
-
-//    def userEdit = Action {
-//      Ok(html.userEdit.form(userForm));
-//    }
 
   /**
    * Handle form submission.
@@ -67,39 +67,38 @@ object WebApp extends Controller with Secured {
   def userSubmit = IsAuthenticated("/userEdit", implicit request =>
     userForm.bindFromRequest.fold(
       errors => BadRequest(html.userEdit(errors)),
-      user =>  {
-        // TODO: Update the DB and session here.
-        Redirect(routes.WebApp.index).flashing(
-          "success" -> ("User information updated: "+user.toString)
-        )
+      user => {
+        User.update(user.id, user) match {
+          case 1 => Ok(html.userEdit(userForm.fill(user)) ).flashing("Success" -> ("User updated."))
+          case _ => Redirect(routes.WebApp.index()).flashing("failure" -> ("An error occured."))
+        }
       }
-        // Ok(html.userEdit(user, userForm))
+
     )
   )
 
-  def userList(page: Int, orderBy: Int, filter: String) = Action { implicit request =>
-    Ok(html.userList(
-      User.list(page = page, orderBy = orderBy, filter = ("%"+filter+"%")),
-      orderBy, filter
-    ))
+  def userList(page: Int, orderBy: Int, filter: String) = Action {
+    implicit request =>
+      Ok(html.userList(
+        User.list(page = page, orderBy = orderBy, filter = ("%" + filter + "%")),
+        orderBy, filter
+      ))
   }
-
 
 
   //  "id" -> Long,
   //    (
-//      (id, firstName ) => User(id, firstName ),
-//      (user: User) => (user.firstName)
-//     )
-//
+  //      (id, firstName ) => User(id, firstName ),
+  //      (user: User) => (user.firstName)
+  //     )
+  //
   //      "lastName" ->  text,
   //      "password" -> nonEmptyText (6),
   //      "email" -> nonEmptyText()
   //      "compId" -> ignored (Long),
   //      "oemId" -> ignored(Option(Long)),
   //      "adId" -> ignored(Option(Long))
-      //(User.apply)(User.unapply)
-
+  //(User.apply)(User.unapply)
 
 
 }
