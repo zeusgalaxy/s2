@@ -35,7 +35,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         <div class="span12">
             <form action="@routes.WebApp.userList()" class="well form-search">
 
-                <button id="add" class="btn btn-success pull-right" href="@routes.WebApp.userEdit()">@Messages("button.add.user")</button>
+                <button id="add" class="btn btn-success pull-right" href="@routes.WebApp.userEdit(1)">@Messages("button.add.user")</button>
 
                 <input type="search" name="f" id="searchbox" value="@currentFilter" class="input-medium search-query" placeholder="@Messages("userlist.filter.lastname")"  >
 
@@ -66,7 +66,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
                 <td>@u.firstName</td>
 
-                <td><a href="@routes.WebApp.userEdit()">@u.email</a></td>
+                <td><a href="@routes.WebApp.userEdit(u.id)">@u.email</a></td>
 
                 <td>Admin</td>
                 </a>
