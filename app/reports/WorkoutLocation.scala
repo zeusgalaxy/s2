@@ -12,7 +12,6 @@ import anorm.SqlParser._
 import play.Logger
 
 
-
 case class WorkoutLocation( clubName: String, screens: Long, newReg: java.math.BigDecimal, totReg: java.math.BigDecimal,
                            woCnt: java.math.BigDecimal, woReg: java.math.BigDecimal, woPercReg: java.math.BigDecimal,
                            woPerScreen: java.math.BigDecimal, woScreenDay: java.math.BigDecimal, durAvg: java.math.BigDecimal,

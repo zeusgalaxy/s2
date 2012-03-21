@@ -44,8 +44,8 @@ object ApiSpec extends Specification {
 
     running(FakeApplication()) {
 
-      val pth = "http://localhost:9000/n5ilinkvtuser.jsp?machine_id=1070&id="+id+"&vt_password="+pwd
-      val result = controllers.Api.linkVtUser(id, pwd, 1070L)(FakeRequest("GET", pth))
+      val pth = "http://localhost:9000/vtLinkUser?machine_id=1070&id="+id+"&vt_password="+pwd
+      val result = controllers.Api.vtLinkUser(id, pwd, 1070L)(FakeRequest("GET", pth))
 
       /**
        * TODO -- Testing the account linking feature requires more setup than this. We would need to
@@ -56,7 +56,7 @@ object ApiSpec extends Specification {
        * for that we'd need to look at the log output).
        */
       status(result) must equalTo(OK)
-      contentAsString(result) must contain("Unable to complete account linkage")
+      contentAsString(result) must contain("<api error=\"1\"")
     }
   }
 }

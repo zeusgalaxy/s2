@@ -9,27 +9,25 @@ import anorm._
 
 import views._
 import models._
+import security._
 
 object WebApp extends Controller with Secured {
 
-  def restrictedHello = IfCanRead(Target("hello")) {
-    implicit request =>
-      Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
+  def restrictedHello = IfCanRead(Target("hello")) { implicit request =>
+    Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
   }
 
-  def unrestrictedHello = Unrestricted {
-    implicit request =>
-      Ok(html.kenner("Hello Everybody!"))
+  def unrestrictedHello = Unrestricted { implicit request =>
+    Ok(html.kenner("Hello Everybody!"))
   }
 
-  def index = IsAuthenticated("/index", implicit request =>
-    Ok(html.index("This is the main page parameter"))
+  def index = IsAuthenticated("/index",  implicit request =>
+      Ok(html.index("This is the main page parameter"))
   )
 
   def testLogin = IsAuthenticated("/testLogin", implicit request =>
     Ok(html.testLogin("test string"))
   )
-
 
   /*
   *
