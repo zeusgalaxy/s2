@@ -19,7 +19,7 @@ case class User(id: Long = 0, firstName: Option[String], lastName: Option[String
 /**
  * Helper for pagination.
  */
-case class Page[A](items: Seq[A], totals: Seq[A], page: Int, offset: Long, total: Long) {
+case class Page[User](items: Seq[User], totals: Seq[User], page: Int, offset: Long, total: Long) {
   lazy val prev = Some(page - 1).filter(_ >= 0)
   lazy val next = Some(page + 1).filter(_ => (offset + items.size) < total)
 }
@@ -191,10 +191,6 @@ object User {
    */
     def update(id: Long, user: User) = {
 
-
-      // TODO: NOT TESTED OR VALIDATED IN ANY WAY. WAS PULLED FROM SPRINT
-
-
       implicit val loc = VL("User.update")
 
       val result = vld {
@@ -202,7 +198,7 @@ object User {
           SQL(
             """
               update user
-              set name = {name}, introduced = {introduced}, discontinued = {discontinued}, company_id = {company_id}
+              set firstName = {firstName}, lastName = {lastName}, email={email}
               where id = {id}
             """
           ).on(
@@ -210,10 +206,11 @@ object User {
             'firstName -> user.firstName,
             'lastName -> user.lastName,
             'password -> user.password,
-            'email -> user.email,
-            'compId -> user.compId,
-            'oemId -> user.oemId,
-            'adId -> user.adId
+            'email -> user.email
+//            ,
+//            'compId -> user.compId,
+//            'oemId -> user.oemId,
+//            'adId -> user.adId
           ).executeUpdate()
         }
       }.error.fold(e => None, s => s)
