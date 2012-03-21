@@ -32,6 +32,8 @@ GET     /vtStatus                           controllers.Api.vtStatus(id: String)
 GET     /s2/vtStatus                        controllers.Api.vtStatus(id: String)
 GET     /vtRegister                         controllers.Api.vtRegister(id: String, machine_id: Long)
 GET     /s2/vtRegister                      controllers.Api.vtRegister(id: String, machine_id: Long)
+GET     /getChannels                        controllers.Api.getChannels(id: String, machine_id: Long)
+GET     /s2/getChannels                     controllers.Api.getChannels(id: String, machine_id: Long)
 
 GET     /n5iregister.jsp                    controllers.DinoWrapper.register
 GET     /n5ilogin.jsp                       controllers.DinoWrapper.login(id: String, machine_id: Long)

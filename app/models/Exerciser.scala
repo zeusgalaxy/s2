@@ -108,6 +108,106 @@ object Exerciser {
     }.info.fold(e => None, s => s)
   }
 
+  /** Retrieves exerciser id based on their login. This mapping from login to id occurs frequently, as the client
+   * often thinks in terms of the login, whereas the database is mostly structured around id.
+   *
+   * @param login Exerciser's login identifier
+   * @return The exerciser's id as Some(Long), if found; else None.
+   */
+  def getId(login: String): Option[Long] = {
+
+    implicit val loc = VL("Exerciser.getId")
+
+    vld {
+      DB.withConnection {
+        implicit connection =>
+          SQL("select id from exerciser" +
+            " where login = {login}")
+          .on('login -> login)
+          .as((get[Long]("exerciser.id")).singleOpt)
+      }
+    }.info.fold(e => None, s => s)
+  }
+
+  /** Retrieves any previously saved "favorite channels" for a given exerciser at a given club location.
+   *
+   * @param login Exerciser's login identifier
+   * @param locationId Club where the exerciser is currently at
+   * @return List[Long] of channel numbers, if any found; else Nil
+   */
+  def getSavedChannels(login: String, locationId: Long): List[Long] = {
+
+    implicit val loc = VL("Exerciser.getSavedChannels")
+
+    vld {
+      val id = getId(login).getOrFail("Exerciser login " + login + " not found")
+
+      DB.withConnection("S2") {
+        implicit connection =>
+          SQL("select tv_channel from exerciser_profile join club_exerciser_channel on" +
+            " (exerciser_profile.person_id = club_exerciser_channel.exerciser_id and club_exerciser_channel.club_id = {locationId})" +
+            " where exerciser_profile.client_login = {login}")
+          .on('login -> login,
+              'locationId -> locationId)
+          .as((get[Long]("club_exerciser_channel.tv_channel"))*)
+      }
+    }.info.fold(e => Nil, s => s)
+  }
+
+  /** Saves "favorite channels" for a given exerciser at a given club location. The list of
+   * favorite channels may be empty, which effectively deletes the favorite channels list for that exerciser/club.
+   *
+   * @param login Exerciser's login identifier
+   * @param locationId Club where the exerciser is currently at
+   * @param channels List[Long] of channel numbers to save; may be Nil
+   * @return true if successful, else false
+   */
+  def setSavedChannels(login: String, locationId: Long, channels: List[Long]): Boolean = {
+
+    implicit val loc = VL("Exerciser.setSavedChannels")
+
+    vld {
+
+      val id = getId(login).getOrFail("Exerciser login " + login + " not found")
+      /**
+       * First, clear out any channels that have previously been saved for this exerciser/location.
+       */
+      DB.withConnection("S2") {
+        implicit connection =>
+          SQL(
+            """
+              delete from club_exerciser_channel
+              where exerciser_id = {id}
+              and club_id = {locationId}
+            """
+          ).on(
+            'id -> id,
+            'locationId -> locationId
+          ).executeUpdate()
+      }
+
+      /**
+       * Next, insert each specified channel (if any), one at a time.
+       */
+
+      DB.withConnection("S2") {
+        implicit connection =>
+          channels.foreach{ ch =>
+            SQL(
+              """
+                insert into club_exerciser_channel values({locationId}, {id}, {ch})
+              """
+            ).on(
+              'locationId -> locationId,
+              'id -> id,
+              'ch -> ch
+            ).executeUpdate()
+          }
+      }
+
+    }.info.fold(e => false, s => true)
+  }
+
   /** Updates the Virtual Trainer fields in the exerciser record with the values provided by the
    * Virtual Trainer api, once we've successfully registered or logged in the Netpulse exerciser with
    * Virtual Trainer.

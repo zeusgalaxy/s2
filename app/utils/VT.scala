@@ -7,8 +7,8 @@ import models._
 
 import play.api.Play.current
 import org.joda.time._
-import net.liftweb.json._
-import net.liftweb.json.JsonDSL._
+import play.api.libs.json._
+import play.api.libs.json.Json._
 import play.api.libs.ws._
 import play.api.libs.ws.WS._
 import xml._
@@ -55,9 +55,9 @@ object RegParams {
     val membershipId = getS("membership_id")
     val gender = getS("gender")
     val weight = getS("weight")
-    val vtNickname = email
+    val vtNickname = npLogin
     val vtp = getS("vt_password")
-    val vtPassword = if (vtp == "") email else vtp
+    val vtPassword = if (vtp == "") npLogin else vtp
     RegParams(npLogin, email, pic, dob, machineId, membershipId, gender, weight, vtNickname, vtPassword)
   }
 
@@ -104,34 +104,35 @@ object VT {
     vld {
 
       val locationId = Machine.getBasic(rp.machineId.toLong).get.locationId
-      val json = ("age" -> age(rp.dob)) ~
-        ("nickName" -> rp.vtNickname) ~
-        ("password" -> b64Enc.encode(rp.vtPassword.getBytes("UTF-8"))) ~
-        ("gender" -> rp.gender.toLowerCase) ~
-        ("emailAddress" -> rp.email) ~
-        ("weight" -> rp.weight) ~
-        ("weightUnit" -> "I") ~
-        ("preferredLanguageCode" -> "en_US") ~
-        ("locationId" -> locationId)
-
-      Printer.compact(JsonAST.render(json))
+      val json = JsObject(List(
+        "age" -> JsNumber(age(rp.dob)),
+        "nickName" -> JsString(rp.vtNickname),
+        "password" -> JsString(b64Enc.encode(rp.vtPassword.getBytes("UTF-8"))),
+        "gender" -> JsString(rp.gender.toLowerCase),
+        "emailAddress" -> JsString(rp.email),
+        "weight" -> JsString(rp.weight),
+        "weightUnit" -> JsString("I"),
+        "preferredLanguageCode" -> JsString("en_US"),
+        "locationId" -> JsNumber(locationId)
+       ))
+      stringify(json)
     }.error
   }
 
   private def linkBody(npLogin: String, vtUid: String) = {
-    Printer.compact(JsonAST.render(
-      ("externalUserId" -> npLogin) ~
+    stringify(JsObject(List(
+      "externalUserId" -> JsString(npLogin),
         //      ("externalUserId" -> "1") ~       // Put a not-previously-used number here for testing purposes
-        ("vtUserId" -> vtUid) ~
-        ("type" -> "NP")
-    ))
+       "vtUserId" -> JsString(vtUid),
+       "type" -> JsString("NP")
+    )))
   }
 
   private def loginBody(emailOrLogin: String, password: String) = {
-    Printer.compact(JsonAST.render(
-      ("username" -> b64Enc.encode(emailOrLogin.getBytes("UTF-8"))) ~
-        ("password" -> b64Enc.encode(password.getBytes("UTF-8")))
-    ))
+    stringify(JsObject(List(
+      "username" -> JsString(b64Enc.encode(emailOrLogin.getBytes("UTF-8"))),
+       "password" -> JsString(b64Enc.encode(password.getBytes("UTF-8")))
+    )))
   }
 
   def vtRequest(path: String, header: => String): WSRequestHolder = {
@@ -189,7 +190,8 @@ object VT {
             regResult <- vld(doVtRegister(rBody))
             status <- tst(regResult)(_.status == 200).
               add("vt register result status", regResult.status.toString).
-              add("body", regResult.body).error
+              add("body sent", rBody).
+              add("body received", regResult.body).error
 
             regXml <- vld(regResult.xml).add("regResult", regResult.toString())
             vtUid <- vld((regXml \\ "userId" head).text).add("regXml", regXml.toString())

@@ -124,7 +124,7 @@ object Api extends Controller {
       implicit val loc = VL("Api.vtStatus")
       val ex = Exerciser.findByLogin(npLogin)
       Ok(ex.isDefined ? ex.get.insertVtDetails(<api error={apiNoError.toString}></api>, "api") |
-                                                <api error={apiUnableToRetrieveExerciser.toString}/>)
+          <api error={apiUnableToRetrieveExerciser.toString}/>)
   }
 
   // http://localhost:9000/vtRegister?machine_id=1070&id=2020
@@ -160,6 +160,44 @@ object Api extends Controller {
           } yield VT.asXml(vtPredefinedPresets)
       }).error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
+
+  def getChannels(npLogin: String, locationId: Long) = Action {
+    implicit request =>
+
+      implicit val loc = VL("Api.getChannels")
+      val channels = Exerciser.getSavedChannels(npLogin, locationId)
+      Ok(<api error={apiNoError.toString}>
+        <channels>
+          {for (ch <- channels) yield
+          <channel>
+            {ch}
+          </channel>}
+        </channels>
+      </api>)
+  }
+
+  // Local test: curl --header "Content-Type: text/xml; charset=UTF-8" -d@setChannels.xml http://localhost:9000/setChannels
+
+  def setChannels = Action(parse.xml) {
+    implicit request =>
+
+      implicit val loc = VL("Api.setChannels")
+
+      val finalResult = vld {
+
+        val npLogin = (request.body \\ "@npLogin").text
+        val locationId = (request.body \\ "@locationId").text.toLong
+        val channels = request.body \\ "channel"
+        val chList = (for (ch <- channels) yield ch.text.toLong).toList
+
+        Exerciser.setSavedChannels(npLogin, locationId, chList)
+
+      }.error.fold(e => false, s => s)
+
+      finalResult ? Ok(<api error={apiNoError.toString}></api>) |
+        Ok(<api error={apiGeneralError.toString}></api>)
+  }
+
 
   /**Landing page to give to Gigya so they can call back to Netpulse after completing social login.
    *
