@@ -14,7 +14,7 @@ GET     /restrictedHello                    controllers.WebApp.restrictedHello()
 GET     /unrestrictedHello                  controllers.WebApp.unrestrictedHello()
 
 # User admin
-GET     /userEdit                           controllers.WebApp.userEdit
+GET     /userEdit                           controllers.WebApp.userEdit(id:Long)
 POST    /userSubmit                         controllers.WebApp.userSubmit
 GET     /userList                           controllers.WebApp.userList(p:Int ?= 0, s:Int ?= 1, f ?= "" )
 
