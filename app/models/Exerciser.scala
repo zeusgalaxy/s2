@@ -114,17 +114,17 @@ object Exerciser {
    * @param login Exerciser's login identifier
    * @return The exerciser's id as Some(Long), if found; else None.
    */
-  def getId(login: String): Option[Long] = {
+  def getId(login: String): Option[Int] = {
 
     implicit val loc = VL("Exerciser.getId")
 
     vld {
-      DB.withConnection {
+      DB.withConnection("S2") {
         implicit connection =>
-          SQL("select id from exerciser" +
-            " where login = {login}")
+          SQL("select person_id from exerciser_profile" +
+            " where client_login = {login}")
           .on('login -> login)
-          .as((get[Long]("exerciser.id")).singleOpt)
+          .as((get[Int]("exerciser_profile.person_id")).singleOpt)
       }
     }.info.fold(e => None, s => s)
   }
@@ -144,12 +144,12 @@ object Exerciser {
 
       DB.withConnection("S2") {
         implicit connection =>
-          SQL("select tv_channel from exerciser_profile join club_exerciser_channel on" +
+          SQL("select tv_channel_id from exerciser_profile join club_exerciser_channel on" +
             " (exerciser_profile.person_id = club_exerciser_channel.exerciser_id and club_exerciser_channel.club_id = {locationId})" +
             " where exerciser_profile.client_login = {login}")
           .on('login -> login,
               'locationId -> locationId)
-          .as((get[Long]("club_exerciser_channel.tv_channel"))*)
+          .as((get[Long]("club_exerciser_channel.tv_channel_id"))*)
       }
     }.info.fold(e => Nil, s => s)
   }
@@ -168,7 +168,8 @@ object Exerciser {
 
     vld {
 
-      val id = getId(login).getOrFail("Exerciser login " + login + " not found")
+      val id = getId(login).getOrElse(throw new Exception("Exerciser login " + login + " not found"))
+      Logger.debug("Id that will be passed in for saving channels (string form): " + id.toString)
       /**
        * First, clear out any channels that have previously been saved for this exerciser/location.
        */
@@ -195,7 +196,8 @@ object Exerciser {
           channels.foreach{ ch =>
             SQL(
               """
-                insert into club_exerciser_channel values({locationId}, {id}, {ch})
+                insert into club_exerciser_channel set club_id = {locationId}, exerciser_id = {id},
+                tv_channel_id = {ch}, created_at = now(), created_by = 0
               """
             ).on(
               'locationId -> locationId,

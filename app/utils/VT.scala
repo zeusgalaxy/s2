@@ -65,7 +65,7 @@ object RegParams {
 
     val gender = ex.gender ? "M" | "F"
     RegParams(ex.login, ex.email, ex.pic.toString, ex.dob.toString(jodaMMDDYYYY), machineId.toString,
-      ex.membershipId.getOrElse("1"), gender, ex.weight.toString, ex.email, ex.email)
+      ex.membershipId.getOrElse("1"), gender, ex.weight.toString, ex.login, ex.login)
   }
 }
 
@@ -105,16 +105,17 @@ object VT {
 
       val locationId = Machine.getBasic(rp.machineId.toLong).get.locationId
       val json = JsObject(List(
-        "age" -> JsNumber(age(rp.dob)),
-        "nickName" -> JsString(rp.vtNickname),
-        "password" -> JsString(b64Enc.encode(rp.vtPassword.getBytes("UTF-8"))),
-        "gender" -> JsString(rp.gender.toLowerCase),
-        "emailAddress" -> JsString(rp.email),
-        "weight" -> JsString(rp.weight),
-        "weightUnit" -> JsString("I"),
-        "preferredLanguageCode" -> JsString("en_US"),
-        "locationId" -> JsNumber(locationId)
-       ))
+      "age" -> JsNumber(age(rp.dob)),
+      "nickName" -> JsString(rp.vtNickname),
+      "password" -> JsString(b64Enc.encode(rp.vtPassword.getBytes("UTF-8"))),
+      "gender" -> JsString(rp.gender.toLowerCase),
+      "emailAddress" -> JsString(rp.email),
+      "weight" -> JsString(rp.weight),
+      "weightUnit" -> JsString("I"),
+      "preferredLanguageCode" -> JsString("en_US"),
+      "locationId" -> JsNumber(locationId)
+      ))
+      Logger.debug("VT registerBody json = " + stringify(json))
       stringify(json)
     }.error
   }
