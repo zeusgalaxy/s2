@@ -5,8 +5,8 @@
 
 # --- !Ups
 
-alter table exerciser add column vt_status tinyint not null default 0;
+######alter table exerciser add column vt_status tinyint not null default 0;
 
 # --- !Downs
 
-alter table exerciser drop column vt_status;
+######alter table exerciser drop column vt_status;
