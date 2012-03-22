@@ -14,7 +14,6 @@ object ApplicationBuild extends Build {
     )
 
   val appDependencies = Seq(
-    "net.liftweb" %% "lift-json" % "2.4-M5",
     "com.ning" % "async-http-client" % "1.7.0" withSources(),
     "mysql" % "mysql-connector-java" % "5.1.18",
     "joda-time" % "joda-time" % "2.0",

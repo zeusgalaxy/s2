@@ -13,7 +13,7 @@ import security._
 
 object WebApp extends Controller with Secured {
 
-  def restrictedHello = IfCanRead(Target("hello")) { implicit request =>
+  def restrictedHello = IfCanRead(tgReports) { implicit request =>
     Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
   }
 

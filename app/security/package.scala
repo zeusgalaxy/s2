@@ -45,7 +45,7 @@ package object security {
 
   // Some example targets have been predefined. These can be fleshed out as we define the application.
   val tgNone = Target("")
-  val tgReports = Target("reports")
+  val tgReports = Target("mySpecificReport")
   val tgAdminPortal = Target("adminPortal")
   val tgUserMaint = Target("userMaint")
 

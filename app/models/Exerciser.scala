@@ -15,7 +15,7 @@ import Scalaz._
 case class Exerciser(dbId: Long, login: String, email: String, pic: Int,
                      membershipId: Option[String], gender: Boolean, dob: DateTime,
                      emailPrefs: Int, weight: Long, homeClubId: Option[Long], homeClubName: Option[String],
-                     vtUserId: String, vtToken: String, vtTokenSecret: String) {
+                     vtUserId: String, vtToken: String, vtTokenSecret: String, vtStatus: Int) {
 
   def hasVtConnection = (!vtUserId.isEmpty && !vtToken.isEmpty && !vtTokenSecret.isEmpty)
 
@@ -23,7 +23,7 @@ case class Exerciser(dbId: Long, login: String, email: String, pic: Int,
     XmlMutator(x).add(parent,
       <exerciser>
       <email>{email}</email>
-      <isConnectedToVt>{hasVtConnection.toString}</isConnectedToVt>
+      <virtualTrainerStatus>{vtStatus.toString}</virtualTrainerStatus>
       <homeClub>
         <id>{homeClubId.getOrElse("").toString}</id>
         <name>{homeClubName.getOrElse("")}</name>
@@ -47,7 +47,7 @@ object Exerciser {
   val selectFields = " exerciser.id, exerciser.login, exerciser.email, exerciser.pic, " +
     " exerciser.membership_id, exerciser.gender," +
     " date(exerciser.date_of_birth) as dob, exerciser.email_prefs, exerciser.weight, exerciser.location_id," +
-    " exerciser.vt_user_id, exerciser.vt_token, exerciser.vt_token_secret "
+    " exerciser.vt_user_id, exerciser.vt_token, exerciser.vt_token_secret, exerciser.vt_status "
 
   val simple = {
     get[Long]("exerciser.id") ~
@@ -63,11 +63,12 @@ object Exerciser {
       get[String]("exerciser.vt_user_id") ~
       get[String]("exerciser.vt_token") ~
       get[String]("exerciser.vt_token_secret") ~
+      get[Int]("exerciser.vt_status") ~
       get[Option[String]]("location.name") map {
       case dbId ~ login ~ email ~ pic ~ membershipId ~ gender ~ dob ~ emailPrefs ~
-        weight ~ homeClubId ~ vtUserId ~ vtToken ~ vtTokenSecret ~ homeClubName =>
+        weight ~ homeClubId ~ vtUserId ~ vtToken ~ vtTokenSecret ~ vtStatus ~ homeClubName =>
         Exerciser(dbId, login, email, pic, membershipId, gender, new DateTime(dob.toString), emailPrefs,
-          weight, homeClubId, homeClubName, vtUserId, vtToken, vtTokenSecret)
+          weight, homeClubId, homeClubName, vtUserId, vtToken, vtTokenSecret, vtStatus)
     }
   }
 
@@ -107,8 +108,110 @@ object Exerciser {
     }.info.fold(e => None, s => s)
   }
 
+  /** Retrieves exerciser id based on their login. This mapping from login to id occurs frequently, as the client
+   * often thinks in terms of the login, whereas the database is mostly structured around id.
+   *
+   * @param login Exerciser's login identifier
+   * @return The exerciser's id as Some(Long), if found; else None.
+   */
+  def getId(login: String): Option[Int] = {
+
+    implicit val loc = VL("Exerciser.getId")
+
+    vld {
+      DB.withConnection("s2") {
+        implicit connection =>
+          SQL("select person_id from exerciser_profile" +
+            " where client_login = {login}")
+          .on('login -> login)
+          .as((get[Int]("exerciser_profile.person_id")).singleOpt)
+      }
+    }.info.fold(e => None, s => s)
+  }
+
+  /** Retrieves any previously saved "favorite channels" for a given exerciser at a given club location.
+   *
+   * @param login Exerciser's login identifier
+   * @param locationId Club where the exerciser is currently at
+   * @return List[Long] of channel numbers, if any found; else Nil
+   */
+  def getSavedChannels(login: String, locationId: Long): List[Long] = {
+
+    implicit val loc = VL("Exerciser.getSavedChannels")
+
+    vld {
+      val id = getId(login).getOrFail("Exerciser login " + login + " not found")
+
+      DB.withConnection("s2") {
+        implicit connection =>
+          SQL("select tv_channel_id from exerciser_profile join club_exerciser_channel on" +
+            " (exerciser_profile.person_id = club_exerciser_channel.exerciser_id and club_exerciser_channel.club_id = {locationId})" +
+            " where exerciser_profile.client_login = {login}")
+          .on('login -> login,
+              'locationId -> locationId)
+          .as((get[Long]("club_exerciser_channel.tv_channel_id"))*)
+      }
+    }.info.fold(e => Nil, s => s)
+  }
+
+  /** Saves "favorite channels" for a given exerciser at a given club location. The list of
+   * favorite channels may be empty, which effectively deletes the favorite channels list for that exerciser/club.
+   *
+   * @param login Exerciser's login identifier
+   * @param locationId Club where the exerciser is currently at
+   * @param channels List[Long] of channel numbers to save; may be Nil
+   * @return true if successful, else false
+   */
+  def setSavedChannels(login: String, locationId: Long, channels: List[Long]): Boolean = {
+
+    implicit val loc = VL("Exerciser.setSavedChannels")
+
+    vld {
+
+      val id = getId(login).getOrElse(throw new Exception("Exerciser login " + login + " not found"))
+      Logger.debug("Id that will be passed in for saving channels (string form): " + id.toString)
+      /**
+       * First, clear out any channels that have previously been saved for this exerciser/location.
+       */
+      DB.withConnection("s2") {
+        implicit connection =>
+          SQL(
+            """
+              delete from club_exerciser_channel
+              where exerciser_id = {id}
+              and club_id = {locationId}
+            """
+          ).on(
+            'id -> id,
+            'locationId -> locationId
+          ).executeUpdate()
+      }
+
+      /**
+       * Next, insert each specified channel (if any), one at a time.
+       */
+
+      DB.withConnection("s2") {
+        implicit connection =>
+          channels.foreach{ ch =>
+            SQL(
+              """
+                insert into club_exerciser_channel set club_id = {locationId}, exerciser_id = {id},
+                tv_channel_id = {ch}, created_at = now(), created_by = 0
+              """
+            ).on(
+              'locationId -> locationId,
+              'id -> id,
+              'ch -> ch
+            ).executeUpdate()
+          }
+      }
+
+    }.info.fold(e => false, s => true)
+  }
+
   /** Updates the Virtual Trainer fields in the exerciser record with the values provided by the
-   * Virtual Trainer api, once we've successfully registered or linked the Netpulse exerciser with
+   * Virtual Trainer api, once we've successfully registered or logged in the Netpulse exerciser with
    * Virtual Trainer.
    *
    * @param npLogin The exerciser's login identifier.
@@ -119,9 +222,9 @@ object Exerciser {
    * @param vtTokenSecret The token secret associated with the token, above.
    * @return True if successful, else False.
    */
-  def linkVT(npLogin: String, vtUserId: String, vtToken: String, vtTokenSecret: String): Boolean = {
+  def loginVt(npLogin: String, vtUserId: String, vtToken: String, vtTokenSecret: String): Boolean = {
 
-    implicit val loc = VL("Exerciser.linkVT")
+    implicit val loc = VL("Exerciser.loginVt")
 
     vld {
       DB.withConnection {
@@ -129,14 +232,16 @@ object Exerciser {
           SQL(
             """
               update exerciser
-              set vt_user_id = {vtUserId}, vt_token = {vtToken}, vt_token_secret = {vtTokenSecret}
+              set vt_user_id = {vtUserId}, vt_token = {vtToken}, vt_token_secret = {vtTokenSecret},
+                  vt_status = {vtStatus}
               where login = {login}
             """
           ).on(
             'login -> npLogin,
             'vtUserId -> vtUserId,
             'vtToken -> vtToken,
-            'vtTokenSecret -> vtTokenSecret
+            'vtTokenSecret -> vtTokenSecret,
+            'vtStatus -> vtStatusLoggedIn
           ).executeUpdate()
       }
     }.info.fold(e => false, s => true)
@@ -152,9 +257,9 @@ object Exerciser {
    * @param npLogin The exerciser's login identifier.
    * @return True if successful, else False.
    */
-  def logoutVT(npLogin: String): Boolean = {
+  def logoutVt(npLogin: String): Boolean = {
 
-    implicit val loc = VL("Exerciser.logoutVT")
+    implicit val loc = VL("Exerciser.logoutVt")
 
     vld {
       DB.withConnection {
@@ -162,11 +267,12 @@ object Exerciser {
           SQL(
             """
               update exerciser
-              set vt_token = "", vt_token_secret = ""
+              set vt_token = "", vt_token_secret = "", vt_status = {vtStatus}
               where login = {login}
             """
           ).on(
-            'login -> npLogin
+            'login -> npLogin,
+            'vtStatus -> vtStatusLinked
           ).executeUpdate()
       }
     }.info.fold(e => false, s => true)
