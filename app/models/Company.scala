@@ -5,6 +5,7 @@ import play.api.Play.current
 
 import anorm._
 import anorm.SqlParser._
+import utils._
 
 case class Company(id: Pk[Long] = NotAssigned, name: String)
 
@@ -31,9 +32,17 @@ object Company {
    *
    * @return List of tuples of company ids and company names.
    */
-  def reportCompanyOptions: Seq[(String,String)] = DB.withConnection("report") { implicit connection =>
-    SQL("select distinct(company_id), company_name from report.location order by company_name").
-      as(Company.reportBasic *).map(c => c.id.toString -> c.name)
+  def reportCompanyOptions: Seq[(String,String)] = {
+
+    implicit val loc = VL("Company.reportCompanyOptions")
+
+    vld { 
+      DB.withConnection("report") { 
+        implicit connection =>
+          SQL("select distinct(company_id), company_name from report.location order by company_name").
+          as(Company.reportBasic *).map(c => c.id.toString -> c.name)
+      }
+    }.error.fold(e => Seq(), s => s )
   }
 
 }
