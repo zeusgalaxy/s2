@@ -119,7 +119,7 @@ object Exerciser {
     implicit val loc = VL("Exerciser.getId")
 
     vld {
-      DB.withConnection("S2") {
+      DB.withConnection("s2") {
         implicit connection =>
           SQL("select person_id from exerciser_profile" +
             " where client_login = {login}")
@@ -142,7 +142,7 @@ object Exerciser {
     vld {
       val id = getId(login).getOrFail("Exerciser login " + login + " not found")
 
-      DB.withConnection("S2") {
+      DB.withConnection("s2") {
         implicit connection =>
           SQL("select tv_channel_id from exerciser_profile join club_exerciser_channel on" +
             " (exerciser_profile.person_id = club_exerciser_channel.exerciser_id and club_exerciser_channel.club_id = {locationId})" +
@@ -173,7 +173,7 @@ object Exerciser {
       /**
        * First, clear out any channels that have previously been saved for this exerciser/location.
        */
-      DB.withConnection("S2") {
+      DB.withConnection("s2") {
         implicit connection =>
           SQL(
             """
@@ -191,7 +191,7 @@ object Exerciser {
        * Next, insert each specified channel (if any), one at a time.
        */
 
-      DB.withConnection("S2") {
+      DB.withConnection("s2") {
         implicit connection =>
           channels.foreach{ ch =>
             SQL(
