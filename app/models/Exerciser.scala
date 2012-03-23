@@ -206,7 +206,6 @@ object Exerciser {
             ).executeUpdate()
           }
       }
-
     }.info.fold(e => false, s => true)
   }
 
