@@ -16,20 +16,21 @@ import Scalaz._
  */
 object Api extends Controller {
 
-  // http://localhost:9000/vtLinkUser?machine_id=1070&id=2115180443&vt_password=sOCClkoE443%40stross.com
-
   /**Links a Netpulse user with their Virtual Trainer account in those situations where the
    * exerciser had created the Virtual Trainer account prior to creating their Netpulse account. The
    * connection between the two accounts is their e-mail address. If they used different e-mail addresses
    * to set up the two accounts, we cannot link them.
+   *
+   * An example call to test:
+   * http://localhost:9000/vtLinkUser?machine_id=1070&id=2115180443&vt_password=sOCClkoE443%40stross.com
    *
    * @param npLogin Id used by the exerciser to log into Netpulse.
    * @param vtPassword Password used by the exerciser to access their Virtual Trainer account.
    * @param machineId Id of the machine from which this link is being attempted. This is needed
    * in order to return an appropriate set of predefined_presets and/or workouts after the linking
    * is completed.
-   * @return Xml that contains Virtual Trainer predefined_presets and/or workouts appropriate for the
-   * machine that the exerciser is currently on.
+   * @return HTTP status 200, with an xml body that contains Virtual Trainer predefined_presets and/or
+   * workouts appropriate for the machine that the exerciser is currently on.
    */
   def vtLinkUser(npLogin: String, vtPassword: String, machineId: Long) = Action {
     implicit request =>
@@ -58,21 +59,22 @@ object Api extends Controller {
       finalResult.error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
 
-  // http://localhost:9000/vtLogin?machine_id=1070&id=2115180443&vt_password=sOCClkoE443%40stross.com
-
   /**Establishes an active session for a Netpulse user that has a Virtual Trainer account, and for whom
    * the two accounts have been linked (either through an earlier auto registration, explicit registration
    * or explicit linking action). Once the session is established, the system will be able to return
    * predefined presets and workouts for this exerciser, and the session will remain active until explicitly
    * cancelled by calling vtLogout.
    *
+   * An example call to test:
+   * http://localhost:9000/vtLogin?machine_id=1070&id=2115180443&vt_password=sOCClkoE443%40stross.com
+   *
    * @param npLogin Id used by the exerciser to log into Netpulse.
    * @param vtPassword Password used by the exerciser to access their Virtual Trainer account.
    * @param machineId Id of the machine from which this link is being attempted. This is needed
    * in order to return an appropriate set of predefined_presets and/or workouts after the linking
    * is completed.
-   * @return Xml that contains Virtual Trainer predefined_presets and/or workouts appropriate for the
-   * machine that the exerciser is currently on.
+   * @return HTTP status 200, with an xml body that contains Virtual Trainer predefined_presets and/or
+   * workouts appropriate for the machine that the exerciser is currently on.
    */
   def vtLogin(npLogin: String, vtPassword: String, machineId: Long) = Action {
     implicit request =>
@@ -98,7 +100,14 @@ object Api extends Controller {
       finalResult.error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
 
-  // http://localhost:9000/vtLogout?id=2115180443
+  /**Terminates any active session between a Netpulse user and their Virtual Trainer account.
+   *
+   * An example call to test:
+   * http://localhost:9000/vtLogout?id=2115180443
+   *
+   * @param npLogin Id used by the exerciser to log into Netpulse.
+   * @return HTTP status 200, with an xml body indicating whether the call was successful or not.
+   */
   def vtLogout(npLogin: String) = Action {
 
     implicit request =>
@@ -116,8 +125,15 @@ object Api extends Controller {
       finalResult.error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
 
-  // http://localhost:9000/vtStatus?id=2115180443
-
+  /**Retrieves Virtual Trainer status information for a given exerciser.
+   *
+   * An example call to test:
+   * http://localhost:9000/vtStatus?id=2115180443
+   *
+   * @param npLogin Id used by the exerciser to log into Netpulse.
+   * @return HTTP status 200, with an xml body describing the status of an exerciser's
+   * current relationship with Virtual Trainer.
+   */
   def vtStatus(npLogin: String) = Action {
     implicit request =>
 
@@ -127,8 +143,17 @@ object Api extends Controller {
           <api error={apiUnableToRetrieveExerciser.toString}/>)
   }
 
-  // http://localhost:9000/vtRegister?machine_id=1070&id=2020
-
+  /** Registers an existing exerciser with Virtual Trainer. This call is used instead of
+   * the DinoWrapper.register call for those cases where the exerciser is already set up within
+   * Netpulse, and just needs to do the Virtual Trainer portion of the registration.
+   *
+   * @return HTTP status 200, with an xml body consisting of the predefined_presets that Virtual
+   * Trainer provides for that machine type, assuming the call was successful. If not, the xml message
+   * will include an error code indicating the nature of the problem.
+   *
+   * An example call to test:
+   * http://localhost:9000/vtRegister?machine_id=1070&id=2020
+   */
   def vtRegister(npLogin: String, machineId: Long) = Action {
     implicit request =>
 
@@ -161,6 +186,16 @@ object Api extends Controller {
       }).error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
 
+  /**Retrieves previously saved "favorite" tv channels for a given exerciser and location.
+   *
+   * An example call to test:
+   * http://localhost:9000/getChannels?id=2115180443,location_id=87
+   *
+   * @param npLogin Id used by the exerciser to log into Netpulse.
+   * @param locationId Club id where the exercise is currently located.
+   * @return HTTP status 200, with an xml body listing the channels (if any) that the exerciser
+   * has previously saved as "favorites" for that location.
+   */
   def getChannels(npLogin: String, locationId: Long) = Action {
     implicit request =>
 
@@ -176,8 +211,13 @@ object Api extends Controller {
       </api>)
   }
 
-  // Local test: curl --header "Content-Type: text/xml; charset=UTF-8" -d@setChannels.xml http://localhost:9000/setChannels
-
+  /** Saves a list of "favorite" tv channels
+   *
+   * @return HTTP status 200, with an xml body indicating whether the call was successful.
+   *
+   * An example call to test locally, when in the test/controllers directory:
+   * curl --header "Content-Type: text/xml; charset=UTF-8" -d@setChannels.xml http://localhost:9000/setChannels
+   */
   def setChannels = Action(parse.xml) {
     implicit request =>
 
