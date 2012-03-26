@@ -15,27 +15,57 @@ import xml._
 import play.api.mvc._
 import play.api.Logger
 
-// http://localhost:9000/n5iregister.jsp?machine_id=1070&id=2115180102&membership_id=1&email=sOCClkoE102%40stross.com&
-// pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15
+/** Encapsulates the basic description of a VirtualTrainer user as resulting from a registration call
+ * to the VT servers.
+ *
+ * @param vtUserId The permanent user id assigned by VirtualTrainer to this account
+ * @param vtNickname The nickname associated with this account; provides an alternate means of loggin in to the VT website
+ */
+case class VtUser(vtUserId: String, vtNickname: String)
 
-case class VtUser(vtUserId: String, vtNickname: String, vtToken: String, vtTokenSecret: String)
-
+/**
+ * Helper object to build our internal VtUser representation from the xml returned by the VT servers.
+ */
 object VtUser {
-  def apply(x: Elem, tok: String = "", tokSec: String = ""): VtUser = {
+  def apply(x: Elem): VtUser = {
     val id = (x \\ "userId" head).text
     val nm = (x \\ "nickName" head).text
-    VtUser(id, nm, tok, tokSec)
+    VtUser(id, nm)
   }
 }
 
-case class RegParams(npLogin: String, email: String, pic: String, dob: String, machineId: String,
-                     membershipId: String, gender: String, weight: String,
-                     vtNickname: String, vtPassword: String)
+/** Encapsulates all of the variables that will be needed when registering a user with VirtualTrainer.
+ * Because users may or may not already be registered with Netpulse when the VT registration occurs, these
+ * values may come from different places: either from the database (if an existing Netpulse exerciser) or
+ * from the registration params passed in from the client.
+ *
+ * @param npLogin Netpulse login id
+ * @param email Email address
+ * @param dob Date of birth, in MMDDYYYY format
+ * @param machineId Machine id from which the registration is occurring
+ * @param gender M or F
+ * @param weight Weight
+ * @param vtNickname The nickname (alternate login id) for the exerciser at VT. Defaults to npLogin.
+ * @param vtPassword The password for the exerciser at VT. Defaults to npLogin.
+ */
+case class RegParams(npLogin: String, email: String, dob: String, machineId: String, gender: String,
+                     weight: String, vtNickname: String, vtPassword: String)
 
+/**
+ * Helper object to instantiate RegParams, either from incoming parameters or from the exerciser's db record.
+ */
 object RegParams {
 
   val jodaMMDDYYYY = org.joda.time.format.DateTimeFormat.forPattern("MMddyyyy")
 
+  /** Populates a RegParams from values in an incoming request. Handles either a POST body or
+   * GET query params. The outgoing nickname always defaults to the incoming npLogin. The
+   * outgoing vt password will use any incoming value that is supplied; if none, it will
+   * default to the npLogin.
+   *
+   * @param rq Incoming request values, either in the POST body or the GET query string
+   * @return RegParams populated appropriately.
+   */
   def apply(rq: Request[AnyContent]): RegParams = {
 
     implicit val source = rq.body.asFormUrlEncoded match {
@@ -49,52 +79,81 @@ object RegParams {
 
     val npLogin = getS("id")
     val email = getS("email")
-    val pic = getS("pic")
     val dob = getS("DOB")
     val machineId = getS("machine_id")
-    val membershipId = getS("membership_id")
     val gender = getS("gender")
     val weight = getS("weight")
     val vtNickname = npLogin
     val vtp = getS("vt_password")
     val vtPassword = if (vtp == "") npLogin else vtp
-    RegParams(npLogin, email, pic, dob, machineId, membershipId, gender, weight, vtNickname, vtPassword)
+    RegParams(npLogin, email, dob, machineId, gender, weight, vtNickname, vtPassword)
   }
 
+  /** Populates a RegParams from values in an existing exerciser's database record.
+   * GET query params. The outgoing vt password and the vt nickname will both default to the exerciser's login.
+   *
+   * @param ex Exerciser encapsulation of database values
+   * @param machineId Machine from which the registration is occurring
+   * @return RegParams populated appropriately.
+   */
   def apply(ex: Exerciser, machineId: Long): RegParams = {
 
     val gender = ex.gender ? "M" | "F"
-    RegParams(ex.login, ex.email, ex.pic.toString, ex.dob.toString(jodaMMDDYYYY), machineId.toString,
-      ex.membershipId.getOrElse("1"), gender, ex.weight.toString, ex.login, ex.login)
+    RegParams(ex.login, ex.email, ex.dob.toString(jodaMMDDYYYY), machineId.toString,
+                  gender, ex.weight.toString, ex.login, ex.login)
   }
 }
 
+/**
+ * Provides various functions for interfacing with the Virtual Trainer servers.
+ */
 object VT {
 
+  /** Calculates an age, in years, from a given birth date.
+   *
+   * @param dob Date of birth, in MMDDYYYY format
+   * @return Age in years
+   */
   def age(dob: String): Int = {
     val born = new DateTime(dob.slice(4, 8).toInt, dob.slice(0, 2).toInt, dob.slice(2, 4).toInt, 0, 0, 0)
     new Interval(born, DateTime.now).toPeriod.getYears
   }
 
+  /** Constructs an HTTP OAuth header that includes the Netpulse security components, but does NOT
+   * include the exerciser-level security token. This header is appropriate for certain VT API calls
+   * that are not "secured" at the user level.
+   *
+   * @param consKey The Netpulse consumer key, provided to us by VirtualTrainer
+   * @param consSecret The Netpulse consumer secret, provided to us by Virtual Trainer
+   * @return An HTTP OAuth header for use in "unsecured" calls to Virtual Trainer
+   */
   def headerNoToken(consKey: String = vtConsumerKey, consSecret: String = vtConsumerSecret): String =
     "OAuth oauth_consumer_key=\"" +
       consKey + "\", oauth_nonce=\"" + nonce + "\", oauth_timestamp=\"" + utcNowInSecs +
       "\", oauth_signature=\"" + b64Enc.encode(consSecret.getBytes("UTF-8")) + "\""
 
-  def headerWithToken(token: String, tokenSecret: String,
-                      consKey: String = vtConsumerKey, consSecret: String = vtConsumerSecret): String =
+  /** Constructs an HTTP OAuth header that includes the Netpulse security components, AND
+   * includes the exerciser-level security token. This header is appropriate for VT API calls
+   * that are "secured" at the user level.
+   *
+   * @param token The exerciser's VT session token
+   * @param tokenSecret The exerciser's VT session token secret
+   * @param consKey The Netpulse consumer key, provided to us by VirtualTrainer
+   * @param consSecret The Netpulse consumer secret, provided to us by Virtual Trainer
+   * @return An HTTP OAuth header for use in "secured" calls to Virtual Trainer
+   */
+  def headerWithToken(token: String, tokenSecret: String, consKey: String = vtConsumerKey,
+                                                consSecret: String = vtConsumerSecret): String =
     "OAuth oauth_consumer_key=\"" +
       consKey + "\", oauth_nonce=\"" + nonce + "\", oauth_timestamp=\"" + utcNowInSecs +
       "\", oauth_token=\"" + token +
       "\", oauth_signature=\"" + b64Enc.encode((consSecret + "&" + tokenSecret).getBytes("UTF-8")) + "\""
 
-  def validSegs(segsXml: String, model: String) = {
-    for (w <- scala.xml.XML.loadString(segsXml) \\ "workoutSegments"
-         if (w \\ "deviceType").exists {
-           _.text == model
-         }) yield w
-  }
-
+  /** Builds the JSON registration body that will be passed to the VirtualTrainer servers.
+   *
+   * @param rp Registration param values, enapsulated into a single abstraction
+   * @return ValidationNEL with error messages if problems, else stringified JSON with the registration params needed by VT
+   */
   private def registerBody(rp: RegParams): ValidationNEL[String, String] = {
 
     implicit val loc = VL("VT.registerBody")
@@ -120,15 +179,26 @@ object VT {
     }.error
   }
 
+  /** Builds the JSON link_external_user body that will be passed to the VirtualTrainer servers.
+   *
+   * @param npLogin Netpulse login id of the exerciser being linked to Virtual Trainer
+   * @param vtUid Virtual Trainer user id representing this exerciser
+   * @return Stringified JSON with the link body needed by VT
+   */
   private def linkBody(npLogin: String, vtUid: String) = {
     stringify(JsObject(List(
       "externalUserId" -> JsString(npLogin),
-        //      ("externalUserId" -> "1") ~       // Put a not-previously-used number here for testing purposes
        "vtUserId" -> JsString(vtUid),
        "type" -> JsString("NP")
     )))
   }
 
+  /** Builds the JSON login body that will be passed to the Virtual Trainer servers.
+   *
+   * @param emailOrLogin Username value that will be basis for login; can either be their email or vt login id.
+   * @param password Exerciser's password with VirtualTrainer
+   * @return Stringified JSON with the login body needed by VT
+   */
   private def loginBody(emailOrLogin: String, password: String) = {
     stringify(JsObject(List(
       "username" -> JsString(b64Enc.encode(emailOrLogin.getBytes("UTF-8"))),
@@ -136,44 +206,82 @@ object VT {
     )))
   }
 
-  def vtRequest(path: String, header: => String): WSRequestHolder = {
-    val h = header
-    WS.url(vtPathPrefix + path).withHeaders(("Content-Type", "application/json"), ("Authorization", h))
-  }
+  /** Prepares the Play! WSRequestHolder needed to execute a web services call to VT, given a destination
+   * URL and a security header (which may or may not be at the user-level of security).
+   *
+   * @param path Endpoint for the call
+   * @param secHdr HTTP OAuth header with security information
+   * @return WSRequestHolder encapsulating the given call to VT
+   */
+  def vtRequest(path: String, secHdr: => String): WSRequestHolder =
+    WS.url(vtPathPrefix + path).withHeaders(("Content-Type", "application/json"), ("Authorization", secHdr))
 
-  private def doVtRegister(rBody: String) = {
-    waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout)
-  }
+  /** Builds and executes the registration call to Virtual Trainer.
+   *
+   * @param rBody Registration body (JSON) needed by VT
+   * @return play.api.libs.ws.WS.Response resulting from the call
+   */
+  private def doVtRegister(rBody: String) = waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout)
 
-  private def doVtLogin(lBody: String) = {
-    waitVal(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout)
-  }
+  /** Builds and executes the login call to Virtual Trainer
+   *
+   * @param lBody Login body (JSON) needed by VT
+   * @return play.api.libs.ws.WS.Response resulting from the call
+   */
+  private def doVtLogin(lBody: String) = waitVal(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout)
 
-  private def doVtLogout(token: String, tokenSecret: String) = {
+  /** Builds and executes the logout call to Virtual Trainer
+   *
+   * @param token Exerciser's Virtual Trainer session token
+   * @param tokenSecret Exerciser's Virtual Trainer session token secret
+   * @return play.api.libs.ws.WS.Response resulting from the call
+   */
+  private def doVtLogout(token: String, tokenSecret: String) =
     waitVal(vtRequest(vtPathLogout, headerWithToken(token, tokenSecret)).post(""), vtTimeout)
-  }
 
-  private def doVtLink(npLogin: String, vtUid: String) = {
+  /** Builds and executes the link_external_user call to Virtual Trainer
+   *
+   * @param npLogin Exerciser's Netpulse login
+   * @param vtUid Exerciser's Virtual Trainer user id
+   * @return play.api.libs.ws.WS.Response resulting from the call
+   */
+  private def doVtLink(npLogin: String, vtUid: String) =
     waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npLogin, vtUid)), vtTimeout)
-  }
 
-  private def doVtPredefineds(token: String, tokenSecret: String) = {
+  /** Builds and executes the get_predefined_presets call to Virtual Trainer
+   *
+   * @param token Exerciser's Virtual Trainer session token
+   * @param tokenSecret Exerciser's Virtual Trainer session token secret
+   * @return play.api.libs.ws.WS.Response resulting from the call
+   */
+  private def doVtPredefineds(token: String, tokenSecret: String) =
     waitVal(vtRequest(vtPathPredefinedPresets, headerWithToken(token, tokenSecret)).get(), vtTimeout)
-  }
 
-  private def doVtWorkouts(token: String, tokenSecret: String) = {
+  /** Builds and executes the get_workouts call to Virtual Trainer
+   *
+   * @param token Exerciser's Virtual Trainer session token
+   * @param tokenSecret Exerciser's Virtual Trainer session token secret
+   * @return play.api.libs.ws.WS.Response resulting from the call
+   */
+  private def doVtWorkouts(token: String, tokenSecret: String) =
     waitVal(vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret)).get(), vtTimeout)
-  }
 
+  /** Manages the process of registering an exerciser with Virtual Trainer, given a set of
+   * registration values that have been packaged into a RegParams object. Will return either
+   * an error code (left side) if problems, or a VtUser object representing the newly registered Virtual
+   * Trainer user (right side) if successful. The error codes are derived from the api... series
+   * of error codes, documented at https://netpulse.atlassian.net/wiki/display/netpulse/API+Error+Codes
+   *
+   * @param rp RegParams object populated with the registration values needed by Virtual Trainer
+   * @return Either an error code if problems (Left), or a VtUser if successful (Right)
+   */
   def register(rp: RegParams): Either[Int, VtUser] = {
 
     implicit val loc = VL("VT.register")
 
     val rVal: Option[(String, Int)] = for {
 
-    //      d0 <- vld({throw new Exception("at d0 in VT.register"); "d0"}).error.toOption
       rBody <- registerBody(rp).error.toOption
-      //      d1 <- vld({throw new Exception("at d1 in VT.register"); "d1"}).error.toOption
       valResult <- vld(waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)).error.toOption
       valStatus = valResult.status
 
