@@ -54,7 +54,7 @@ object Api extends Controller {
           vtPredefinedPresets <- VT.predefinedPresets(vtToken, vtTokenSecret, model)
           vtWorkouts <- VT.workouts(vtToken, vtTokenSecret, model)
 
-        } yield VT.asXml(vtPredefinedPresets, vtWorkouts)
+        } yield VT.asApiResult(vtPredefinedPresets, vtWorkouts)
 
       finalResult.error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
@@ -95,7 +95,7 @@ object Api extends Controller {
           vtPredefinedPresets <- VT.predefinedPresets(vtToken, vtTokenSecret, model)
           vtWorkouts <- VT.workouts(vtToken, vtTokenSecret, model)
 
-        } yield VT.asXml(vtPredefinedPresets, vtWorkouts)
+        } yield VT.asApiResult(vtPredefinedPresets, vtWorkouts)
 
       finalResult.error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
@@ -182,7 +182,7 @@ object Api extends Controller {
 
             vtPredefinedPresets <- VT.predefinedPresets(vtToken, vtTokenSecret, model)
 
-          } yield VT.asXml(vtPredefinedPresets)
+          } yield VT.asApiResult(vtPredefinedPresets)
       }).error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
 
