@@ -314,6 +314,12 @@ object VT {
     }
   }
 
+  /** Manages the process of linking a given Netpulse user to a given Virtual Trainer account.
+   *
+   * @param npLogin Exerciser's Netpulse login
+   * @param vtUid Virtual Trainer user id for this exerciser
+   * @return ValidationNEL with error message(s) if problems, otherwise Boolean true indicating success
+   */
   def link(npLogin: String, vtUid: String): ValidationNEL[String, Boolean] = {
 
     implicit val loc = VL("VT.link")
@@ -325,6 +331,7 @@ object VT {
         add("body", linkResult.body).error
     } yield true).error
   }
+
 
   def login(emailOrNickname: String, vtPassword: String): ValidationNEL[String, (String, String, String)] = {
 

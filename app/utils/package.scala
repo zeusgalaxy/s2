@@ -75,7 +75,7 @@ package object utils {
       case _ => None
     }
     val pth = r.host.isEmpty ? switchHosts(r.uri) | "http://" + switchHosts(r.host) + r.uri // Weirdness with specs2 FakeRequest
-    (WSRequestHolder(pth, Map("ACCEPT-CHARSET" -> Seq("utf-8")), Map(), None, None), newBody)
+    (WSRequestHolder(pth, Map("ACCEPT-CHARSET" -> Seq("utf-8")), Map(), None, None, None, None), newBody)
   }
 
   /**Executes a Promise of a Response with a specified wait value, since the default timeout of
