@@ -32,11 +32,11 @@ object DinoWrapper extends Controller {
 
     vld {
 
-      val (newRequest, newBody) = toWSRequest(request)
+      val (newRequest, newBody) = toWSRequest(request, dinoTimeout)
 
       request.method match {
         case "GET" => {
-          waitVal(newRequest.get(), dinoTimeout)
+          newRequest.value.get()
         }
         case "POST" => {
 
@@ -44,9 +44,9 @@ object DinoWrapper extends Controller {
             case AnyContentAsFormUrlEncoded(fueBody) => {
               val wrt = Writeable.writeableOf_urlEncodedForm
               val ct = ContentTypeOf.contentTypeOf_urlEncodedForm
-              waitVal(newRequest.post[Map[String, Seq[String]]](fueBody)(wrt, ct), dinoTimeout)
+              (newRequest.post[Map[String, Seq[String]]](fueBody)(wrt, ct)).value.get
             }
-            case _ => waitVal(newRequest.post(newBody.get), dinoTimeout)
+            case _ => newRequest.post(newBody.get).value.get
           }
         }
         case "PUT" => newRequest.put(newBody.get).value.get

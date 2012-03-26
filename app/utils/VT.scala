@@ -214,21 +214,22 @@ object VT {
    * @return WSRequestHolder encapsulating the given call to VT
    */
   def vtRequest(path: String, secHdr: => String): WSRequestHolder =
-    WS.url(vtPathPrefix + path).withHeaders(("Content-Type", "application/json"), ("Authorization", secHdr))
+    WS.url(vtPathPrefix + path).withHeaders(("Content-Type", "application/json"), ("Authorization", secHdr)).
+      withTimeout(vtTimeout)
 
   /** Builds and executes the registration call to Virtual Trainer.
    *
    * @param rBody Registration body (JSON) needed by VT
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
-  private def doVtRegister(rBody: String) = waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout)
+  private def doVtRegister(rBody: String) = (vtRequest(vtPathRegister, headerNoToken()).post(rBody)).value.get
 
   /** Builds and executes the login call to Virtual Trainer
    *
    * @param lBody Login body (JSON) needed by VT
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
-  private def doVtLogin(lBody: String) = waitVal(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout)
+  private def doVtLogin(lBody: String) = (vtRequest(vtPathLogin, headerNoToken()).post(lBody)).value.get
 
   /** Builds and executes the logout call to Virtual Trainer
    *
@@ -237,7 +238,7 @@ object VT {
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
   private def doVtLogout(token: String, tokenSecret: String) =
-    waitVal(vtRequest(vtPathLogout, headerWithToken(token, tokenSecret)).post(""), vtTimeout)
+    (vtRequest(vtPathLogout, headerWithToken(token, tokenSecret)).post("")).value.get
 
   /** Builds and executes the link_external_user call to Virtual Trainer
    *
@@ -246,7 +247,7 @@ object VT {
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
   private def doVtLink(npLogin: String, vtUid: String) =
-    waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npLogin, vtUid)), vtTimeout)
+    (vtRequest(vtPathLink, headerNoToken()).post(linkBody(npLogin, vtUid))).value.get
 
   /** Builds and executes the get_predefined_presets call to Virtual Trainer
    *
@@ -255,7 +256,7 @@ object VT {
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
   private def doVtPredefineds(token: String, tokenSecret: String) =
-    waitVal(vtRequest(vtPathPredefinedPresets, headerWithToken(token, tokenSecret)).get(), vtTimeout)
+    (vtRequest(vtPathPredefinedPresets, headerWithToken(token, tokenSecret)).get()).value.get
 
   /** Builds and executes the get_workouts call to Virtual Trainer
    *
@@ -264,7 +265,7 @@ object VT {
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
   private def doVtWorkouts(token: String, tokenSecret: String) =
-    waitVal(vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret)).get(), vtTimeout)
+    (vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret)).get()).value.get
 
   /** Manages the process of registering an exerciser with Virtual Trainer, given a set of
    * registration values that have been packaged into a RegParams object. Will return either
@@ -282,7 +283,7 @@ object VT {
     val rVal: Option[(String, Int)] = for {
 
       rBody <- registerBody(rp).error.toOption
-      valResult <- vld(waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)).error.toOption
+      valResult <- vld((vtRequest(vtPathValidate, headerNoToken()).post(rBody)).value.get).error.toOption
       valStatus = valResult.status
 
     } yield {
