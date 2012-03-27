@@ -214,21 +214,22 @@ object VT {
    * @return WSRequestHolder encapsulating the given call to VT
    */
   def vtRequest(path: String, secHdr: => String): WSRequestHolder =
-    WS.url(vtPathPrefix + path).withHeaders(("Content-Type", "application/json"), ("Authorization", secHdr))
+    WS.url(vtPathPrefix + path).withHeaders(("Content-Type", "application/json"), ("Authorization", secHdr)).
+      withTimeout(vtTimeout)
 
   /** Builds and executes the registration call to Virtual Trainer.
    *
    * @param rBody Registration body (JSON) needed by VT
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
-  private def doVtRegister(rBody: String) = waitVal(vtRequest(vtPathRegister, headerNoToken()).post(rBody), vtTimeout)
+  private def doVtRegister(rBody: String) = (vtRequest(vtPathRegister, headerNoToken()).post(rBody)).await(vtTimeout).get
 
   /** Builds and executes the login call to Virtual Trainer
    *
    * @param lBody Login body (JSON) needed by VT
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
-  private def doVtLogin(lBody: String) = waitVal(vtRequest(vtPathLogin, headerNoToken()).post(lBody), vtTimeout)
+  private def doVtLogin(lBody: String) = (vtRequest(vtPathLogin, headerNoToken()).post(lBody)).await(vtTimeout).get
 
   /** Builds and executes the logout call to Virtual Trainer
    *
@@ -237,7 +238,7 @@ object VT {
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
   private def doVtLogout(token: String, tokenSecret: String) =
-    waitVal(vtRequest(vtPathLogout, headerWithToken(token, tokenSecret)).post(""), vtTimeout)
+    (vtRequest(vtPathLogout, headerWithToken(token, tokenSecret)).post("")).await(vtTimeout).get
 
   /** Builds and executes the link_external_user call to Virtual Trainer
    *
@@ -246,7 +247,7 @@ object VT {
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
   private def doVtLink(npLogin: String, vtUid: String) =
-    waitVal(vtRequest(vtPathLink, headerNoToken()).post(linkBody(npLogin, vtUid)), vtTimeout)
+    (vtRequest(vtPathLink, headerNoToken()).post(linkBody(npLogin, vtUid))).await(vtTimeout).get
 
   /** Builds and executes the get_predefined_presets call to Virtual Trainer
    *
@@ -255,7 +256,7 @@ object VT {
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
   private def doVtPredefineds(token: String, tokenSecret: String) =
-    waitVal(vtRequest(vtPathPredefinedPresets, headerWithToken(token, tokenSecret)).get(), vtTimeout)
+    (vtRequest(vtPathPredefinedPresets, headerWithToken(token, tokenSecret)).get()).await(vtTimeout).get
 
   /** Builds and executes the get_workouts call to Virtual Trainer
    *
@@ -264,7 +265,7 @@ object VT {
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
   private def doVtWorkouts(token: String, tokenSecret: String) =
-    waitVal(vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret)).get(), vtTimeout)
+    (vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret)).get()).await(vtTimeout).get
 
   /** Manages the process of registering an exerciser with Virtual Trainer, given a set of
    * registration values that have been packaged into a RegParams object. Will return either
@@ -282,7 +283,7 @@ object VT {
     val rVal: Option[(String, Int)] = for {
 
       rBody <- registerBody(rp).error.toOption
-      valResult <- vld(waitVal(vtRequest(vtPathValidate, headerNoToken()).post(rBody), vtTimeout)).error.toOption
+      valResult <- vld((vtRequest(vtPathValidate, headerNoToken()).post(rBody)).await(vtTimeout).get).error.toOption
       valStatus = valResult.status
 
     } yield {
@@ -332,7 +333,14 @@ object VT {
     } yield true).error
   }
 
-
+  /** Manages the process of logging a given Netpulse user into Virtual Trainer. Once logged in, the system
+   * can retrieve predefined_presets and/or workouts for the exerciser. The login session remains active
+   * until explictly logged out.
+   *
+   * @param emailOrNickname Username value that will be basis for login; can either be their email or vt login id.
+   * @param vtPassword Exerciser's password with Virtual Trainer
+   * @return ValidationNEL with error string(s) if problems, else a tuple of vt id, token and token secret
+   */
   def login(emailOrNickname: String, vtPassword: String): ValidationNEL[String, (String, String, String)] = {
 
     implicit val loc = VL("VT.login")
@@ -361,6 +369,14 @@ object VT {
     } yield (id, token, secret)).error
   }
 
+  /** Manages the process of logging an exerciser out of their currently active session with Virtual Trainer.
+   * Once logged out, they will need to relogin in order to access predefined_presets and/or workouts.
+   * Logging in again will require that they provide their Virtual Trainer password.
+   *
+   * @param token The exercisers' current Virtual Trainer session token
+   * @param tokenSecret The exerciser's current Virtual Trainer session token secret
+   * @return ValidationNEL with error string(s) if a problem occurred, otherwise Boolean true
+   */
   def logout(token: String, tokenSecret: String): ValidationNEL[String, Boolean] = {
 
     implicit val loc = VL("VT.logout")
@@ -373,8 +389,12 @@ object VT {
     } yield true).error
   }
 
-  /**
-   * @return An xml string with the predefined presets
+  /** Returns all Virtual Trainer predefined presets for the given exerciser session (represented by the Virtual
+   * Trainer token and token secret) which are applicable to the given machine model.
+
+   * @param token The exercisers' current Virtual Trainer session token
+   * @param tokenSecret The exerciser's current Virtual Trainer session token secret
+   * @return An xml string with the applicable predefined presets
    */
   def predefinedPresets(token: String, tokenSecret: String, model: String): ValidationNEL[String, NodeSeq] = {
 
@@ -392,8 +412,12 @@ object VT {
       }).error
   }
 
-  /**
-   * @return An xml string with the user's workouts
+  /** Returns all Virtual Trainer workouts for the given exerciser session (represented by the Virtual
+   * Trainer token and token secret) which are applicable to the given machine model.
+
+   * @param token The exercisers' current Virtual Trainer session token
+   * @param tokenSecret The exerciser's current Virtual Trainer session token secret
+   * @return An xml string with the applicable predefined presets
    */
   def workouts(token: String, tokenSecret: String, model: String): ValidationNEL[String, NodeSeq] = {
 
@@ -410,12 +434,29 @@ object VT {
       }).error
   }
 
-  def insertIntoXml(x: Node, parent: String, presets: NodeSeq, workouts: NodeSeq = NodeSeq.Empty) = {
+  /** Utility function that accepts XML of predefined_presets and workouts, and inserts those
+   * into another XML chunk under the specified element. This function is needed because the
+   * presets and workouts that are returned from Virtual Trainer are often packaged inside some
+   * other XML data (such as the XML coming back from a Dino register or login call) before
+   * being returned to the caller.
+   *
+   * @param x XML into which the presets and workoutw will be inserted
+   * @param parent Element name which will be the parent for the presets and workouts
+   * @param presets XML of predefined presets to be inserted under the parent element of the target XML
+   * @param workouts XML of workouts to be inserted under the parent element of the target XML
+   * @return XML which combines the original input with the given presets and workouts
+   */
+  def insertIntoXml(x: Node, parent: String, presets: NodeSeq, workouts: NodeSeq = NodeSeq.Empty) =
+          XmlMutator(x).add(parent, asApiResult(presets, workouts))
 
-    XmlMutator(x).add(parent, asXml(presets, workouts))
-  }
-
-  def asXml(presets: NodeSeq, workouts: NodeSeq = NodeSeq.Empty) = {
+  /** Packages the provided predefined_presets and workouts into an XML chunk with <api> as the
+   * parent element.
+   *
+   * @param presets XML of predefined presets retrieved from Virtual Trainer
+   * @param workouts XML of workouts retrieved from Virtual Trainer
+   * @return XML which packages the given presets and workouts inside standardized elements
+   */
+  def asApiResult(presets: NodeSeq, workouts: NodeSeq = NodeSeq.Empty) = {
 
     <api error={apiNoError.toString}>
       <virtualTrainer>

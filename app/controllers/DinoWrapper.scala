@@ -32,11 +32,11 @@ object DinoWrapper extends Controller {
 
     vld {
 
-      val (newRequest, newBody) = toWSRequest(request)
+      val (newRequest, newBody) = toWSRequest(request, dinoTimeout)
 
       request.method match {
         case "GET" => {
-          waitVal(newRequest.get(), dinoTimeout)
+          newRequest.get().await(dinoTimeout).get
         }
         case "POST" => {
 
@@ -44,13 +44,13 @@ object DinoWrapper extends Controller {
             case AnyContentAsFormUrlEncoded(fueBody) => {
               val wrt = Writeable.writeableOf_urlEncodedForm
               val ct = ContentTypeOf.contentTypeOf_urlEncodedForm
-              waitVal(newRequest.post[Map[String, Seq[String]]](fueBody)(wrt, ct), dinoTimeout)
+              (newRequest.post[Map[String, Seq[String]]](fueBody)(wrt, ct)).await(dinoTimeout).get
             }
-            case _ => waitVal(newRequest.post(newBody.get), dinoTimeout)
+            case _ => newRequest.post(newBody.get).await(dinoTimeout).get
           }
         }
-        case "PUT" => newRequest.put(newBody.get).value.get
-        case "DELETE" => newRequest.delete().value.get
+        case "PUT" => newRequest.put(newBody.get).await(dinoTimeout).get
+        case "DELETE" => newRequest.delete().await(dinoTimeout).get
         case m => throw new Exception("Unexpected method in Dino.forward: " + m)
       }
     }.error
@@ -128,7 +128,7 @@ object DinoWrapper extends Controller {
 
       // either error code or object encapsulating vt user
       val rVal: Either[Int, VtUser] = (for {
-        code <- tst((oldXml \\ "response" \ "@code").text)(_ == "0", "oldXml response code != 0")
+        code <- tst((oldXml \\ "response" \ "@code").text)(_ == "0", "oldXml response code != 0").add("oldXml", oldXml.text)
         vtUser <- vld(VT.register(rp))
       } yield {
         vtUser

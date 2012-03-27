@@ -60,10 +60,11 @@ package object utils {
    * it points to Dino instead of S2.
    *
    * @param r The request that needs to be repackaged.
+   * @param timeout Maximum time to wait (in milliseconds) for the call to complete
    * @return A tuple with a WSRequestHolder representing the request, and an Option with
    * the request's body, if applicable.
    */
-  def toWSRequest(r: Request[AnyContent]): (WSRequestHolder, Option[Array[Byte]]) = {
+  def toWSRequest(r: Request[AnyContent], timeout: Int): (WSRequestHolder, Option[Array[Byte]]) = {
 
     val newBody: Option[Array[Byte]] = r.body match {
       case c@AnyContentAsFormUrlEncoded(data) => None
@@ -75,19 +76,7 @@ package object utils {
       case _ => None
     }
     val pth = r.host.isEmpty ? switchHosts(r.uri) | "http://" + switchHosts(r.host) + r.uri // Weirdness with specs2 FakeRequest
-    (WSRequestHolder(pth, Map("ACCEPT-CHARSET" -> Seq("utf-8")), Map(), None, None, None, None), newBody)
-  }
-
-  /**Executes a Promise of a Response with a specified wait value, since the default timeout of
-   * five seconds may not be adequate in all situations.
-   *
-   * @param p The Promise of the Reponse.
-   * @param timeout The timeout to use for the execution of this Promise.
-   * @return The Reponse, once available.
-   */
-  def waitVal(p: Promise[Response], timeout: Int): Response = {
-    p.await(timeout)
-    p.value.get
+    (WSRequestHolder(pth, Map("ACCEPT-CHARSET" -> Seq("utf-8")), Map(), None, None, None, Some(timeout)), newBody)
   }
 
   /**Expresses the current time in the UTC timezone in milliseconds.
