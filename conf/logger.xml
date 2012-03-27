@@ -1,0 +1,52 @@
+<!--
+   Log Levels
+        level of
+        request p	effective level q
+                TRACE	DEBUG	INFO	WARN	ERROR	OFF
+        TRACE	YES	    NO	    NO	    NO	    NO	    NO
+        DEBUG	YES	    YES	    NO	    NO	    NO	    NO
+        INFO	YES	    YES	    YES	    NO	    NO	    NO
+        WARN	YES	    YES	    YES	    YES	    NO	    NO
+        ERROR	YES	    YES	    YES	    YES	    YES	    NO
+-->
+<!--<configuration debug="true">-->
+<configuration>
+    <conversionRule conversionWord="coloredLevel" converterClass="play.api.Logger$ColoredLevel" />
+
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>${application.home}/logs/app.log</file>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%date - [%level] - from %logger in %thread %n%message%n%xException%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%coloredLevel %logger{15} - %message%n%xException{5}</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="play" level="INFO" />
+    <logger name="application" level="INFO" />
+
+    <root level="ERROR">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILE" />
+    </root>
+
+    <appender name="loggly" class="se.pp.gustafson.marten.logback.LogglyAppender">
+        <layout>
+            <pattern>"test":900, thread:%thread, level:%-5level = loc:"%logger{36}" = msg:"%msg"</pattern>
+            <!-- ts:"%d{HH:mm:ss.SSS}" -->
+        </layout>
+        <queueSize>3</queueSize>
+        <endpoint>https://logs.loggly.com/inputs/5df51c89-800a-4d62-bb07-e9aa74a74812</endpoint>
+    </appender>
+
+    <root level="ALL">
+        <appender-ref ref="loggly" />
+    </root>
+
+
+</configuration>
