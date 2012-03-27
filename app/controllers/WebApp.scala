@@ -22,7 +22,6 @@ object WebApp extends Controller with Secured {
   }
 
   def index = IsAuthenticated("/index",  implicit request => {
-      Logger.error("This is an error for Kenner.")
       Ok(html.index("This is the main page parameter"))
     }
   )
