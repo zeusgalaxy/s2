@@ -8,8 +8,9 @@
         INFO	YES	    YES	    YES	    NO	    NO	    NO
         WARN	YES	    YES	    YES	    YES	    NO	    NO
         ERROR	YES	    YES	    YES	    YES	    YES	    NO
--->
-<!--<configuration debug="true">-->
+--> 
+
+<!-- <configuration debug="true">  Spits out debugging messages to help with logging set up -->
 <configuration>
     <conversionRule conversionWord="coloredLevel" converterClass="play.api.Logger$ColoredLevel" />
 
@@ -34,19 +35,23 @@
         <appender-ref ref="STDOUT" />
         <appender-ref ref="FILE" />
     </root>
-
-    <appender name="loggly" class="se.pp.gustafson.marten.logback.LogglyAppender">
-        <layout>
-            <pattern>"test":900, thread:%thread, level:%-5level = loc:"%logger{36}" = msg:"%msg"</pattern>
-            <!-- ts:"%d{HH:mm:ss.SSS}" -->
+     
+    <!-- https://github.com/qos-ch/logback-extensions/wiki/Loggly -->
+    <appender name="logglyAppender" class="ch.qos.logback.ext.loggly.LogglyAppender">
+        <inputKey>5df51c89-800a-4d62-bb07-e9aa74a74812</inputKey> 
+        <layout class="ch.qos.logback.ext.json.classic.JsonLayout">
+             <jsonFormatter class="ch.qos.logback.ext.jackson.JacksonJsonFormatter">
+              <!-- prettyPrint is probably ok in dev, but usually not ideal in production: -->
+              <prettyPrint>false</prettyPrint>
+            </jsonFormatter>
+            <timestampFormat>yyyy-MM-dd'T'HH:mm:ss.SSS'Z'</timestampFormat>
+            <timestampFormatTimezoneId>UTC</timestampFormatTimezoneId>
         </layout>
-        <queueSize>3</queueSize>
-        <endpoint>https://logs.loggly.com/inputs/5df51c89-800a-4d62-bb07-e9aa74a74812</endpoint>
     </appender>
-
+   
     <root level="ALL">
-        <appender-ref ref="loggly" />
+        <appender-ref ref="logglyAppender" />
     </root>
-
+    
 
 </configuration>
