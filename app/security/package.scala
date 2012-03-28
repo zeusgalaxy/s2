@@ -164,6 +164,7 @@ package object security {
                f: CtxRqst[A] => PlainResult): Action[A] = {
     Action(p) {
       request =>
+        println("Session in IfCan is: " + request.session.toString)
         val ctxReq = CtxRqst(target, request)
         ctxReq.context.user match {
           case Some(u) => if (ok(ctxReq)) withSession(ctxReq, f(ctxReq)) else withSession(ctxReq, Unauthorized)

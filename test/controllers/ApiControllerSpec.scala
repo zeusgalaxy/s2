@@ -6,7 +6,7 @@ import org.specs2.mutable._
 import play.api.test._
 import play.api.test.Helpers._
 
-object ApiSpec extends Specification {
+object ApiControllerSpec extends Specification {
 
   val id = org.joda.time.DateTime.now.getMillis.toString.takeRight(10)
   val pwd = "kgs" + id + "@stross.com"
