@@ -14,7 +14,7 @@ import play.api.Logger
 /**
  * Controller for server API functions which "wrap" around old Dino functions.
  */
-object DinoWrapper extends Controller {
+object DinoController extends Controller {
   
   lazy val dinoTimeout = current.configuration.getString("dino.timeout").getOrElse(throw new Exception("dino.timeout not in configuration")).toInt
 

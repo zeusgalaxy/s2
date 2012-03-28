@@ -14,7 +14,7 @@ import Scalaz._
 /**
  * Controller for general server API functions.
  */
-object Api extends Controller {
+object ApiController extends Controller {
 
   /**Links a Netpulse user with their Virtual Trainer account in those situations where the
    * exerciser had created the Virtual Trainer account prior to creating their Netpulse account. The

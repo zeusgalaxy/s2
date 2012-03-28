@@ -1,12 +1,12 @@
+
+import controllers._
 import models._
+import play.api.Logger
 import play.api.mvc._
 import play.api.mvc.Results._
 import play.api.mvc.BodyParsers._
 
-import security._
-
-import scalaz._
-import Scalaz._
+import scalaz.{ Logger => _, _}
 
 /** The security package object provides the common facilities for creating and executing
  *  rights-managed requests. This is done by wrapping a normal Request in a specialized
@@ -47,7 +47,8 @@ package object security {
   val tgNone = Target("")
   val tgReports = Target("mySpecificReport")
   val tgAdminPortal = Target("adminPortal")
-  val tgUserMaint = Target("userMaint")
+  val tgUsers = Target("users")
+  val tgReportWorkoutLocations = Target("reportWorkoutLocations")
 
   /** Subclasses and wraps a normal request so we can associate some "context" with the request.
    * [[security.Context]] at a minimum will contain the current user (if any) as well as the
@@ -157,7 +158,10 @@ package object security {
     Action(p) {
       request =>
         val ctxReq = CtxRqst(target, request)
-        if (ok(ctxReq)) withSession(f(ctxReq)) else withSession(Unauthorized)
+        ctxReq.context.user match {
+          case Some(u) => if (ok(ctxReq)) withSession(f(ctxReq)) else withSession(Unauthorized)
+          case _ => Results.Redirect(routes.AuthController.promptLogin(request.path))
+        }
     }
   }
 

@@ -15,7 +15,7 @@
         <h1>@Messages("lifescape.header")</h1>
         <p>@Messages("lifescape.tagline")</p>
         <p> @if(!session.get("email").isEmpty) {
-            <a class="btn btn-primary  btn-large" href="@routes.Auth.logout()">@Messages("logout") &raquo;</a></p>
+            <a class="btn btn-primary  btn-large" href="@routes.AuthController.logout()">@Messages("logout") &raquo;</a></p>
         }
     </div>
 
@@ -36,9 +36,7 @@
                 <p> </p>
                 <p><a class="btn" href="">@Messages("workouts.equipment.button") &raquo;</a></p>
                 <p> </p>
-                <p><a class="btn btn-primary" href="@routes.Report.showWorkoutLocations()">@Messages("workouts.location.button") &raquo;</a></p>
-                <p> </p>
-                <p><a class="btn" href="@routes.WebApp.testLogin()">@Messages("test.login.button") &raquo;</a></p>
+                <p><a class="btn btn-primary" href="@routes.ReportController.showWorkoutLocations()">@Messages("workouts.location.button") &raquo;</a></p>
             </div>
         </div>
     </div>

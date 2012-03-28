@@ -3,47 +3,45 @@
 # ~~~~
 
 # Authentication
-GET     /login                              controllers.Auth.login(page ?= "")
-POST    /login                              controllers.Auth.authenticate()
-GET     /logout                             controllers.Auth.logout
+GET     /login                              controllers.AuthController.promptLogin(page ?= "")
+POST    /login                              controllers.AuthController.attemptLogin()
+GET     /logout                             controllers.AuthController.logout
 
 # Home page
-GET     /                                   controllers.WebApp.index()
-GET     /index                              controllers.WebApp.index()
-GET     /restrictedHello                    controllers.WebApp.restrictedHello()
-GET     /unrestrictedHello                  controllers.WebApp.unrestrictedHello()
+GET     /                                   controllers.MiscController.index()
+GET     /index                              controllers.MiscController.index()
+GET     /restrictedHello                    controllers.MiscController.restrictedHello()
+GET     /unrestrictedHello                  controllers.MiscController.unrestrictedHello()
 
 # User admin
-GET     /userEdit                           controllers.WebApp.userEdit(id:Long)
-POST    /userSubmit                         controllers.WebApp.userSubmit
-GET     /userList                           controllers.WebApp.userList(p:Int ?= 0, s:Int ?= 1, f ?= "" )
+GET     /userEdit                           controllers.MiscController.userEdit(id:Long)
+POST    /userSubmit                         controllers.MiscController.userSubmit
+GET     /userList                           controllers.MiscController.userList(p:Int ?= 0, s:Int ?= 1, f ?= "" )
 
-GET     /gigyaLogin                         controllers.Api.gigyaLogin
-POST    /gigyaLogin                         controllers.Api.gigyaLogin
-GET     /s2/gigyaLogin                      controllers.Api.gigyaLogin
-POST    /s2/gigyaLogin                      controllers.Api.gigyaLogin
-GET     /vtLinkUser                         controllers.Api.vtLinkUser(id: String, vt_password: String, machine_id: Long)
-GET     /s2/vtLinkUser                      controllers.Api.vtLinkUser(id: String, vt_password: String, machine_id: Long)
-GET     /vtLogin                            controllers.Api.vtLogin(id: String, vt_password: String, machine_id: Long)
-GET     /s2/vtLogin                         controllers.Api.vtLogin(id: String, vt_password: String, machine_id: Long)
-GET     /vtLogout                           controllers.Api.vtLogout(id: String)
-GET     /s2/vtLogout                        controllers.Api.vtLogout(id: String)
-GET     /vtStatus                           controllers.Api.vtStatus(id: String)
-GET     /s2/vtStatus                        controllers.Api.vtStatus(id: String)
-GET     /vtRegister                         controllers.Api.vtRegister(id: String, machine_id: Long)
-GET     /s2/vtRegister                      controllers.Api.vtRegister(id: String, machine_id: Long)
-GET     /getChannels                        controllers.Api.getChannels(id: String, location_id: Long)
-GET     /s2/getChannels                     controllers.Api.getChannels(id: String, location_id: Long)
-POST    /setChannels                        controllers.Api.setChannels
-POST    /s2/setChannels                     controllers.Api.setChannels
+GET     /gigyaLogin                         controllers.ApiController.gigyaLogin
+POST    /gigyaLogin                         controllers.ApiController.gigyaLogin
+GET     /s2/gigyaLogin                      controllers.ApiController.gigyaLogin
+POST    /s2/gigyaLogin                      controllers.ApiController.gigyaLogin
+GET     /vtLinkUser                         controllers.ApiController.vtLinkUser(id: String, vt_password: String, machine_id: Long)
+GET     /s2/vtLinkUser                      controllers.ApiController.vtLinkUser(id: String, vt_password: String, machine_id: Long)
+GET     /vtLogin                            controllers.ApiController.vtLogin(id: String, vt_password: String, machine_id: Long)
+GET     /s2/vtLogin                         controllers.ApiController.vtLogin(id: String, vt_password: String, machine_id: Long)
+GET     /vtLogout                           controllers.ApiController.vtLogout(id: String)
+GET     /s2/vtLogout                        controllers.ApiController.vtLogout(id: String)
+GET     /vtStatus                           controllers.ApiController.vtStatus(id: String)
+GET     /s2/vtStatus                        controllers.ApiController.vtStatus(id: String)
+GET     /vtRegister                         controllers.ApiController.vtRegister(id: String, machine_id: Long)
+GET     /s2/vtRegister                      controllers.ApiController.vtRegister(id: String, machine_id: Long)
+GET     /getChannels                        controllers.ApiController.getChannels(id: String, location_id: Long)
+GET     /s2/getChannels                     controllers.ApiController.getChannels(id: String, location_id: Long)
+POST    /setChannels                        controllers.ApiController.setChannels
+POST    /s2/setChannels                     controllers.ApiController.setChannels
 
-GET     /n5iregister.jsp                    controllers.DinoWrapper.register
-GET     /n5ilogin.jsp                       controllers.DinoWrapper.login(id: String, machine_id: Long)
-
-GET     /testLogin                          controllers.WebApp.testLogin()
+GET     /n5iregister.jsp                    controllers.DinoController.register
+GET     /n5ilogin.jsp                       controllers.DinoController.login(id: String, machine_id: Long)
 
 # Reports
-GET     /s2/reports/WorkoutLocations        controllers.Report.showWorkoutLocations(p:Int ?= 0, s:Int ?= 1, f ?= "", sd ?= "", ed ?= "" )
+GET     /s2/reports/WorkoutLocations        controllers.ReportController.showWorkoutLocations(p:Int ?= 0, s:Int ?= 1, f ?= "", sd ?= "", ed ?= "" )
 
 
 # Map static resources from the /public folder to the /assets URL path
@@ -51,9 +49,9 @@ GET     /s2/assets/*file                    controllers.Assets.at(path="/public"
 
 
 # PageViewUpload
-POST    /core/n5iworkout.jsp                controllers.DinoWrapper.pageview
-POST    /n5iworkout.jsp                     controllers.DinoWrapper.pageview
-POST    /core/n5iuploader.jsp               controllers.DinoWrapper.pageview
-POST    /uploader.jsp                       controllers.DinoWrapper.pageview
-POST    /otherstuff.jsp                     controllers.DinoWrapper.passthru
+POST    /core/n5iworkout.jsp                controllers.DinoController.pageview
+POST    /n5iworkout.jsp                     controllers.DinoController.pageview
+POST    /core/n5iuploader.jsp               controllers.DinoController.pageview
+POST    /uploader.jsp                       controllers.DinoController.pageview
+POST    /otherstuff.jsp                     controllers.DinoController.passthru
 

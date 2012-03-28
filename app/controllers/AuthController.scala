@@ -14,7 +14,7 @@ import models._
  * is not yet logged in. When the user goes through login and is authorized, a session and context
  * are created for them.
   */
-object Auth extends Controller {
+object AuthController extends Controller {
 
   /** Authenticate against the DB the user's entry for email and password.
    *
@@ -37,7 +37,7 @@ object Auth extends Controller {
    * @param destPage The page the user requested. They were routed here because they weren't logged in.
    * This allows us to redirect to that desired page after they log in.
    */
-  def login(destPage: String = "/index") = Action {
+  def promptLogin(destPage: String = "/index") = Action {
     implicit request =>
       Ok(html.login(loginForm)).withSession(session + ("page" -> destPage))
   }
@@ -48,7 +48,7 @@ object Auth extends Controller {
    * the auth items on login failure. Redirect them to their originally desired page after auth success.
    * @return side effect - route the user either to their requested page or back to index()
    */
-  def authenticate() = Action {
+  def attemptLogin() = Action {
     implicit request =>
       loginForm.bindFromRequest.fold(
         formWithErrors => {
@@ -71,7 +71,7 @@ object Auth extends Controller {
               val ss = session + ("id" -> u.id.toString) + ("fname" -> u.firstName.getOrElse("") ) + ("lname" -> u.lastName.getOrElse("")) + ("email" -> u.email) + ("cmpId" -> u.compId.toString) +("oemId" -> u.oemId.toString)
               Redirect(targetPage).withSession(ss)              
             }
-            case _ => Redirect(routes.Auth.login("/index")).withNewSession.flashing(
+            case _ => Redirect(routes.AuthController.promptLogin("/index")).withNewSession.flashing(
               "error" -> "Problem logging in.")
           }
         }
@@ -83,47 +83,9 @@ object Auth extends Controller {
    * @return side effect route to /index with a nice success message.
    */
   def logout = Action {
-    Redirect(routes.Auth.login("/index")).withNewSession.flashing(
+    Redirect(routes.AuthController.promptLogin("/index")).withNewSession.flashing(
       "success" -> "You've been logged out"
     )
   }
 
 }  // End of Auth
-
-
-/** Provide security features - TODO: ScalaDoc when complete.
- */
-trait Secured {
-
-  /**
-   * Retrieve the connected user's email. If it's there they are already authenticated.
-   */
-  private def checkUserEmail(request: RequestHeader) = request.session.get("email")
-
-  /**
-   * Redirect to login if the user is not authorized.
-   */
-  private def onUnauthorized(request: RequestHeader)(destPage: String = "") = {
-    Logger.info("onUnauthorized destPage =" + destPage)
-    Results.Redirect(routes.Auth.login(destPage))
-  }
-
-  /**
-   * Action for authenticated users.
-   */
-  // If the user's email is on the session they are already authorized.
-  def IsAuthenticated(destPage: String, f: => Request[AnyContent] => Result) =
-    Security.Authenticated(checkUserEmail, onUnauthorized(_)(destPage))  {
-      emailOpt =>  emailOpt match {
-        case email  =>  Action(request => f(request))
-// unreachable
-//        case "" => {
-//                  Logger.error("IsAuthenticated: Problem with parsing the npadmin cookie into a User")
-//                  // TODO: Route to index with error string?
-//                  Action(request => f(request))
-//        }
-      }
-    }
-
-
-}

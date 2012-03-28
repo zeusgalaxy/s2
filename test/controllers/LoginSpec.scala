@@ -17,7 +17,7 @@ object Login extends Specification {
   "Log the current User out" in {
     running(FakeApplication()) {
 
-      val action = controllers.Auth.logout()
+      val action = controllers.AuthController.logout()
       val result = action(FakeRequest())
 
       // result = SimpleResult(303, Map(Location -> /login?page=%2Findex, Set-Cookie -> PLAY_FLASH=success%3AYou%27ve+been+logged+out;Path=/;HTTPOnly;PLAY_SESSION=;Expires=Mon, 5-Mar-12 23:23:25 GMT;Path=/))
@@ -33,33 +33,10 @@ object Login extends Specification {
     }
   }
 
-//  def testLogin = IsAuthenticated("/testLogin", username => implicit request =>
-//    Ok(html.testLogin("This is a login test"))
-//  )
-
   "Block access to secure controllers for logged out user" in {
     running(FakeApplication()) {
-//      val res = controllers.WebApp.index(FakeRequest)
-//
-//      val result = controllers.WebApp.IsAuthenticated("/testLogin", username => implicit request =>
-//        result )(FakeRequest)
-////      val result = action(FakeRequest())
-//
-//      println("result = " + result.toString)
       true
     }
   }
-
-//
-//  "Allow a user to login" in {
-//    false
-//  }
-//
-//  "Allow a logged in user access to secure controllers"
-//  false
-//
-//  "Again block access once the user is logged out"
-//  false
-
 }
 

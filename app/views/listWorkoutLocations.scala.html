@@ -6,7 +6,7 @@
 * Helper generating navigation links    *
 ****************************************@
 @link(newPage: Int, newOrderBy: Option[Int] = None) = @{
-    routes.Report.showWorkoutLocations(newPage, newOrderBy.map { orderBy =>
+    routes.ReportController.showWorkoutLocations(newPage, newOrderBy.map { orderBy =>
 if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 }.getOrElse(currentOrderBy), currentFilter)
 
@@ -35,7 +35,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
     @*****  Form for report filters etc. *******@
     <div id="actions" class="twipsies well">
-    <form action="@routes.Report.showWorkoutLocations()" class="form-horizontal">
+    <form action="@routes.ReportController.showWorkoutLocations()" class="form-horizontal">
         <fieldset>
             <input type="submit" value="@Messages("button.go")" class="btn btn-primary pull-right">
 

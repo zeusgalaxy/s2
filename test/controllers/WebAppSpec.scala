@@ -13,7 +13,7 @@ object WebAppSpec extends Specification {
     running(FakeApplication()) {
 
       val rq = FakeRequest()
-      val result = controllers.WebApp.unrestrictedHello()(rq)
+      val result = controllers.MiscController.unrestrictedHello()(rq)
 
       status(result) must equalTo(OK)
       contentAsString(result) must contain("Hello Everybody!")
@@ -25,7 +25,7 @@ object WebAppSpec extends Specification {
     running(FakeApplication()) {
 
       val rq = FakeRequest().withHeaders(("Cookie" -> "PLAY_SESSION=35cd92a4a4e3c8ca034a4525a349598a90321817-email%3Akstross%40netpulse.com%00page%3A%2Findex%00fname%3ASylvester%00id%3A179%00cmpId%3ASome%281%29%00lname%3AKennedy%00oemId%3ANone"))
-      val result = controllers.WebApp.restrictedHello()(rq)
+      val result = controllers.MiscController.restrictedHello()(rq)
 
       status(result) must equalTo(OK)
       contentAsString(result) must contain("Hello")
@@ -37,7 +37,7 @@ object WebAppSpec extends Specification {
     running(FakeApplication()) {
 
       val rq = FakeRequest()
-      val result = controllers.WebApp.restrictedHello()(rq)
+      val result = controllers.MiscController.restrictedHello()(rq)
 
       status(result) must equalTo(UNAUTHORIZED)
     }

@@ -18,7 +18,7 @@ object ApiSpec extends Specification {
       running(FakeApplication()) {
 
         var pth = "http://localhost:9000/n5iregister.jsp?machine_id=1070&id=" + id + "&membership_id=1&email=" + email + "&pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15"
-        var result = controllers.DinoWrapper.register()(FakeRequest("GET", pth))
+        var result = controllers.DinoController.register()(FakeRequest("GET", pth))
 
         status(result) must equalTo(OK)
         contentAsString(result) must contain("adunit")
@@ -26,7 +26,7 @@ object ApiSpec extends Specification {
         contentAsString(result) must contain("workoutSegments")
 
         pth = "http://localhost:9000/n5ilogin.jsp?machine_id=1070&id=" + id + "&pic=22&oem_tos=15"
-        result = controllers.DinoWrapper.login(id, 1070L)(FakeRequest("GET", pth))
+        result = controllers.DinoController.login(id, 1070L)(FakeRequest("GET", pth))
 
         status(result) must equalTo(OK)
         contentAsString(result) must contain("adunit")
@@ -34,7 +34,7 @@ object ApiSpec extends Specification {
         contentAsString(result) must contain("workoutSegments")
 
         pth = "http://localhost:9000/vtLinkUser?machine_id=1070&id=" + id + "&vt_password=" + pwd
-        result = controllers.Api.vtLinkUser(id, pwd, 1070L)(FakeRequest("GET", pth))
+        result = controllers.ApiController.vtLinkUser(id, pwd, 1070L)(FakeRequest("GET", pth))
 
         /**
          * TODO -- Testing the account linking feature requires more setup than this. We would need to
