@@ -1,4 +1,4 @@
-@(form: Form[(String,String)])(implicit flash: Flash, session: Session)
+@(form: Form[(String,String)], destPage: String)(implicit rq: security.CtxRqst[_], flash: Flash)
 
 @main( Messages("page.title.login"), 'login) {
 
@@ -18,7 +18,7 @@
 
     <div class="row">
         <div class="span8">
-            <form action="@routes.AuthController.attemptLogin()"  method="POST" class="form-horizontal">
+            <form action="@routes.AuthController.attemptLogin(destPage)"  method="POST" class="form-horizontal">
                 <fieldset>
                     <legend></legend>
                     <div class="control-group">

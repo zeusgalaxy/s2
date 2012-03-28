@@ -1,4 +1,4 @@
-@(title: String, activePage: Symbol)(content: Html)(implicit session: play.api.mvc.Session)
+@(title: String, activePage: Symbol)(content: Html)(implicit rq: security.CtxRqst[_])
 
 <!DOCTYPE html>
 
@@ -49,8 +49,6 @@
     <div class="container"
     <footer>
         <p>&copy; @Messages("copyright")</p>
-        <p>Session: @session.toString</p>
-
     </footer>
     </div>
 

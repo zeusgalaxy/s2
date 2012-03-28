@@ -1,4 +1,4 @@
-@(text: String)(implicit flash: play.api.mvc.Flash, session: play.api.mvc.Session)
+@(text: String)(implicit rq: security.CtxRqst[_], flash: play.api.mvc.Flash)
 
 @main("Kenner's Test Page", 'home) {
 
@@ -8,7 +8,8 @@
 </div>
 }
 <div>
-@text
+    "Hello to request for: " + @rq.context.user.map(_.firstName).getOrElse("Nobody in particular")
+    @text
 </div>
 
 }

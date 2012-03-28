@@ -1,4 +1,4 @@
-@(active: Symbol)(implicit session: play.api.mvc.Session)
+@(active: Symbol)(implicit rq: security.CtxRqst[_])
 
 <div class="navbar navbar-fixed-top">
     <div class="navbar-inner">
@@ -12,8 +12,10 @@
                 <li class="@{if(active == 'admin) "active" else "inactive"}"><a href="@routes.MiscController.userList()">@Messages("menu.admin")</a></li>
              @*   <li class="@{if(active == 'account) "active" else "inactive"}"><a href="@routes.MiscController.userEdit">@Messages("menu.account")</a></li> *@
                 <li class="@{if(active == 'contact) "active" else "inactive"}"><a href="">@Messages("menu.contact")</a></li>
-                @if(!session.get("email").isEmpty) {
+                @if(rq.context.user.isDefined) {
                     <li class="@{if(active == 'logout) "active" else "inactive"}"><a href="@routes.AuthController.logout()">@Messages("menu.logout")</a></li>
+                } else {
+                    <li class="@{if(active == 'login) "active" else "inactive"}"><a href="@routes.AuthController.promptLogin(rq.request.path)">@Messages("menu.login")</a></li>
                 }
             </ul>
         </div>

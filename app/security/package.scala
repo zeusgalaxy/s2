@@ -1,4 +1,4 @@
-
+import utils._
 import controllers._
 import models._
 import play.api.Logger
@@ -6,9 +6,9 @@ import play.api.mvc._
 import play.api.mvc.Results._
 import play.api.mvc.BodyParsers._
 
-import scalaz.{ Logger => _, _}
+import scalaz.{Logger => _, _}
 
-/** The security package object provides the common facilities for creating and executing
+/**The security package object provides the common facilities for creating and executing
  *  rights-managed requests. This is done by wrapping a normal Request in a specialized
  *  subclass -- CtxRqst -- which has knowledge of the user who is logged in (if any)
  *  as well as the CRUD rights associated with that user for the target currently being
@@ -22,7 +22,7 @@ import scalaz.{ Logger => _, _}
  */
 package object security {
 
-  /** Defines a template for the basic rights operations -- CRUD -- as well as the notion
+  /**Defines a template for the basic rights operations -- CRUD -- as well as the notion
    * of "filtering," which indicates whether or not the application needs to constrain the
    * data that this user sees. If so, the meaning of that constraint (i.e, of that filtering)
    * is entirely up to the application.
@@ -50,12 +50,12 @@ package object security {
   val tgUsers = Target("users")
   val tgReportWorkoutLocations = Target("reportWorkoutLocations")
 
-  /** Subclasses and wraps a normal request so we can associate some "context" with the request.
+  /**Subclasses and wraps a normal request so we can associate some "context" with the request.
    * [[security.Context]] at a minimum will contain the current user (if any) as well as the
    * rights that apply to this request. This context is queried by the helper functions that
    * control access on actions, and it can also be queried by views, controllers, etc., to access
    * the user's name, etc., since this request is passed down the chain.
-   * 
+   *
    */
   // (Ignore the IntelliJ syntax error on request, below.)
   case class CtxRqst[A](context: Context, request: Request[A]) extends WrappedRequest(request) {
@@ -71,32 +71,39 @@ package object security {
 
   }
 
-  /** Companion object for creating a [[security.CtxRqst]] from a normal request. The
+  /**Companion object for creating a [[security.CtxRqst]] from a normal request. The
    * application-defined [[security.Target]] must be passed in, so we know what realm of
    * functionality defines the rights that should be granted. The current user will be
    * extracted from the session cookie, if any.
-   * 
+   *
    */
   object CtxRqst {
     def apply[A](target: Target, request: Request[A]): CtxRqst[A] = {
-      request.session.get("id").flatMap(uid => models.User.findById(uid.toLong)).map {
-        user =>
-          CtxRqst(Context(user, target), request)
-      }.getOrElse(CtxRqst(Context(None, noRights), request))
+      vld {
+        request.session.get("id").flatMap(uid => models.User.findById(uid.toLong)).map {
+          user =>
+            CtxRqst(Context(user, target), request)
+        }.getOrElse(CtxRqst(Context(None, noRights), request))
+      }.fold(e => CtxRqst(Context(None, noRights), request), s => s)
     }
   }
 
-  /** Helper function for attaching context-related data to the session, before returning
+  /**Helper function for attaching context-related data to the session, before returning
    * the final result.
    *
+   * @param ctx The contextualized request which embeds necessary user data, if any
    * @param r The result, before attaching the session data
    * @return The result with session data attached
    */
-  def withSession(r: PlainResult): PlainResult = {
-    r.withSession("x" -> "session data added")    // TODO -- Figure out what really should be attached to session here
+  def withSession[A](ctx: CtxRqst[A], r: PlainResult): PlainResult = {
+    val u = ctx.context.user
+    //    val ss = ctx.request.session + ("id" -> u.map(_.id.toString).getOrElse(""))
+    val ss = ("id" -> u.map(_.id.toString).getOrElse(""))
+    Logger.debug("in withSession, on page " + ctx.request.path + ", the user is: " + ctx.context.user.toString)
+    r.withSession(ss) // TODO -- Figure out what really should be attached to session here
   }
 
-  /** Helper function for clearing all session data, before returning
+  /**Helper function for clearing all session data, before returning
    * the final result.
    *
    * @param r The result, before clearing the session data
@@ -106,7 +113,7 @@ package object security {
     r.withNewSession
   }
 
-  /** Helper function for genericizing the inspection of a context to check for certain
+  /**Helper function for genericizing the inspection of a context to check for certain
    * rights. Intended to be called as partially-applied function by the various versions of
    * Action creation functions.
    *
@@ -115,7 +122,7 @@ package object security {
    */
   def create[A](ctx: CtxRqst[A]) = ctx.canCreate
 
-  /** Helper function for genericizing the inspection of a context to check for certain
+  /**Helper function for genericizing the inspection of a context to check for certain
    * rights. Intended to be called as partially-applied function by the various versions of
    * Action creation functions.
    *
@@ -124,7 +131,7 @@ package object security {
    */
   def read[A](ctx: CtxRqst[A]) = ctx.canRead
 
-  /** Helper function for genericizing the inspection of a context to check for certain
+  /**Helper function for genericizing the inspection of a context to check for certain
    * rights. Intended to be called as partially-applied function by the various versions of
    * Action creation functions.
    *
@@ -133,7 +140,7 @@ package object security {
    */
   def update[A](ctx: CtxRqst[A]) = ctx.canUpdate
 
-  /** Helper function for genericizing the inspection of a context to check for certain
+  /**Helper function for genericizing the inspection of a context to check for certain
    * rights. Intended to be called as partially-applied function by the various versions of
    * Action creation functions.
    *
@@ -142,7 +149,7 @@ package object security {
    */
   def delete[A](ctx: CtxRqst[A]) = ctx.canDelete
 
-  /** Generalized helper function that will create a [[play.api.mvc.Action]] which will
+  /**Generalized helper function that will create a [[play.api.mvc.Action]] which will
    * inspect the request context (using the supplied partially-applied inspection function)
    * to see whether this user has the rights to access the given target.
    * If so, the action performs the given function; if not, it returns an Unauthorized result.  
@@ -159,13 +166,13 @@ package object security {
       request =>
         val ctxReq = CtxRqst(target, request)
         ctxReq.context.user match {
-          case Some(u) => if (ok(ctxReq)) withSession(f(ctxReq)) else withSession(Unauthorized)
+          case Some(u) => if (ok(ctxReq)) withSession(ctxReq, f(ctxReq)) else withSession(ctxReq, Unauthorized)
           case _ => Results.Redirect(routes.AuthController.promptLogin(request.path))
         }
     }
   }
 
-  /** Convenience function for wrapping secured actions in controllers. This version
+  /**Convenience function for wrapping secured actions in controllers. This version
    * will work with an explictly-provided BodyParser.
    *
    * Example usage:
@@ -179,7 +186,7 @@ package object security {
   def IfCanCreate[A](p: BodyParser[A])(target: Target)(f: CtxRqst[A] => PlainResult): Action[A] =
     IfCan(create[A] _, p, target, f)
 
-  /** Convenience function for wrapping secured actions in controllers. This version uses
+  /**Convenience function for wrapping secured actions in controllers. This version uses
    * the default AnyContent body parser.
    *
    * Example usage:
@@ -193,7 +200,7 @@ package object security {
   def IfCanCreate(target: Target)(f: CtxRqst[AnyContent] => PlainResult): Action[AnyContent] =
     IfCan(create[AnyContent] _, parse.anyContent, target, f)
 
-  /** Convenience function for wrapping secured actions in controllers. This version
+  /**Convenience function for wrapping secured actions in controllers. This version
    * will work with an explictly-provided BodyParser.
    *
    * Example usage:
@@ -207,7 +214,7 @@ package object security {
   def IfCanRead[A](p: BodyParser[A])(target: Target)(f: CtxRqst[A] => PlainResult): Action[A] =
     IfCan(read[A] _, p, target, f)
 
-  /** Convenience function for wrapping secured actions in controllers. This version uses
+  /**Convenience function for wrapping secured actions in controllers. This version uses
    * the default AnyContent body parser.
    *
    * Example usage:
@@ -221,7 +228,7 @@ package object security {
   def IfCanRead(target: Target)(f: CtxRqst[AnyContent] => PlainResult): Action[AnyContent] =
     IfCan(read[AnyContent] _, parse.anyContent, target, f)
 
-  /** Convenience function for wrapping secured actions in controllers. This version
+  /**Convenience function for wrapping secured actions in controllers. This version
    * will work with an explictly-provided BodyParser.
    *
    * Example usage:
@@ -235,7 +242,7 @@ package object security {
   def IfCanUpdate[A](p: BodyParser[A])(target: Target)(f: CtxRqst[A] => PlainResult): Action[A] =
     IfCan(update[A] _, p, target, f)
 
-  /** Convenience function for wrapping secured actions in controllers. This version uses
+  /**Convenience function for wrapping secured actions in controllers. This version uses
    * the default AnyContent body parser.
    *
    * Example usage:
@@ -249,7 +256,7 @@ package object security {
   def IfCanUpdate(target: Target)(f: CtxRqst[AnyContent] => PlainResult): Action[AnyContent] =
     IfCan(update[AnyContent] _, parse.anyContent, target, f)
 
-  /** Convenience function for wrapping secured actions in controllers. This version
+  /**Convenience function for wrapping secured actions in controllers. This version
    * will work with an explictly-provided BodyParser.
    *
    * Example usage:
@@ -263,7 +270,7 @@ package object security {
   def IfCanDelete[A](p: BodyParser[A])(target: Target)(f: CtxRqst[A] => PlainResult): Action[A] =
     IfCan(delete[A] _, p, target, f)
 
-  /** Convenience function for wrapping secured actions in controllers. This version uses
+  /**Convenience function for wrapping secured actions in controllers. This version uses
    * the default AnyContent body parser.
    *
    * Example usage:
@@ -278,7 +285,7 @@ package object security {
     IfCan(delete[AnyContent] _, parse.anyContent, target, f)
 
 
-  /** Convenience function for wrapping an unsecured action in a controller. The reason that an action
+  /**Convenience function for wrapping an unsecured action in a controller. The reason that an action
    * might want this capability -- even though it wasn't secured -- is that it gets a request
    * that includes context such as the logged in user.
    *
@@ -296,11 +303,11 @@ package object security {
     Action(p) {
       request =>
         val ctxReq = CtxRqst(tgNone, request)
-        withSession(f(ctxReq))
+        withSession(ctxReq, f(ctxReq))
     }
   }
 
-  /** Convenience function for wrapping an unsecured action in a controller. The reason that an action
+  /**Convenience function for wrapping an unsecured action in a controller. The reason that an action
    * might want this capability -- even though it wasn't secured -- is that it gets a request
    * that includes context such as the logged in user.
    *

@@ -1,4 +1,4 @@
-@(request: play.api.mvc.Request[AnyContent])(implicit flash: play.api.mvc.Flash, session: play.api.mvc.Session)
+@(request: play.api.mvc.Request[AnyContent])(implicit rq: security.CtxRqst[_], flash: play.api.mvc.Flash)
 
 @main("Gigya Test", 'testLogin) {
 

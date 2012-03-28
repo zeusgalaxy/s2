@@ -24,6 +24,7 @@ menu.admin=Admin
 menu.account=Your Account
 menu.contact=Contact Us
 menu.logout=Logout
+menu.login=Login
 
 asset.management.title=Asset Management
 equipment.status.prompt=Get current status of your operating equipment...

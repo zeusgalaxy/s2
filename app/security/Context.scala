@@ -3,7 +3,7 @@ package security
 import models._
 import play.api.mvc.{WrappedRequest, Request}
 
-case class Context(user: Option[User], rights: Rights)
+case class Context(var user: Option[User], rights: Rights)
 
 object Context {
 

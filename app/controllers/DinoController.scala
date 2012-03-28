@@ -7,6 +7,7 @@ import play.api.http._
 import play.api.mvc._
 import play.api.Play.current
 
+import security._
 import utils._
 import models._
 import play.api.Logger
@@ -63,7 +64,7 @@ object DinoController extends Controller {
    * @return HTTP response type 200 (ok) with the Dino response body, else the http response type
    * 500 (internal server error) with the error text as the body.
    */
-  def passthru = Action {
+  def passthru = Unrestricted {
     implicit request => {
       val r = forward(request)
       r.fold(e => InternalServerError("Problem during dino passthru. Errors: " + e.list.mkString(", ")),
@@ -81,7 +82,7 @@ object DinoController extends Controller {
    * @return HTTP status 200, if successful, with a message showing the number of inserts as the body;
    * html status 500 with the error messages as the body, if unsuccessful.
    */
-  def pageview = Action {
+  def pageview = Unrestricted {
 
     implicit request => {
 
@@ -117,7 +118,7 @@ object DinoController extends Controller {
    * An example call to test:
    * http://localhost:9000/n5iregister.jsp?machine_id=1070&id=2115180102&membership_id=1&email=sOCClkoE102%40stross.com&pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15
    */
-  def register = Action {
+  def register = Unrestricted {
     implicit request =>
 
       implicit val loc = VL("DinoWrapper.register")
@@ -167,7 +168,7 @@ object DinoController extends Controller {
    * An example call to test:
    * http://localhost:9000/n5ilogin.jsp?machine_id=1070&id=2115180443&pic=22&oem_tos=15
    */
-  def login(npLogin: String, machineId: Long) = Action {
+  def login(npLogin: String, machineId: Long) = Unrestricted {
     implicit request =>
       implicit val loc = VL("ApiWrapper.login")
 

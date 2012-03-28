@@ -3,6 +3,7 @@ package controllers
 import play.api.mvc._
 import play.api.Play.current
 
+import security._
 import views._
 import utils._
 import models._
@@ -32,7 +33,7 @@ object ApiController extends Controller {
    * @return HTTP status 200, with an xml body that contains Virtual Trainer predefined_presets and/or
    * workouts appropriate for the machine that the exerciser is currently on.
    */
-  def vtLinkUser(npLogin: String, vtPassword: String, machineId: Long) = Action {
+  def vtLinkUser(npLogin: String, vtPassword: String, machineId: Long) = Unrestricted {
     implicit request =>
 
       implicit val loc = VL("Api.vtLinkUser")
@@ -76,7 +77,7 @@ object ApiController extends Controller {
    * @return HTTP status 200, with an xml body that contains Virtual Trainer predefined_presets and/or
    * workouts appropriate for the machine that the exerciser is currently on.
    */
-  def vtLogin(npLogin: String, vtPassword: String, machineId: Long) = Action {
+  def vtLogin(npLogin: String, vtPassword: String, machineId: Long) = Unrestricted {
     implicit request =>
 
       implicit val loc = VL("Api.vtLogin")
@@ -108,7 +109,7 @@ object ApiController extends Controller {
    * @param npLogin Id used by the exerciser to log into Netpulse.
    * @return HTTP status 200, with an xml body indicating whether the call was successful or not.
    */
-  def vtLogout(npLogin: String) = Action {
+  def vtLogout(npLogin: String) = Unrestricted {
 
     implicit request =>
 
@@ -134,7 +135,7 @@ object ApiController extends Controller {
    * @return HTTP status 200, with an xml body describing the status of an exerciser's
    * current relationship with Virtual Trainer.
    */
-  def vtStatus(npLogin: String) = Action {
+  def vtStatus(npLogin: String) = Unrestricted {
     implicit request =>
 
       implicit val loc = VL("Api.vtStatus")
@@ -154,7 +155,7 @@ object ApiController extends Controller {
    * An example call to test:
    * http://localhost:9000/vtRegister?machine_id=1070&id=2020
    */
-  def vtRegister(npLogin: String, machineId: Long) = Action {
+  def vtRegister(npLogin: String, machineId: Long) = Unrestricted {
     implicit request =>
 
       implicit val loc = VL("Api.vtRegister")
@@ -196,7 +197,7 @@ object ApiController extends Controller {
    * @return HTTP status 200, with an xml body listing the channels (if any) that the exerciser
    * has previously saved as "favorites" for that location.
    */
-  def getChannels(npLogin: String, locationId: Long) = Action {
+  def getChannels(npLogin: String, locationId: Long) = Unrestricted {
     implicit request =>
 
       implicit val loc = VL("Api.getChannels")
@@ -218,7 +219,7 @@ object ApiController extends Controller {
    * An example call to test locally, when in the test/controllers directory:
    * curl --header "Content-Type: text/xml; charset=UTF-8" -d@setChannels.xml http://localhost:9000/setChannels
    */
-  def setChannels = Action(parse.xml) {
+  def setChannels = Unrestricted(parse.xml) {
     implicit request =>
 
       implicit val loc = VL("Api.setChannels")
@@ -243,7 +244,7 @@ object ApiController extends Controller {
    *
    * @return An html page that contains javascript code necessary to complete the social login process.
    */
-  def gigyaLogin = Action {
+  def gigyaLogin = Unrestricted {
     implicit request =>
       Ok(html.gigya(request))
   }

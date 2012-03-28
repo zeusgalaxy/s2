@@ -1,4 +1,4 @@
-@(currentPage: Page[WorkoutLocation], currentOrderBy: Int, currentFilter: String, startDate: String, endDate: String)(implicit flash: play.api.mvc.Flash, session: play.api.mvc.Session)
+@(currentPage: Page[WorkoutLocation], currentOrderBy: Int, currentFilter: String, startDate: String, endDate: String)(implicit rq: security.CtxRqst[_], flash: play.api.mvc.Flash)
 
 @import helper._
 
@@ -49,10 +49,6 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
             </div>
             *@
 
-            @***** Don't show this to non-Netpulse Users ******@
-            @* The company ID was put onto the flash object in the controller *@
-            @* compId=@currentPage.cmpId: *@
-            @* TODO:        @if(session.get("cmpId").getOrElse("0").toInt == 1) {        *@
             <div class="control-group">
                 <label class="control-label" for="input01">@Messages("workouts.location.field.company")</label>
                 <div class="controls">

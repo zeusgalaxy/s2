@@ -1,4 +1,4 @@
-@(message: String)(implicit flash: play.api.mvc.Flash, session: play.api.mvc.Session)
+@(message: String)(implicit rq: security.CtxRqst[_], flash: play.api.mvc.Flash)
 
 @main(Messages("page.title.index"), 'home) {
 
@@ -14,7 +14,7 @@
     <div class="hero-unit">
         <h1>@Messages("lifescape.header")</h1>
         <p>@Messages("lifescape.tagline")</p>
-        <p> @if(!session.get("email").isEmpty) {
+        <p> @if(rq.context.user.isDefined) {
             <a class="btn btn-primary  btn-large" href="@routes.AuthController.logout()">@Messages("logout") &raquo;</a></p>
         }
     </div>

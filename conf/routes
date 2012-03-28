@@ -4,7 +4,7 @@
 
 # Authentication
 GET     /login                              controllers.AuthController.promptLogin(page ?= "")
-POST    /login                              controllers.AuthController.attemptLogin()
+POST    /login                              controllers.AuthController.attemptLogin(page ?= "")
 GET     /logout                             controllers.AuthController.logout
 
 # Home page
