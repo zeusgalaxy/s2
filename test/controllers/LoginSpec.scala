@@ -33,6 +33,7 @@ object Login extends Specification {
     }
   }
 
+<<<<<<< Updated upstream:test/controllers/LoginSpec.scala
 //  def testLogin = IsAuthenticated("/testLogin", username => implicit request =>
 //    Ok(html.testLogin("This is a login test"))
 //  )
@@ -61,5 +62,12 @@ object Login extends Specification {
 //  "Again block access once the user is logged out"
 //  false
 
+=======
+//  "Block access to secure controllers for logged out user" in {
+//    running(FakeApplication()) {
+//      true
+//    }
+//  }
+>>>>>>> Stashed changes:test/controllers/AuthControllerSpec.scala
 }
 
