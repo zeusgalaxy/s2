@@ -30,14 +30,27 @@ object AuthControllerSpec extends Specification {
 //      println("play cookie ="+cookies(result)("PLAY_SESSION").toString)
 //      case class Cookie(name: String, value: String, maxAge: Int = -1, path: String = "/", domain: Option[String] = None, secure: Boolean = false, httpOnly: Boolean = true)
 
-      cookies(result)("PLAY_SESSION") must equalTo( Cookie("PLAY_SESSION","66fc5205b89553aaa6cac878e1f936c19214c188-id%3A")  )
+//      cookies(result)("PLAY_SESSION") must equalTo( Cookie("PLAY_SESSION","66fc5205b89553aaa6cac878e1f936c19214c188-id%3A")  )
+
+      // TODO:
+
+      //
+      // Block access to secure controllers for logged out user
+      //
+
+      //
+      //  "Allow a user to login" in {
+      //    false
+      //  }
+      //
+      //  "Allow a logged in user access to secure controllers"
+      //  false
+      //
+      //  "Again block access once the user is logged out"
+      //  false
+
     }
   }
 
-  "Block access to secure controllers for logged out user" in {
-    running(FakeApplication()) {
-      true
-    }
-  }
 }
 

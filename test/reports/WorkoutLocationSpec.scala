@@ -35,48 +35,48 @@ object WorkoutLocationSpec extends Specification {
    *
    */
 
-  "Pull with default settings and verify no data is returned without a company" in {
+  "Verify no data is returned without a company, then verify past netpulse data " in {
     running(FakeApplication())  {
+      
       val page = WorkoutLocation.list()
       println (page.toString())
 
-      page match {
-        case Some(page) => page.items == List()    // equal empty List
-        case None => true
-      }
-    }
-  }
-
-  "Pull netpulse data and verify meaningful data is returned" in {
-    running(FakeApplication())  {
-      val page = WorkoutLocation.list( endDate = "2011-09-31", filter = "1" )
-      // Some(Page(List(WorkoutLocation(None,1,19,19,25,2,8.0000,25.0000,12.50000000,9.9600000,4.1500000)),List(WorkoutLocation(,1,19,19,25,2,8.0000,25.0000,12.50000000,9.9600000,4.1500000)),0,0,1))
-
-      page match {
-        case Some(p) => {
-//          println(p.toString)
-//          println("values = "+
-//            (p.items != List()).toString+","+
-//            (p.items(0).screens).toString+","+
-//            (p.items(0).newReg).toString+","+
-//            (p.totals != List()).toString+","+
-//            (p.totals(0).screens).toString+","+
-//            (p.totals(0).newReg).toString+","
-//          )
-
-          ( p.items != List()  &&
-            p.items(0).screens == 1 &&
-            p.items(0).newReg == java.math.BigDecimal.valueOf(19L) &&
-            p.totals != List() &
-            p.totals(0).screens == 1 &&
-            p.totals(0).newReg == java.math.BigDecimal.valueOf(19L)
-          )
+      // Verify no data is returned without a company,
+      (
+        page match {
+          case Some(page) => page.items == List()    // equal empty List
+          case None => true
         }
-        case None => false
-      }
+      ) must equalTo (true)
+
+      // Pull netpulse data and verify meaningful data is returned
+      val page1 = WorkoutLocation.list( endDate = "2011-09-31", filter = "1" )
+      // Some(Page(List(WorkoutLocation(None,1,19,19,25,2,8.0000,25.0000,12.50000000,9.9600000,4.1500000)),List(WorkoutLocation(,1,19,19,25,2,8.0000,25.0000,12.50000000,9.9600000,4.1500000)),0,0,1))
+      (
+        page1 match {
+          case Some(p) => {
+            //          println(p.toString)
+            //          println("values = "+
+            //            (p.items != List()).toString+","+
+            //            (p.items(0).screens).toString+","+
+            //            (p.items(0).newReg).toString+","+
+            //            (p.totals != List()).toString+","+
+            //            (p.totals(0).screens).toString+","+
+            //            (p.totals(0).newReg).toString+","
+            //          )
+  
+            ( p.items != List()  &&
+              p.items(0).screens == 1 &&
+              p.items(0).newReg == java.math.BigDecimal.valueOf(19L) &&
+              p.totals != List() &
+              p.totals(0).screens == 1 &&
+              p.totals(0).newReg == java.math.BigDecimal.valueOf(19L)
+              )
+          }
+          case None => false
+        }
+      ) must equalTo (true)
     }
   }
-
-
 }
 
