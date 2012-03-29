@@ -197,8 +197,8 @@ object User {
         DB.withConnection { implicit connection =>
           SQL(
             """
-              update user
-              set firstName = {firstName}, lastName = {lastName}, email={email}
+              update admin_user
+              set first_name = {firstName}, last_name = {lastName}, email={email}
               where id = {id}
             """
           ).on(
@@ -271,6 +271,24 @@ object User {
      }.error.fold(e => None, s => s)
   }
 
+  /**
+   * Delete a user permanently and completely - see delete
+   *
+   * @param id Id of the computer to delete.
+   * @return int, number of rows affected - should be 1
+   */
+  def hardDelete(id: Long) = {
+
+    implicit val loc = VL("User.hardDelete")
+
+    vld {
+      DB.withConnection {
+        implicit connection =>
+          SQL("delete from admin_user where id = {id}").
+            on('id -> id).executeUpdate()
+      }
+    }.error.fold(e => None, s => s)
+  }
 
   /**
    * Create an encrypted admin user cookie to be added onto the session
