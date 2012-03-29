@@ -16,6 +16,9 @@ case class User(id: Long = 0, firstName: Option[String], lastName: Option[String
                 password: String = "", email: String = "", compId: Option[Long] = None,
                 oemId: Option[Long] = None, adId: Option[Long] = None)
 
+
+case class UserEdit (firstName: Option[String], lastName: Option[String], email: String, password: Option[String])
+
 /**
  * Helper for pagination.
  */
@@ -186,14 +189,15 @@ object User {
    * Password not encrypted here. Decrypt it only when needed.
    *
    * @param id The user id
-   * @param user, The user values.
+   * @param user, The user values from the UserEdit class NOT the User class.
    * @return int the number of rows updated
    */
-    def update(id: Long, user: User) = {
+    def update(id: Long, user: UserEdit) = {
 
       implicit val loc = VL("User.update")
 
       val result = vld {
+        Logger.debug("User data to be updated: "+user.toString)
         DB.withConnection { implicit connection =>
           SQL(
             """

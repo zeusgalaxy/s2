@@ -1,4 +1,4 @@
-@(form: Form[User])(implicit rq: security.CtxRqst[_], flash: Flash)
+@(id: Long, form: Form[UserEdit])(implicit rq: security.CtxRqst[_], flash: Flash)
 
 @main("useredit.title", 'userEdit) {
 
@@ -18,7 +18,7 @@
 
     <div class="row">
         <div class="span8">
-            <form action="@routes.MiscController.userSubmit()"  method="POST" class="form-horizontal">
+            <form action="@routes.MiscController.userSubmit(id)"  method="POST" class="form-horizontal">
                 <fieldset>
                     <legend></legend>
                     <div class="control-group">
