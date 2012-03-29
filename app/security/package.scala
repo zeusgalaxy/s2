@@ -80,7 +80,7 @@ package object security {
   object CtxRqst {
     def apply[A](target: Target, request: Request[A]): CtxRqst[A] = {
       vld {
-        request.session.get("id").flatMap(uid => models.User.findById(uid.toLong)).map {
+        request.session.get("id").flatMap(pid => models.Person.findById(pid.toInt)).map {
           user =>
             CtxRqst(Context(user, target), request)
         }.getOrElse(CtxRqst(Context(None, noRights), request))
