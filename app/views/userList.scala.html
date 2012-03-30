@@ -32,7 +32,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
     }
 
     @flash.get("failure").map { message =>
-        <div class="alert-message warning">
+        <div class="alert alert-warning">
             @message
         </div>
     }

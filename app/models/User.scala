@@ -176,8 +176,6 @@ object User {
             'filter -> filter
           ).as(scalar[Long].single)
 
-          Logger.debug("User list = " + u.toString)
-
           Page(u, Seq(), page, offset, totalRows)
       }
     }.error.fold(e => Page(Seq(), Seq(), 0, 0, 0), s => s)

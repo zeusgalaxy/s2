@@ -43,13 +43,26 @@
                         <label class="control-label" for="password"></label>
                         <div class="controls">
                             <input type="password" name="password" id="password" class="input-xlarge" placeholder="Optional new password" >
-                            <p class="help-block">Leave this blank to keep your current password.</p>
+                            <p class="help-block">Leave this blank to keep the current password.</p>
+                        </div>
+                    </div>
+
+@* TODO: - This should only be shown to Admin users  *@
+
+                    <div class="control-group">
+                        @* <label class="control-label" for="optionsCheckboxList">Checkboxes</label>  *@
+                        <div class="controls">
+                            <label class="checkbox">
+                                <input type="checkbox" name="optionsCheckboxList1" value="option1">
+                                Administrator account?
+                            </label>
+                            <p class="help-block"><strong>Note:</strong> Administrators can create and edit others user's accounts.</p>
                         </div>
                     </div>
 
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary">@Messages("button.save")</button>
-                        @* <button type="cancel" class="btn btn-primary">@Messages("button.cancel")</button> *@
+                        <a href="@routes.MiscController.userList()" class="btn btn-primary">@Messages("button.cancel")</a>
                     </div>
 
                 </fieldset>

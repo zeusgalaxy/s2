@@ -30,12 +30,6 @@ object MiscController extends Controller {
   }
 
 
-  /*
- *
- *  User CRUD controllers, form etc.
- *        case class User(id: Long = 0, firstName: String="", lastName: String="", password: String="", email: String="",
-               compId: Long=0,  oemId: Option[Long]=None, adId: Option[Long]=None  )
-  */
 
   /** userForm
    * This is a special form to user for user editing since we don't want to use
@@ -62,7 +56,7 @@ object MiscController extends Controller {
   }
 
   /** userSubmit
-   * Handle form submission.
+   * Handle form submission from an edit.
    * @param id User ID
    */
   def userSubmit(id: Long) = IfCanUpdate(tgUsers) {
@@ -74,7 +68,7 @@ object MiscController extends Controller {
             case 1 =>
               Redirect(routes.MiscController.userList()).flashing("success" -> ("User: " + uE.email + " updated."))
             case _ =>
-              Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occured."))
+              Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occured. Make sure the email address is unique."))
           }
       )
     }
