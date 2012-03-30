@@ -12,7 +12,7 @@
 
     <div class="row">
         <div class="span8">
-            <form action="@routes.MiscController.userSubmit(id)"  method="POST" class="form-horizontal">
+            <form action="@routes.MiscController.userEditSubmit(id)"  method="POST" class="form-horizontal">
                 <fieldset>
                     <legend></legend>
                     <div class="control-group">
@@ -56,13 +56,13 @@
                                 <input type="checkbox" name="optionsCheckboxList1" value="option1">
                                 Administrator account?
                             </label>
-                            <p class="help-block"><strong>Note:</strong> Administrators can create and edit others user's accounts.</p>
+                            <p class="help-block"><strong>Note:</strong> Administrators can create and edit other user's accounts.</p>
                         </div>
                     </div>
 
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary">@Messages("button.save")</button>
-                        <a href="@routes.MiscController.userList()" class="btn btn-primary">@Messages("button.cancel")</a>
+                        <a href="@routes.MiscController.userList()" class="btn">@Messages("button.cancel")</a>
                     </div>
 
                 </fieldset>

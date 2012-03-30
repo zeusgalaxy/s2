@@ -16,8 +16,16 @@ case class User(id: Long = 0, firstName: Option[String], lastName: Option[String
                 password: String = "", email: String = "", compId: Option[Long] = None,
                 oemId: Option[Long] = None, adId: Option[Long] = None)
 
-
-case class UserEdit (firstName: Option[String], lastName: Option[String], email: String, password: Option[String])
+/**UserEdit Class
+ * Subset of the User class that is user editable for using in edit and add forms.
+ * @param firstName
+ * @param lastName
+ * @param password
+ * @param email
+ */
+case class UserEdit (firstName: Option[String], lastName: Option[String], password: Option[String], email: String ) {
+  def toUser:User = User(-1, firstName = firstName, lastName=lastName, password = password.map(p => p).getOrElse(""), email = email  )
+}
 
 /**
  * Helper for pagination.

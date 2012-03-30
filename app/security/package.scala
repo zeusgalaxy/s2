@@ -41,7 +41,6 @@ package object security {
   }
 
   val noRights = new Rights(c = false, r = false, u = false, d = false, f = false)
-  val readOnly = new Rights(c = false, r = true, u = false, d = false, f = false)
 
   // Some example targets have been predefined. These can be fleshed out as we define the application.
   val tgNone = Target("")
