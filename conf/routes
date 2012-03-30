@@ -15,7 +15,9 @@ GET     /unrestrictedHello                  controllers.MiscController.unrestric
 
 # User admin
 GET     /userEdit                           controllers.MiscController.userEdit(id:Long)
-POST    /userSubmit                         controllers.MiscController.userSubmit(id:Long)
+POST    /userEditSubmit                     controllers.MiscController.userEditSubmit(id:Long)
+GET     /userAdd                            controllers.MiscController.userAdd()
+POST    /userAddSubmit                      controllers.MiscController.userAddSubmit()
 GET     /userList                           controllers.MiscController.userList(p:Int ?= 0, s:Int ?= 1, f ?= "" )
 
 GET     /gigyaLogin                         controllers.ApiController.gigyaLogin

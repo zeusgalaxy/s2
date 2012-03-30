@@ -3,6 +3,7 @@ copyright=Netpulse 2012. All rights reserved
 button.go=Go
 button.save=Save
 button.add.user=Add User
+button.cancel=Cancel
 
 page.title.index=This is the S2 index page
 page.title.login=Login
