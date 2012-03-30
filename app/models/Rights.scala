@@ -40,7 +40,7 @@ object Rights {
     }
   }
 
-  def apply(u: Option[Person], t: Target) = {
+  def apply(u: Option[Person], t: Target): Rights = {
     u match {
       case Some(user) => {
         implicit val loc = VL("Rights.apply")

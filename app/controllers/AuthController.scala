@@ -54,7 +54,7 @@ object AuthController extends Controller {
           BadRequest(html.login(formWithErrors, destPage))
         },
         user => {
-          User.findByEmail(user._1) match {
+          Person.findByLogin(user._1) match {       // we use their e-mail address as their login id
             case Some(u) => {
               request.context.user = Some(u)
               Redirect(destPage)

@@ -10,7 +10,7 @@ import anorm.SqlParser._
 import play.api.Logger
 import scalaz.{Node => _, _}
 
-case class Person(id: Int, firstName: String, lastName: String, portalLogin: String, portalPassword: String,
+case class Person(id: Int, firstName: String, lastName: String, portalLogin: String, portalPassword: Option[String],
                     email: String, phone: String, lastLogin: DateTime, activeStatus: Int)
 
 /**
@@ -32,7 +32,7 @@ object Person {
       get[String]("person.first_name") ~
       get[String]("person.last_name") ~
       get[String]("person.portal_login") ~
-      get[String]("person.portal_password") ~
+      get[Option[String]]("person.portal_password") ~
       get[String]("person.email") ~
       get[String]("person.phone") ~
       get[java.util.Date]("lastLogin") ~
@@ -54,8 +54,26 @@ object Person {
     vld {
       DB.withConnection("s2") {
         implicit connection =>
-          SQL("select "+selectFields+"  person " +
+          SQL("select "+selectFields+" from person " +
             " where id = {id}").on('id -> id).as(Person.simple.singleOpt)
+      }
+    }.info.fold(e => None, s => s)
+  }
+
+  /** Retrieves a person from the database using their portal login identifier.
+   *
+   * @param login Person's login identifier used when accessing the portal
+   * @return Some(Person), if found; else None
+   */
+  def findByLogin(login: String): Option[Person] = {
+
+    implicit val loc = VL("Person.findByEmail")
+
+    vld {
+      DB.withConnection("s2") {
+        implicit connection =>
+          SQL("select "+selectFields+" from person " +
+            " where portal_login = {login}").on('login -> login).as(Person.simple.singleOpt)
       }
     }.info.fold(e => None, s => s)
   }
