@@ -42,8 +42,8 @@ object MiscController extends Controller {
     mapping(
       "firstName" -> optional(text),
       "lastName" -> optional(text),
-      "email" -> text,
-      "newPass" -> optional(text)
+      "email" -> email,
+      "password" -> optional(text)
     )  (UserEdit.apply)(UserEdit.unapply)
   )
 
@@ -54,7 +54,7 @@ object MiscController extends Controller {
           val uE = UserEdit(u.firstName, u.lastName, u.email, None)
           Ok(html.userEdit(id, userForm.fill(uE)))
         }
-        case _ => Redirect(routes.MiscController.index()).flashing("failure" -> ("An error occured."))
+        case _ => Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occured."))
       }
   }
 
@@ -64,11 +64,11 @@ object MiscController extends Controller {
   def userSubmit(id: Long) = IfCanUpdate(tgUsers) {
     implicit request => {
       userForm.bindFromRequest.fold(
-        errors => BadRequest(html.userEdit(id, errors)),
+        formErrors => BadRequest(html.userEdit(id, formErrors)),
         uE => {
           User.update(id, uE) match {
             case 1 =>
-              Redirect(routes.MiscController.userList()).flashing("Success" -> ("User updated."))
+              Redirect(routes.MiscController.userList()).flashing("success" -> ("User: "+uE.email+" updated."))
             case _ =>
               Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occured."))
           }

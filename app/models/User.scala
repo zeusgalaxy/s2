@@ -197,24 +197,21 @@ object User {
       implicit val loc = VL("User.update")
 
       val result = vld {
-        Logger.debug("User data to be updated: "+user.toString)
+
         DB.withConnection { implicit connection =>
           SQL(
             """
               update admin_user
-              set first_name = {firstName}, last_name = {lastName}, email={email}
+              set first_name = {firstName}, last_name = {lastName}, email={email}, update_date=NOW() """ +
+              user.password.map{ newPass => ", password={password} "}.getOrElse("")  + """
               where id = {id}
             """
           ).on(
             'id -> id,
             'firstName -> user.firstName,
             'lastName -> user.lastName,
-            'password -> user.password,
+            'password -> user.password.map { newPass => Blowfish.encrypt(newPass) },
             'email -> user.email
-//            ,
-//            'compId -> user.compId,
-//            'oemId -> user.oemId,
-//            'adId -> user.adId
           ).executeUpdate()
         }
       }.error.fold(e => None, s => s)

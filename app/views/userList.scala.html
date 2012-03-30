@@ -26,9 +26,15 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
     <h1>@Messages("userlist.title", currentPage.total)</h1>
 
     @flash.get("success").map { message =>
-    <div class="alert alert-success">
-        <strong>Done!</strong> @message
-    </div>
+        <div class="alert alert-success">
+            @message
+        </div>
+    }
+
+    @flash.get("failure").map { message =>
+        <div class="alert-message warning">
+            @message
+        </div>
     }
 
     <div class="row">
