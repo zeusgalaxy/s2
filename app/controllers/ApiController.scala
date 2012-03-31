@@ -248,4 +248,14 @@ object ApiController extends Controller {
     implicit request =>
       Ok(html.gigya(request))
   }
+
+  /**Proxy any Gigya call by building the request as needed by Gigya (i.e, with the proper security headers, etc.)
+   * and then making the Gigya call and returning whatever it yields as our own result.
+   *
+   * @return Whatever the Gigya page returns.
+   */
+//  def gigyaLogin = Unrestricted {
+//    implicit request =>
+//      Ok(html.gigya(request))
+//  }
 }
