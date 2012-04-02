@@ -13,30 +13,28 @@ import scalaz._
 import Scalaz._
 
 
-case class Rights(c: Boolean, r: Boolean, u: Boolean, d: Boolean, f: Boolean) extends Can {
+case class Rights(c: Int, r: Int, u: Int, d: Int, f: Int) extends Can {
 
-  override def canCreate = c
+  override def canCreate = c > 0
 
-  override def canRead = r
+  override def canRead = r > 0
 
-  override def canUpdate = u
+  override def canUpdate = u > 0
 
-  override def canDelete = d
+  override def canDelete = d > 0
 
-  override def isFiltered = f
+  override def isFiltered = f > 0
 }
 
 object Rights {
 
   val simple = {
-    get[Short] ("rights.c") ~
-      get[Short] ("rights.r") ~
-      get[Short] ("rights.u") ~
-      get[Short] ("rights.d") ~
-      get[Short] ("rights.filter") map {
-      case c ~ r ~ u ~ d ~ filter =>
-        Rights ((c > 0) ? true | false, (r > 0) ? true | false , (u > 0) ? true | false,
-                (d > 0) ? true | false, (filter > 0) ? true | false)
+    get[Int] ("rights.c") ~
+      get[Int] ("rights.r") ~
+      get[Int] ("rights.u") ~
+      get[Int] ("rights.d") ~
+      get[Int] ("rights.filter") map {
+      case c ~ r ~ u ~ d ~ filter => Rights(c, r, u, d, filter)
     }
   }
 
@@ -53,7 +51,7 @@ object Rights {
                 " join person_role on rights.role_id = person_role.role_id " +
                 " where person_role.person_id = {personId} and target.name = {targetName}").
                 on('personId -> user.id,
-                'targetName -> t).
+                'targetName -> t.t).
                 as(Rights.simple.singleOpt)
           }
         }.info.fold(e => noRights, s => s.getOrElse(noRights))

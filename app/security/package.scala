@@ -40,8 +40,8 @@ package object security {
     def isFiltered = false
   }
 
-  val noRights = new Rights(c = false, r = false, u = false, d = false, f = false)
-  val readOnly = new Rights(c = false, r = true, u = false, d = false, f = false)
+  val noRights = new Rights(c = 0, r = 0, u = 0, d = 0, f = 0)
+  val readOnly = new Rights(c = 0, r = 1, u = 0, d = 0, f = 0)
 
   // Some example targets have been predefined. These can be fleshed out as we define the application.
   val tgNone = Target("")
