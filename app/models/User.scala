@@ -33,45 +33,6 @@ object User {
 
   val pageLength = 15
 
-  /**
-   * Authenticate a User based on email and password
-   *
-   * @param email user email
-   * @param password, unencrypted user password
-   * @return Some(User) if the email and encrypted password are found in the DB, None otherwise.
-   */
-  def authenticate(email: String, password: String): Option[User] = {
-
-    implicit val loc = VL("User.authenticate")
-
-    val sqlValid = vld {
-      DB.withConnection {
-        implicit connection =>
-          SQL(
-            """
-             select * from admin_user where
-             email = {email} and password = {password} and status = '1'
-            """
-          ).on(
-            'email -> email,
-            'password -> Blowfish.encrypt(password)
-          ).as(User.simple.singleOpt)
-      }
-    }
-
-    sqlValid.fold(
-      e => {
-        sqlValid.add("email", email).error
-        None
-      },
-      s => s match {
-        case None =>
-          Logger.info("No valid user returned from sql on email " + email)
-          None
-        case Some(u) => Some(u)
-      })
-  }
-
   // -- Parsers
 
   /**
