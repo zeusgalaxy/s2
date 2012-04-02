@@ -10,7 +10,6 @@ import anorm.SqlParser._
 import play.api.Logger
 import xml._
 import scalaz.{Node => _, _}
-import Scalaz._
 
 case class Exerciser(dbId: Long, login: String, email: String, pic: Int,
                      membershipId: Option[String], gender: Boolean, dob: DateTime,

@@ -25,11 +25,11 @@ object AuthController extends Controller {
       "password" -> text
     ) verifying("Invalid email or password", result => result match {
       case (email, password) =>
-        User.authenticate(email, password).isDefined
+        Person.authenticate(email, password).isDefined
     })
   )
 
-  /** Presents the login form to the user, so they can enter their user name and password.
+  /**Presents the login form to the user, so they can enter their user name and password.
    *
    * @param destPage The page the user had requested before they were diverted into the login sequence.
    */
@@ -38,7 +38,14 @@ object AuthController extends Controller {
       Ok(html.login(loginForm, destPage))
   }
 
-  /** Handles login form submission
+  /**
+   * insert into person values(null, "s2", "netpulse", "s2@netpulse.com", "19e359d99f3c4e3bdf8592078de921bc", "s2@netpulse.com", "5103369779", now(), 1, now(), now(), 0, 0, null, null);
+   * insert into target values (null, "reportWorkoutLocations", 0, 0, 0, null);
+   * insert into role values (null, "netpulse-admin", 0, 0, 0, null);
+   * insert into person_role values(null, 0, 0, 0, null, 8234, 1);
+   * insert into rights values(null, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1);
+   */
+  /**Handles login form submission
    *
    * Handles the login form submission by validating the submitted user name and password against the
    * database, and if okay, beginning a logged in user session. If successful, they will be forwarded to
@@ -54,19 +61,23 @@ object AuthController extends Controller {
           BadRequest(html.login(formWithErrors, destPage))
         },
         user => {
-          User.findByEmail(user._1) match {
+          Person.findByLogin(user._1) match {
+            // we use their e-mail address as their login id
             case Some(u) => {
               request.context.user = Some(u)
+              Logger.debug("We have user: " + u.firstName + " in AuthController.attemptLogin")
               Redirect(destPage)
             }
-            case _ => Redirect(routes.AuthController.promptLogin("/index")).withNewSession.flashing(
-              "error" -> "Problem logging in.")
+            case _ =>
+              Logger.debug("We failed to get a person object for " + user._1)
+              Redirect(routes.AuthController.promptLogin(destPage)).withNewSession.flashing(
+                "error" -> "Problem logging in.")
           }
         }
       )
   }
 
-  /** Logs out the current user by setting the sessions user variable to None.
+  /**Logs out the current user by setting the sessions user variable to None.
    *
    * @return The index (home) page with a message showing that they logged out successfully
    */

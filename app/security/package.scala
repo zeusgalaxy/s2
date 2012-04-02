@@ -40,7 +40,8 @@ package object security {
     def isFiltered = false
   }
 
-  val noRights = new Rights(c = false, r = false, u = false, d = false, f = false)
+  val noRights = new Rights(c = 0, r = 0, u = 0, d = 0, f = 0)
+  val readOnly = new Rights(c = 0, r = 1, u = 0, d = 0, f = 0)
 
   // Some example targets have been predefined. These can be fleshed out as we define the application.
   val tgNone = Target("")
@@ -79,7 +80,7 @@ package object security {
   object CtxRqst {
     def apply[A](target: Target, request: Request[A]): CtxRqst[A] = {
       vld {
-        request.session.get("id").flatMap(uid => models.User.findById(uid.toLong)).map {
+        request.session.get("id").flatMap(pid => models.Person.findById(pid.toInt)).map {
           user =>
             CtxRqst(Context(user, target), request)
         }.getOrElse(CtxRqst(Context(None, noRights), request))
