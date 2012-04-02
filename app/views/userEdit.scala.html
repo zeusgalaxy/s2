@@ -1,8 +1,8 @@
 @(id: Long, form: Form[UserEdit])(implicit rq: security.CtxRqst[_], flash: Flash)
 
-@main("useredit.title", 'userEdit) {
+@main( if(id == -1L) {"useradd.title"} else {"useredit.title"}, 'userEdit) {
 
-    <h1>@Messages("useredit.title")</h1>
+    <h1>@Messages( if(id == -1L) "useradd.title" else "useredit.title" )</h1>
 
     @form.errors.map { error =>
         <p class="alert alert-error">
@@ -12,13 +12,18 @@
 
     <div class="row">
         <div class="span8">
+        @if(id == -1L) {
+            <form action="@routes.MiscController.userAddSubmit()"  method="POST" class="form-horizontal">
+          } else {
             <form action="@routes.MiscController.userEditSubmit(id)"  method="POST" class="form-horizontal">
+          }
+
                 <fieldset>
                     <legend></legend>
                     <div class="control-group">
                         <label class="control-label" for="firstName"></label>
                         <div class="controls">
-                            <input type="text" name="firstName" id="firstName" class="input-xlarge" placeholder="First Name"  value="@form("firstName").value">
+                            <input type="text" name="firstName" id="firstName" class="input-xlarge" placeholder="@Messages("useredit.fname")"  value="@form("firstName").value">
                             <p class="help-block"></p>
                         </div>
                     </div>
@@ -26,7 +31,7 @@
                     <div class="control-group">
                         <label class="control-label" for="lastName"></label>
                         <div class="controls">
-                            <input type="text" name="lastName" id="lastName" class="input-xlarge" placeholder="Last Name"  value="@form("lastName").value">
+                            <input type="text" name="lastName" id="lastName" class="input-xlarge" placeholder="@Messages("useredit.lname")"  value="@form("lastName").value">
                             <p class="help-block"></p>
                         </div>
                     </div>
@@ -34,7 +39,7 @@
                     <div class="control-group">
                         <label class="control-label" for="email"></label>
                         <div class="controls">
-                            <input type="email" name="email" id="email" class="input-xlarge" placeholder="Email"  value="@form("email").value">
+                            <input type="email" name="email" id="email" class="input-xlarge" placeholder="@Messages("useredit.email")"  value="@form("email").value">
                             <p class="help-block"></p>
                         </div>
                     </div>
@@ -42,8 +47,12 @@
                     <div class="control-group">
                         <label class="control-label" for="password"></label>
                         <div class="controls">
-                            <input type="password" name="password" id="password" class="input-xlarge" placeholder="Optional new password" >
-                            <p class="help-block">Leave this blank to keep the current password.</p>
+                            @if(id == -1L)  {
+                                <input type="password" name="password" id="password" class="input-xlarge" placeholder="@Messages("useredit.password")" >
+                            } else {
+                                <input type="password" name="password" id="password" class="input-xlarge" placeholder="@Messages("useredit.newpw")" >
+                                <p class="help-block">@Messages("useredit.newpwhelp")</p>
+                            }
                         </div>
                     </div>
 
@@ -54,9 +63,9 @@
                         <div class="controls">
                             <label class="checkbox">
                                 <input type="checkbox" name="optionsCheckboxList1" value="option1">
-                                Administrator account?
+                                @Messages("useredit.admin")
                             </label>
-                            <p class="help-block"><strong>Note:</strong> Administrators can create and edit other user's accounts.</p>
+                            <p class="help-block">@Messages("useredit.adminhelp")</p>
                         </div>
                     </div>
 

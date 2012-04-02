@@ -31,8 +31,7 @@ object MiscController extends Controller {
 
 
 
-  /** userForm
-   * This is a special form to user for user editing since we don't want to use
+  /** This is a special form to user for user case class editing since we don't want to use
    * the full User case class.
    */
   val userForm = Form(
@@ -44,8 +43,7 @@ object MiscController extends Controller {
     )(UserEdit.apply)(UserEdit.unapply)
   )
 
-  /** userEdit
-   * Use the passed in ID value to get the user from the DB. Present that info in the form above.
+  /** Use the passed in ID value to get the user from the DB. Present that info in the form above.
    * @param id - User ID
    */
   def userEdit(id: Long) = IfCanUpdate(tgUsers) {
@@ -55,8 +53,7 @@ object MiscController extends Controller {
       }).getOrElse(Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occured.")))
   }
 
-  /** userEditSubmit
-   * Handle form submission from an edit.
+  /** Controller to Handle form submission from an edit.
    * @param id User ID
    */
   def userEditSubmit(id: Long) = IfCanUpdate(tgUsers) {
@@ -68,43 +65,44 @@ object MiscController extends Controller {
           case 1 =>
             Redirect(routes.MiscController.userList()).flashing("success" -> ("User: " + uE.email + " updated."))
           case _ =>
-            Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occured. Make sure the email address is unique."))
+            Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred. Make sure the email address is unique."))
         }
       )
     }
   }
   
-  /** userAdd
-   * Add a user.
+  /** Controller for Adding a user.
    * @param - none
    */
   def userAdd() = IfCanUpdate(tgUsers) {
-    implicit request => Ok(html.userEdit(-1, userForm))
+    implicit request => {
+      Logger.debug("in userAdd controller")
+      Ok(html.userEdit(-1, userForm))
+    } 
   }
 
-  /** userAddSubmit
-   * Handle form submission from an edit.
+  /** Handle form submission from an edit.
    * @param - none
    */
   def userAddSubmit() = IfCanUpdate(tgUsers) {
     implicit request => {
       userForm.bindFromRequest.fold(
         formErrors => BadRequest(html.userEdit(-1, formErrors)),
-        uE => User.insert(uE.toUser)
-        match {
-          case Some(u) =>
-            Redirect(routes.MiscController.userList()).flashing("success" -> ("User added."))
-          case _ =>
-            Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occured. Make sure the email address is unique."))
+        uE => {
+          Logger.debug("UserAddSubmit uE to be added: "+uE.toString)
+          Logger.debug("UserAddSubmit user from uE: "+uE.toUser)
+          User.insert(uE.toUser)  match {
+            case Some(u) =>
+              Redirect(routes.MiscController.userList()).flashing("success" -> ("User added."))
+            case _ =>
+              Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred. Make sure the email address is unique."))
+            }
         }
       )
     }
   }
   
-  
-  /**userList
-   *
-   * Display a page by page listing of the the admin users
+  /** Display a page by page listing of the the admin users
    * @param page - which page of paginated results to display
    * @param orderBy - column to sort by
    * @param filter - partial last name to use as a match string

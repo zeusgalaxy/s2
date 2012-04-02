@@ -24,7 +24,7 @@ case class User(id: Long = 0, firstName: Option[String], lastName: Option[String
  * @param email
  */
 case class UserEdit (firstName: Option[String], lastName: Option[String], password: Option[String], email: String ) {
-  def toUser:User = User(-1, firstName = firstName, lastName=lastName, password = password.map(p => p).getOrElse(""), email = email  )
+  def toUser:User = User(-1, firstName = firstName, lastName=lastName, password = password.map(p => p).getOrElse(""), email = email, oemId = Some(1)  )
 }
 
 /**
@@ -178,7 +178,7 @@ object User {
           val totalRows = SQL(
             """
               select count(*) from admin_user
-              where oem_id =1 and ifnull(last_name,'') like {filter}
+              where oem_id =1 and ifnull(last_name,'') like {filter} AND status = 1
             """
           ).on(
             'filter -> filter
@@ -255,7 +255,7 @@ object User {
           ).executeInsert()
         }
     }.error.fold(e => None, s => s)
-    Logger.debug("Insert :"+result)
+    Logger.debug("Inserted ID :"+result)
     result       //  you can println your vld left side (with the error part) by calling the "either" method to turn it into an Either and access it as a "left"
   }
 

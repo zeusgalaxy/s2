@@ -31,7 +31,17 @@ asset.management.title=Asset Management
 equipment.status.prompt=Get current status of your operating equipment...
 equipment.status.button=Equipment Status
 
+useradd.title=Add Account
 useredit.title=Update Account
+useredit.fname=First Name
+useredit.lname=Last Name
+useredit.email=Email
+useredit.password=Password
+useredit.newpw=Optional New Password
+useredit.newpwhelp=Leave this blank to keep the current password.
+useredit.admin=Administrator Account?
+useredit.adminhelp=Note: Administrators can create and edit other user accounts.
+
 
 userlist.title=User List
 userlist.filter.lastname=Filter by last name...
