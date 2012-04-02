@@ -28,10 +28,10 @@ object ApiController extends Controller {
    * @param npLogin Id used by the exerciser to log into Netpulse.
    * @param vtPassword Password used by the exerciser to access their Virtual Trainer account.
    * @param machineId Id of the machine from which this link is being attempted. This is needed
-   * in order to return an appropriate set of predefined_presets and/or workouts after the linking
-   * is completed.
+   *                  in order to return an appropriate set of predefined_presets and/or workouts after the linking
+   *                  is completed.
    * @return HTTP status 200, with an xml body that contains Virtual Trainer predefined_presets and/or
-   * workouts appropriate for the machine that the exerciser is currently on.
+   *         workouts appropriate for the machine that the exerciser is currently on.
    */
   def vtLinkUser(npLogin: String, vtPassword: String, machineId: Long) = Unrestricted {
     implicit request =>
@@ -72,10 +72,10 @@ object ApiController extends Controller {
    * @param npLogin Id used by the exerciser to log into Netpulse.
    * @param vtPassword Password used by the exerciser to access their Virtual Trainer account.
    * @param machineId Id of the machine from which this link is being attempted. This is needed
-   * in order to return an appropriate set of predefined_presets and/or workouts after the linking
-   * is completed.
+   *                  in order to return an appropriate set of predefined_presets and/or workouts after the linking
+   *                  is completed.
    * @return HTTP status 200, with an xml body that contains Virtual Trainer predefined_presets and/or
-   * workouts appropriate for the machine that the exerciser is currently on.
+   *         workouts appropriate for the machine that the exerciser is currently on.
    */
   def vtLogin(npLogin: String, vtPassword: String, machineId: Long) = Unrestricted {
     implicit request =>
@@ -133,7 +133,7 @@ object ApiController extends Controller {
    *
    * @param npLogin Id used by the exerciser to log into Netpulse.
    * @return HTTP status 200, with an xml body describing the status of an exerciser's
-   * current relationship with Virtual Trainer.
+   *         current relationship with Virtual Trainer.
    */
   def vtStatus(npLogin: String) = Unrestricted {
     implicit request =>
@@ -144,16 +144,16 @@ object ApiController extends Controller {
           <api error={apiUnableToRetrieveExerciser.toString}/>)
   }
 
-  /** Registers an existing exerciser with Virtual Trainer. This call is used instead of
+  /**Registers an existing exerciser with Virtual Trainer. This call is used instead of
    * the DinoWrapper.register call for those cases where the exerciser is already set up within
    * Netpulse, and just needs to do the Virtual Trainer portion of the registration.
    *
    * @return HTTP status 200, with an xml body consisting of the predefined_presets that Virtual
-   * Trainer provides for that machine type, assuming the call was successful. If not, the xml message
-   * will include an error code indicating the nature of the problem.
+   *         Trainer provides for that machine type, assuming the call was successful. If not, the xml message
+   *         will include an error code indicating the nature of the problem.
    *
-   * An example call to test:
-   * http://localhost:9000/vtRegister?machine_id=1070&id=2020
+   *         An example call to test:
+   *         http://localhost:9000/vtRegister?machine_id=1070&id=2020
    */
   def vtRegister(npLogin: String, machineId: Long) = Unrestricted {
     implicit request =>
@@ -195,7 +195,7 @@ object ApiController extends Controller {
    * @param npLogin Id used by the exerciser to log into Netpulse.
    * @param locationId Club id where the exercise is currently located.
    * @return HTTP status 200, with an xml body listing the channels (if any) that the exerciser
-   * has previously saved as "favorites" for that location.
+   *         has previously saved as "favorites" for that location.
    */
   def getChannels(npLogin: String, locationId: Long) = Unrestricted {
     implicit request =>
@@ -212,12 +212,12 @@ object ApiController extends Controller {
       </api>)
   }
 
-  /** Saves a list of "favorite" tv channels
+  /**Saves a list of "favorite" tv channels
    *
    * @return HTTP status 200, with an xml body indicating whether the call was successful.
    *
-   * An example call to test locally, when in the test/controllers directory:
-   * curl --header "Content-Type: text/xml; charset=UTF-8" -d@setChannels.xml http://localhost:9000/setChannels
+   *         An example call to test locally, when in the test/controllers directory:
+   *         curl --header "Content-Type: text/xml; charset=UTF-8" -d@setChannels.xml http://localhost:9000/setChannels
    */
   def setChannels = Unrestricted(parse.xml) {
     implicit request =>
@@ -239,7 +239,6 @@ object ApiController extends Controller {
         Ok(<api error={apiGeneralError.toString}></api>)
   }
 
-
   /**Landing page to give to Gigya so they can call back to Netpulse after completing social login.
    *
    * @return An html page that contains javascript code necessary to complete the social login process.
@@ -252,10 +251,17 @@ object ApiController extends Controller {
   /**Proxy any Gigya call by building the request as needed by Gigya (i.e, with the proper security headers, etc.)
    * and then making the Gigya call and returning whatever it yields as our own result.
    *
+   * @param method The gigya API method to be invoked
    * @return Whatever the Gigya page returns.
    */
-//  def gigyaLogin = Unrestricted {
-//    implicit request =>
-//      Ok(html.gigya(request))
-//  }
+  def gigyaProxy(method: String) = Unrestricted {
+    implicit request =>
+
+      val response = Gigya.call(method, request.queryString)
+      if (response.getErrorCode == 0) {
+        Ok(<api error={apiNoError.toString}><gigya>{response.getResponseText}</gigya></api>)
+      } else {
+        Ok(<api error={apiGeneralError.toString}><gigya>{response.getLog}</gigya></api>)
+      }
+  }
 }

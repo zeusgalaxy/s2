@@ -60,6 +60,15 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="supporting-libs" level="project" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/GSJavaSDK.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>
 

@@ -108,7 +108,7 @@ object DinoController extends Controller {
     }
   }
 
-  /** Registers a new exerciser with both Netpulse (via Dino) and with Virtual Trainer.
+  /** Registers a new exerciser with Netpulse (via Dino) and with Virtual Trainer.
    *
    * @return HTTP status 200, with a body consisting of some combination of Dino's registration response
    * (such as the ad units to be displayed), along with the predefined_presets that Virtual
@@ -116,7 +116,7 @@ object DinoController extends Controller {
    * on which of these calls to Dino and Virtual Trainer were successful.
    *
    * An example call to test:
-   * http://localhost:9000/n5iregister.jsp?machine_id=1070&id=2115180102&membership_id=1&email=sOCClkoE102%40stross.com&pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15
+   * http://localhost:9000/n5iregister.jsp?machine_id=1070&id=2115180102&membership_id=1&email=sOCClkoE102%40stross.com&pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15&gigya_id=123
    */
   def register = Unrestricted {
     implicit request =>
