@@ -14,15 +14,17 @@ import scalaz.{Node => _, _}
 case class Exerciser(dbId: Long, login: String, email: String, pic: Int,
                      membershipId: Option[String], gender: Boolean, dob: DateTime,
                      emailPrefs: Int, weight: Long, homeClubId: Option[Long], homeClubName: Option[String],
-                     vtUserId: String, vtToken: String, vtTokenSecret: String, vtStatus: Int) {
+                     vtUserId: String, vtToken: String, vtTokenSecret: String, vtStatus: Int,
+                     gigyaUid: String) {
 
   def hasVtConnection = (!vtUserId.isEmpty && !vtToken.isEmpty && !vtTokenSecret.isEmpty)
 
-  def insertVtDetails(x: Node, parent: String) = {
+  def insertStatus(x: Node, parent: String) = {
     XmlMutator(x).add(parent,
       <exerciser>
       <email>{email}</email>
       <virtualTrainerStatus>{vtStatus.toString}</virtualTrainerStatus>
+      <gigyaUserId>{gigyaUid}</gigyaUserId>
       <homeClub>
         <id>{homeClubId.getOrElse("").toString}</id>
         <name>{homeClubName.getOrElse("")}</name>
@@ -46,7 +48,8 @@ object Exerciser {
   val selectFields = " exerciser.id, exerciser.login, exerciser.email, exerciser.pic, " +
     " exerciser.membership_id, exerciser.gender," +
     " date(exerciser.date_of_birth) as dob, exerciser.email_prefs, exerciser.weight, exerciser.location_id," +
-    " exerciser.vt_user_id, exerciser.vt_token, exerciser.vt_token_secret, exerciser.vt_status "
+    " exerciser.vt_user_id, exerciser.vt_token, exerciser.vt_token_secret, exerciser.vt_status, " +
+    " exerciser.gigya_uid "
 
   val simple = {
     get[Long]("exerciser.id") ~
@@ -63,11 +66,12 @@ object Exerciser {
       get[String]("exerciser.vt_token") ~
       get[String]("exerciser.vt_token_secret") ~
       get[Int]("exerciser.vt_status") ~
+      get[String]("exerciser.gigya_uid") ~
       get[Option[String]]("location.name") map {
       case dbId ~ login ~ email ~ pic ~ membershipId ~ gender ~ dob ~ emailPrefs ~
-        weight ~ homeClubId ~ vtUserId ~ vtToken ~ vtTokenSecret ~ vtStatus ~ homeClubName =>
+        weight ~ homeClubId ~ vtUserId ~ vtToken ~ vtTokenSecret ~ vtStatus ~ gigyaUid ~ homeClubName =>
         Exerciser(dbId, login, email, pic, membershipId, gender, new DateTime(dob.toString), emailPrefs,
-          weight, homeClubId, homeClubName, vtUserId, vtToken, vtTokenSecret, vtStatus)
+          weight, homeClubId, homeClubName, vtUserId, vtToken, vtTokenSecret, vtStatus, gigyaUid)
     }
   }
 
@@ -271,6 +275,34 @@ object Exerciser {
           ).on(
             'login -> npLogin,
             'vtStatus -> vtStatusLinked
+          ).executeUpdate()
+      }
+    }.info.fold(e => false, s => true)
+  }
+
+  /** Sets the gigya user id so that we know that we have already established the link
+   * to gigya.
+   *
+   * @param npLogin The exerciser's login identifier.
+   * @param gigyaUid The user identifier that was provided by gigya
+   * @return True if successful, else False.
+   */
+  def setGigyaUid(npLogin: String, gigyaUid: String): Boolean = {
+
+    implicit val loc = VL("Exerciser.setGigyaUid")
+
+    vld {
+      DB.withConnection {
+        implicit connection =>
+          SQL(
+            """
+              update exerciser
+              set gigya_uid = {gigyaUid}
+              where login = {login}
+            """
+          ).on(
+            'login -> npLogin,
+            'gigyaUid -> gigyaUid
           ).executeUpdate()
       }
     }.info.fold(e => false, s => true)

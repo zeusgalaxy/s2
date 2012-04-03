@@ -126,24 +126,6 @@ object ApiController extends Controller {
       finalResult.error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
 
-  /**Retrieves Virtual Trainer status information for a given exerciser.
-   *
-   * An example call to test:
-   * http://localhost:9000/vtStatus?id=2115180443
-   *
-   * @param npLogin Id used by the exerciser to log into Netpulse.
-   * @return HTTP status 200, with an xml body describing the status of an exerciser's
-   *         current relationship with Virtual Trainer.
-   */
-  def vtStatus(npLogin: String) = Unrestricted {
-    implicit request =>
-
-      implicit val loc = VL("Api.vtStatus")
-      val ex = Exerciser.findByLogin(npLogin)
-      Ok(ex.isDefined ? ex.get.insertVtDetails(<api error={apiNoError.toString}></api>, "api") |
-          <api error={apiUnableToRetrieveExerciser.toString}/>)
-  }
-
   /**Registers an existing exerciser with Virtual Trainer. This call is used instead of
    * the DinoWrapper.register call for those cases where the exerciser is already set up within
    * Netpulse, and just needs to do the Virtual Trainer portion of the registration.
@@ -185,6 +167,24 @@ object ApiController extends Controller {
 
           } yield VT.asApiResult(vtPredefinedPresets)
       }).error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
+  }
+
+  /**Retrieves supplemental status information for a given exerciser.
+   *
+   * An example call to test:
+   * http://localhost:9000/vtStatus?id=2115180443
+   *
+   * @param npLogin Id used by the exerciser to log into Netpulse.
+   * @return HTTP status 200, with an xml body describing the status of an exerciser's
+   *         current relationship with Virtual Trainer, Gigya, et. al.
+   */
+  def exerciserStatus(npLogin: String) = Unrestricted {
+    implicit request =>
+
+      implicit val loc = VL("Api.exerciserStatus")
+      val ex = Exerciser.findByLogin(npLogin)
+      Ok(ex.isDefined ? ex.get.insertStatus(<api error={apiNoError.toString}></api>, "api") |
+          <api error={apiUnableToRetrieveExerciser.toString}/>)
   }
 
   /**Retrieves previously saved "favorite" tv channels for a given exerciser and location.

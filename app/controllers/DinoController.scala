@@ -115,6 +115,9 @@ object DinoController extends Controller {
    * Trainer provides for that machine type. What will actually appear in the body depends
    * on which of these calls to Dino and Virtual Trainer were successful.
    *
+   * If a gigya user id is passed in (param = gigya_uid), we will add it to the exerciser table so that
+   * we know that the link to gigya has already been established.
+   *
    * An example call to test:
    * http://localhost:9000/n5iregister.jsp?machine_id=1070&id=2115180102&membership_id=1&email=sOCClkoE102%40stross.com&pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15&gigya_id=123
    */
@@ -152,6 +155,9 @@ object DinoController extends Controller {
 
           } yield VT.insertIntoXml(oldXml, "response", vtPredefinedPresets)
       }
+
+      val gigyaUid = request.queryString.get("gigya_uid")
+      if (gigyaUid.isDefined) Exerciser.setGigyaUid(rp.npLogin, gigyaUid.get(0))
       finalResult.error.fold(e => Ok(e.list.mkString(", ")), s => Ok(s))
   }
 
@@ -198,6 +204,6 @@ object DinoController extends Controller {
         {e.list.mkString(", ")}
       </response>, s => s)
 
-      Ok(ex.isDefined ? ex.get.insertVtDetails(responseXml, "api") | responseXml)
+      Ok(ex.isDefined ? ex.get.insertStatus(responseXml, "api") | responseXml)
   }
 }
