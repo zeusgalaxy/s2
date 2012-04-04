@@ -1,6 +1,7 @@
 import utils._
 import controllers._
 import models._
+import views._
 import play.api.Logger
 import play.api.mvc._
 import play.api.mvc.Results._
@@ -48,6 +49,7 @@ package object security {
   val tgReports = Target("mySpecificReport")
   val tgAdminPortal = Target("adminPortal")
   val tgUsers = Target("users")
+  val tgTest = Target("test")
   val tgReportWorkoutLocations = Target("reportWorkoutLocations")
 
   /**Subclasses and wraps a normal request so we can associate some "context" with the request.
@@ -167,7 +169,8 @@ package object security {
         println("Session in IfCan is: " + request.session.toString)
         val ctxReq = CtxRqst(target, request)
         ctxReq.context.user match {
-          case Some(u) => if (ok(ctxReq)) withSession(ctxReq, f(ctxReq)) else withSession(ctxReq, Unauthorized)
+          case Some(u) => if (ok(ctxReq)) withSession(ctxReq, f(ctxReq)) else
+                            Results.Redirect(routes.AuthController.unauthorized())
           case _ => Results.Redirect(routes.AuthController.promptLogin(request.path))
         }
     }

@@ -24,11 +24,11 @@ object MiscControllerSpec extends Specification {
       //
       // access the restricted hello page with login
       //
-      val rq1 = FakeRequest().withHeaders(("Cookie" -> "PLAY_SESSION=ffe5ab33858250cc8222e8fab9d81b2325859f50-id%3A179"))
+      val rq1 = FakeRequest().withHeaders(("Cookie" -> "PLAY_SESSION=7861299e9d14d7716f0d23389576ffb2db9e825c-id%3A8234"))
       val result1 = controllers.MiscController.restrictedHello()(rq1)
 
-      status(result1) must equalTo(OK)
-      contentAsString(result1) must contain("Hello")
+      status(result1) must equalTo(SEE_OTHER)
+//      contentAsString(result1) must contain("Sorry")
 
       //
       // access the restricted hello page without login

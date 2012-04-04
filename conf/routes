@@ -6,6 +6,7 @@
 GET     /login                              controllers.AuthController.promptLogin(page ?= "")
 POST    /login                              controllers.AuthController.attemptLogin(page ?= "")
 GET     /logout                             controllers.AuthController.logout
+GET     /unauthorized                       controllers.AuthController.unauthorized
 
 # Home page
 GET     /                                   controllers.MiscController.index()

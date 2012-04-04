@@ -172,7 +172,7 @@ object ApiController extends Controller {
   /**Retrieves supplemental status information for a given exerciser.
    *
    * An example call to test:
-   * http://localhost:9000/vtStatus?id=2115180443
+   * http://localhost:9000/exerciserStatus?id=2115180443
    *
    * @param npLogin Id used by the exerciser to log into Netpulse.
    * @return HTTP status 200, with an xml body describing the status of an exerciser's

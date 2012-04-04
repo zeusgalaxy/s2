@@ -38,6 +38,14 @@ object AuthController extends Controller {
       Ok(html.login(loginForm, destPage))
   }
 
+  /**Presents the "you're not authorized" page to the user.
+   *
+   */
+  def unauthorized() = Unrestricted {
+    implicit request =>
+      Ok(html.unauthorized.apply)
+  }
+
   /**
    * insert into person values(null, "s2", "netpulse", "s2@netpulse.com", "19e359d99f3c4e3bdf8592078de921bc", "s2@netpulse.com", "5103369779", now(), 1, now(), now(), 0, 0, null, null);
    * insert into target values (null, "reportWorkoutLocations", 0, 0, 0, null);
