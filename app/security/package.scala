@@ -48,7 +48,7 @@ package object security {
   val tgNone = Target("")
   val tgReports = Target("mySpecificReport")
   val tgAdminPortal = Target("adminPortal")
-  val tgUsers = Target("users")
+  val tgUser = Target("user")
   val tgTest = Target("test")
   val tgReportWorkoutLocations = Target("reportWorkoutLocations")
 

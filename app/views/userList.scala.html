@@ -41,8 +41,9 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         <div class="span12">
             <form action="@routes.MiscController.userList()" class="well form-search">
 
-                <a href="@routes.MiscController.userAdd()" id="add" class="btn btn-success pull-right" >@Messages("button.add.user")</a>
-
+                @if(rq.canCreate) {
+                   <a href="@routes.MiscController.userAdd()" id="add" class="btn btn-success pull-right" >@Messages("button.add.user")</a>
+                }
                 <input type="search" name="f" id="searchbox" value="@currentFilter" class="input-medium search-query" placeholder="@Messages("userlist.filter.lastname")"  >
 
                 <button type="submit" id="searchsubmit" class="btn btn-primary">@Messages("button.go")</button>

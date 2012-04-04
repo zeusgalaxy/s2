@@ -228,7 +228,7 @@ object Person {
           'id             -> id,
           'firstName      -> person.firstName,
           'lastName       -> person.lastName,
-          'portalLogin    -> person.portalLogin.map(p => p).getOrElse(""),
+          'portalLogin    -> person.portalLogin.get,
           'portalPassword -> person.portalPassword.map { portalPassword => Blowfish.encrypt(portalPassword) },
           'email          -> person.email
         ).executeUpdate()
