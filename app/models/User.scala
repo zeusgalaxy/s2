@@ -16,6 +16,17 @@ case class User(id: Long = 0, firstName: Option[String], lastName: Option[String
                 password: String = "", email: String = "", compId: Option[Long] = None,
                 oemId: Option[Long] = None, adId: Option[Long] = None)
 
+/**UserEdit Class
+ * Subset of the User class that is user editable for using in edit and add forms.
+ * @param firstName
+ * @param lastName
+ * @param password
+ * @param email
+ */
+case class UserEdit (firstName: Option[String], lastName: Option[String], password: Option[String], email: String ) {
+  def toUser:User = User(-1, firstName = firstName, lastName=lastName, password = password.map(p => p).getOrElse(""), email = email, oemId = Some(1L)  )
+}
+
 /**
  * Helper for pagination.
  */
@@ -32,6 +43,45 @@ object User {
   implicit val loc = VL("User")
 
   val pageLength = 15
+
+  /**
+   * Authenticate a User based on email and password
+   *
+   * @param email user email
+   * @param password, unencrypted user password
+   * @return Some(User) if the email and encrypted password are found in the DB, None otherwise.
+   */
+  def authenticate(email: String, password: String): Option[User] = {
+
+    implicit val loc = VL("User.authenticate")
+
+    val sqlValid = vld {
+      DB.withConnection {
+        implicit connection =>
+          SQL(
+            """
+             select * from admin_user where
+             email = {email} and password = {password} and status = '1'
+            """
+          ).on(
+            'email -> email,
+            'password -> Blowfish.encrypt(password)
+          ).as(User.simple.singleOpt)
+      }
+    }
+
+    sqlValid.fold(
+      e => {
+        sqlValid.add("email", email).error
+        None
+      },
+      s => s match {
+        case None =>
+          Logger.info("No valid user returned from sql on email " + email)
+          None
+        case Some(u) => Some(u)
+      })
+  }
 
   // -- Parsers
 
@@ -128,13 +178,11 @@ object User {
           val totalRows = SQL(
             """
               select count(*) from admin_user
-              where oem_id =1 and ifnull(last_name,'') like {filter}
+              where oem_id =1 and ifnull(last_name,'') like {filter} AND status = 1
             """
           ).on(
             'filter -> filter
           ).as(scalar[Long].single)
-
-          Logger.debug("User list = " + u.toString)
 
           Page(u, Seq(), page, offset, totalRows)
       }
@@ -147,31 +195,29 @@ object User {
    * Password not encrypted here. Decrypt it only when needed.
    *
    * @param id The user id
-   * @param user, The user values.
+   * @param user, The user values from the UserEdit class NOT the User class.
    * @return int the number of rows updated
    */
-    def update(id: Long, user: User) = {
+    def update(id: Long, user: UserEdit) = {
 
       implicit val loc = VL("User.update")
 
       val result = vld {
+
         DB.withConnection { implicit connection =>
           SQL(
             """
               update admin_user
-              set first_name = {firstName}, last_name = {lastName}, email={email}
+              set first_name = {firstName}, last_name = {lastName}, email={email}, update_date=NOW() """ +
+              user.password.map{ newPass => ", password={password} "}.getOrElse("")  + """
               where id = {id}
             """
           ).on(
             'id -> id,
             'firstName -> user.firstName,
             'lastName -> user.lastName,
-            'password -> user.password,
+            'password -> user.password.map { newPass => Blowfish.encrypt(newPass) },
             'email -> user.email
-//            ,
-//            'compId -> user.compId,
-//            'oemId -> user.oemId,
-//            'adId -> user.adId
           ).executeUpdate()
         }
       }.error.fold(e => None, s => s)
@@ -209,7 +255,7 @@ object User {
           ).executeInsert()
         }
     }.error.fold(e => None, s => s)
-    Logger.debug("Insert :"+result)
+    Logger.debug("Inserted ID :"+result)
     result       //  you can println your vld left side (with the error part) by calling the "either" method to turn it into an Either and access it as a "left"
   }
 

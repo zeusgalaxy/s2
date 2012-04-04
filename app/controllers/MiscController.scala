@@ -30,58 +30,88 @@ object MiscController extends Controller {
   }
 
 
-  /*
- *
- *  User CRUD controllers, form etc.
- *        case class User(id: Long = 0, firstName: String="", lastName: String="", password: String="", email: String="",
-               compId: Long=0,  oemId: Option[Long]=None, adId: Option[Long]=None  )
-  */
 
-  val userForm: Form[User] = Form(
+  /** This is a special form to user for user case class editing since we don't want to use
+   * the full User case class.
+   */
+  val personForm = Form(
     mapping(
-      "firstName" -> text,
-      "lastName" -> text,
-      "email" -> text,
-      "newPass" -> optional(text)
-      //      "newPassConf" -> text
-    ) {
-      // apply
-      (firstName: String, lastName: String, email: String, newPass: Option[String]) => User(0, Some(firstName), Some(lastName), "", email)
-    } {
-      // UnApply
-      user: User => Option(user.firstName.getOrElse(""), user.lastName.getOrElse(""), user.email, Option(""))
-    }
+      "firstName"   -> optional(text),
+      "lastName"    -> optional(text),
+      "portalLogin" -> optional(text),
+      "password"    -> optional(text),
+      "email"       -> email
+    )(PersonEdit.apply)(PersonEdit.unapply)
   )
 
-  def userEdit(id: Long) = IfCanUpdate(tgUsers) {
+  /** Use the passed in ID value to get the user from the DB. Present that info in the form above.
+   * @param id - User ID
+   */
+  def userEdit(id: Long) = Unrestricted {             // IfCanUpdate(tgUsers)
     implicit request =>
-      User.findById(id) match {
-        case Some(u) => Ok(html.userEdit(userForm.fill(u)))
-        case _ => Redirect(routes.MiscController.index()).flashing("failure" -> ("An error occured."))
-      }
+      Person.findById(id).map(user => {
+        Ok(html.userEdit(id, personForm.fill(PersonEdit(Some(user.firstName), Some(user.lastName), None, None, user.email))))
+      }).getOrElse(Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred.")))
   }
 
-  /**
-   * Handle form submission.
+  /** Controller to Handle form submission from an edit.
+   * @param id User ID
    */
-  def userSubmit = IfCanUpdate(tgUsers) {
+  def userEditSubmit(id: Long) = Unrestricted {        //    IfCanUpdate(tgUsers)
     implicit request => {
-      userForm.bindFromRequest.fold(
-        errors => BadRequest(html.userEdit(errors)),
-        user => {
-          User.update(user.id, user) match {
-            case 1 => Ok(html.userEdit(userForm.fill(user))).flashing("Success" -> ("User updated."))
-            case _ => Redirect(routes.MiscController.index()).flashing("failure" -> ("An error occured."))
-          }
+      personForm.bindFromRequest.fold(
+        formErrors => BadRequest(html.userEdit(id, formErrors)),
+        uE => Person.update(id, uE)
+        match {
+          case 1 =>
+            Redirect(routes.MiscController.userList()).flashing("success" -> ("User: " + uE.email + " updated."))
+          case _ =>
+            Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred. Make sure the email address is unique."))
         }
       )
     }
   }
+  
+  /** Controller for Adding a user.
+   * @param - none
+   */
+  def userAdd() = Unrestricted {              // IfCanUpdate(tgUsers)
+    implicit request => {
+      Logger.debug("in userAdd controller")
+      Ok(html.userEdit(-1, personForm))
+    } 
+  }
 
-  def userList(page: Int, orderBy: Int, filter: String) = IfCanRead(tgUsers) {
+  /** Handle form submission from an edit.
+   * @param - none
+   */
+  def userAddSubmit() = Unrestricted {                // IfCanUpdate(tgUsers)
+    implicit request => {
+      personForm.bindFromRequest.fold(
+        formErrors => BadRequest(html.userEdit(-1, formErrors)),
+        pE => {
+          Logger.debug("UserAddSubmit uE to be added: "+pE.toString)
+          Logger.debug("UserAddSubmit user from uE: "+pE.toPerson)
+          Person.insert(pE.toPerson)  match {
+            case Some(u) =>
+              Redirect(routes.MiscController.userList()).flashing("success" -> ("User added."))
+            case _ =>
+              Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred. Make sure the email address is unique."))
+            }
+        }
+      )
+    }
+  }
+  
+  /** Display a page by page listing of the the admin users
+   * @param page - which page of paginated results to display
+   * @param orderBy - column to sort by
+   * @param filter - partial last name to use as a match string
+   */
+  def userList(page: Int, orderBy: Int, filter: String) = Unrestricted {      // = IfCanRead(tgUsers)
     implicit request =>
       Ok(html.userList(
-        User.list(page = page, orderBy = orderBy, filter = ("%" + filter + "%")),
+        Person.list(page = page, orderBy = orderBy, filter = ("%" + filter + "%")),
         orderBy, filter
       ))
   }
