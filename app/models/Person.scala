@@ -14,7 +14,7 @@ case class Person(id: Long, firstName: String, lastName: String, portalLogin: St
                   email: String, phone: String, lastLogin: DateTime, activeStatus: Int)
 
 /**PersonEdit Class
- * Subset of the User class that is user editable for using in edit and add forms.
+ * Subset of the Person class that is displayable and editable for using in edit and add forms.
  * @param firstName
  * @param lastName
  * @param portalPassword
@@ -206,7 +206,7 @@ object Person {
    *
    * Password not encrypted here. Decrypt it only when needed.
    *
-   * @param id The user id
+   * @param id The person id
    * @param person, The person values from the PersonEdit class NOT the Person class.
    * @return int the number of rows updated
    */
@@ -225,12 +225,12 @@ object Person {
               where id = {id}
             """
         ).on(
-          'id -> id,
-          'firstName    -> person.firstName,
-          'lastName     -> person.lastName,
-          'portalLogin  -> person.portalLogin.map(p => p).getOrElse(""),
-          'password     -> person.portalPassword.map { portalPassword => Blowfish.encrypt(portalPassword) },
-          'email        -> person.email
+          'id             -> id,
+          'firstName      -> person.firstName,
+          'lastName       -> person.lastName,
+          'portalLogin    -> person.portalLogin.map(p => p).getOrElse(""),
+          'portalPassword -> person.portalPassword.map { portalPassword => Blowfish.encrypt(portalPassword) },
+          'email          -> person.email
         ).executeUpdate()
       }
     }.error.fold(e => None, s => s)
@@ -238,5 +238,42 @@ object Person {
     result
   }
 
+  /**
+   * Delete a person by setting their status to 3.
+   *
+   * @param id Id to delete.
+   * @return int, number of rows affected - should be 1
+   */
+  def delete(id: Long) = {
+
+    implicit val loc = VL("Person.delete")
+
+    vld {
+      DB.withConnection("s2") {
+        implicit connection =>
+          SQL("update person set active_status = 3 where id = {id}").
+            on('id -> id).executeUpdate()
+      }
+    }.error.fold(e => None, s => s)
+  }
+
+  /**
+   * Delete person permanently and completely - see delete also
+   *
+   * @param id Id of the computer to delete.
+   * @return int, number of rows affected - should be 1
+   */
+  def hardDelete(id: Long) = {
+
+    implicit val loc = VL("Person.hardDelete")
+
+    vld {
+      DB.withConnection("s2") {
+        implicit connection =>
+          SQL("delete from person where id = {id}").
+            on('id -> id).executeUpdate()
+      }
+    }.error.fold(e => None, s => s)
+  }
 
 }
