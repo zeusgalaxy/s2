@@ -241,11 +241,11 @@ object ApiController extends Controller {
 
   /**Landing page to give to Gigya so they can call back to Netpulse after completing social login.
    *
-   * @return An html page that contains javascript code necessary to complete the social login process.
+   * @return A blank page
    */
   def gigyaLogin = Unrestricted {
     implicit request =>
-      Ok(html.gigya(request))
+      Ok(html.gigya())
   }
 
   /**Proxy any Gigya call by building the request as needed by Gigya (i.e, with the proper security headers, etc.)
