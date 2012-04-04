@@ -34,33 +34,34 @@ object MiscController extends Controller {
   /** This is a special form to user for user case class editing since we don't want to use
    * the full User case class.
    */
-  val userForm = Form(
+  val personForm = Form(
     mapping(
-      "firstName" -> optional(text),
-      "lastName" -> optional(text),
-      "password" -> optional(text),
-      "email" -> email
-    )(UserEdit.apply)(UserEdit.unapply)
+      "firstName"   -> optional(text),
+      "lastName"    -> optional(text),
+      "portalLogin" -> optional(text),
+      "password"    -> optional(text),
+      "email"       -> email
+    )(PersonEdit.apply)(PersonEdit.unapply)
   )
 
   /** Use the passed in ID value to get the user from the DB. Present that info in the form above.
    * @param id - User ID
    */
-  def userEdit(id: Long) = IfCanUpdate(tgUsers) {
+  def userEdit(id: Long) = Unrestricted {             // IfCanUpdate(tgUsers)
     implicit request =>
-      User.findById(id).map(user => {
-        Ok(html.userEdit(id, userForm.fill(UserEdit(user.firstName, user.lastName, None, user.email))))
-      }).getOrElse(Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occured.")))
+      Person.findById(id).map(user => {
+        Ok(html.userEdit(id, personForm.fill(PersonEdit(Some(user.firstName), Some(user.lastName), None, None, user.email))))
+      }).getOrElse(Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred.")))
   }
 
   /** Controller to Handle form submission from an edit.
    * @param id User ID
    */
-  def userEditSubmit(id: Long) = IfCanUpdate(tgUsers) {
+  def userEditSubmit(id: Long) = Unrestricted {        //    IfCanUpdate(tgUsers)
     implicit request => {
-      userForm.bindFromRequest.fold(
+      personForm.bindFromRequest.fold(
         formErrors => BadRequest(html.userEdit(id, formErrors)),
-        uE => User.update(id, uE)
+        uE => Person.update(id, uE)
         match {
           case 1 =>
             Redirect(routes.MiscController.userList()).flashing("success" -> ("User: " + uE.email + " updated."))
@@ -74,24 +75,24 @@ object MiscController extends Controller {
   /** Controller for Adding a user.
    * @param - none
    */
-  def userAdd() = IfCanUpdate(tgUsers) {
+  def userAdd() = Unrestricted {              // IfCanUpdate(tgUsers)
     implicit request => {
       Logger.debug("in userAdd controller")
-      Ok(html.userEdit(-1, userForm))
+      Ok(html.userEdit(-1, personForm))
     } 
   }
 
   /** Handle form submission from an edit.
    * @param - none
    */
-  def userAddSubmit() = IfCanUpdate(tgUsers) {
+  def userAddSubmit() = Unrestricted {                // IfCanUpdate(tgUsers)
     implicit request => {
-      userForm.bindFromRequest.fold(
+      personForm.bindFromRequest.fold(
         formErrors => BadRequest(html.userEdit(-1, formErrors)),
-        uE => {
-          Logger.debug("UserAddSubmit uE to be added: "+uE.toString)
-          Logger.debug("UserAddSubmit user from uE: "+uE.toUser)
-          User.insert(uE.toUser)  match {
+        pE => {
+          Logger.debug("UserAddSubmit uE to be added: "+pE.toString)
+          Logger.debug("UserAddSubmit user from uE: "+pE.toPerson)
+          Person.insert(pE.toPerson)  match {
             case Some(u) =>
               Redirect(routes.MiscController.userList()).flashing("success" -> ("User added."))
             case _ =>
@@ -107,10 +108,10 @@ object MiscController extends Controller {
    * @param orderBy - column to sort by
    * @param filter - partial last name to use as a match string
    */
-  def userList(page: Int, orderBy: Int, filter: String) = IfCanRead(tgUsers) {
+  def userList(page: Int, orderBy: Int, filter: String) = Unrestricted {      // = IfCanRead(tgUsers)
     implicit request =>
       Ok(html.userList(
-        User.list(page = page, orderBy = orderBy, filter = ("%" + filter + "%")),
+        Person.list(page = page, orderBy = orderBy, filter = ("%" + filter + "%")),
         orderBy, filter
       ))
   }

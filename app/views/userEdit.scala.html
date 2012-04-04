@@ -1,4 +1,4 @@
-@(id: Long, form: Form[UserEdit])(implicit rq: security.CtxRqst[_], flash: Flash)
+@(id: Long, form: Form[PersonEdit])(implicit rq: security.CtxRqst[_], flash: Flash)
 
 @main( if(id == -1L) {"useradd.title"} else {"useredit.title"}, 'userEdit) {
 
