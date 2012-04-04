@@ -15,7 +15,7 @@ object PersonSpec extends Specification {
   import models._
 
   "The Person Model " should {
-    "get or add a test user, " +
+    "delete if exists and then add back a test user, " +
       "find them by email and id, " +
       "Authenticate them, " +
       "reject bad auth attempts, " +
@@ -42,96 +42,52 @@ object PersonSpec extends Specification {
             p1.portalPassword.get == ((encryptPW) ? Blowfish.encrypt(p2.portalPassword.get) | p2.portalPassword.get) &&
             p1.email == p2.email)
 
-        // Get or add a test user
-        (
-          Person.findByLogin(fakePerson.portalLogin) match {
-            case Some(p) =>
-              if (devMode) println("Person found: " + p.toString)
-              fpID = p.id
-              true
-            case None =>
-              if (devMode) println("Person not found: " + fakePerson.email)
-              Person.insert(fakePerson) match {
-                case Some(p) =>
-                  if (devMode) println("Inserted Person :" + p.toString)
-                  fpID = p
-                  (p > -1)
-                case _ =>
-                  if (devMode) println("Person insert failed :" + fakePerson.toString)
-                  false
-              }
-          }
-          ) must equalTo(true)
+        /**
+         * Set up for the tests
+         * Delete existing test person(s) then Add a test user
+         */
+        var pGet = Person.findByLogin(fakePerson.portalLogin)
+        if (pGet != None) Person.hardDelete(pGet.get.id)
 
-        // get the fake user's ID from their email and check via findById"
-        (
-          Person.findByLogin(fakePerson.portalLogin) match {
-            case Some(p) =>
-              Person.findById(p.id) match {
-                case Some(p) => {
-                  println("findByLogin found: " + p.toString)
-                  println("fakePerson found: " + fakePerson)
-                  compareP(p, fakePerson)
-                }
-                case _ => false
-              }
-            case _ => false
-          }
-          ) must equalTo(true)
+        val pAdd = Person.insert(fakePerson)
+        pAdd.get must be_>(-1L)
 
 
-        // Reject a user with bad uname and good pw.
-        (
-          Person.authenticate("failme@netpulse.com",
-            fakePerson.portalPassword.map(s => s).getOrElse("")) match {
-            case Some(p) => compareP(p, fakePerson)
-            case _ => true
-          }
-          ) must equalTo(true)
+        /**
+         * get the fake user's ID from their email and check via findById
+         */
+        val pCheck = Person.findByLogin(fakePerson.portalLogin)
+        pCheck.get.firstName must equalTo(fakePerson.firstName)
+
+        val pCheck1 = Person.findById(pCheck.get.id)
+        pCheck1.get.firstName must equalTo(pCheck.get.firstName)
+
+        compareP(pCheck1.get, fakePerson) must equalTo(true)
 
 
-        // Reject a user with good uname and bad pw.
-        (
-          Person.authenticate("frudge@netpulse.com", "S@ndB0x!") match {
-            case Some(p) => false
-            case _ => true
-          }
-          ) must equalTo(true)
+        /**
+         * Reject a user with bad uname and good pw.
+         */
+        Person.authenticate("failme@netpulse.com", fakePerson.portalPassword.get)  must equalTo(None)
 
 
-
-        // Authenticate with known good uname and pw
-        val person = Person.authenticate(fakePerson.portalLogin, fakePerson.portalPassword.map(s => s).getOrElse(""))
-        if (devMode) println("Person = " + person.toString)
-        (person match {
-          case Some(p) => compareP(p, fakePerson)
-          case _ => false
-        }
-          ) must equalTo(true)
+        /**
+         * Reject a user with good uname and bad pw.
+         */
+        Person.authenticate("frudge@netpulse.com", "S@ndB0x!")  must equalTo(None)
 
 
-        // Update the fake person
-        (
-          Person.findByLogin(fakePerson.portalLogin) match {
-            case Some(p) => {
-              Person.update(p.id, PersonEdit(Some(fakePerson2.firstName), Some(fakePerson2.lastName), Some(fakePerson2.portalLogin),
-                fakePerson2.portalPassword, fakePerson2.email))
-              Person.findById(p.id) match {
-                case Some(pp) => {
-                  if (devMode) println("fakePerson2 : " + fakePerson2.toString + " pw: " + Blowfish.encrypt(fakePerson2.portalPassword.get))
-                  if (devMode) println("Updated person found: " + pp.toString)
-                  compareP(pp, fakePerson2)
-                }
-                case _ => false
-              }
-            }
-            case _ => false
-          }
-          ) must equalTo(true)
+        /**
+         * Authenticate with known good uname and pw
+         */
+        val pAuth = Person.authenticate(fakePerson.portalLogin, fakePerson.portalPassword.map(s => s).getOrElse(""))
+        if (devMode) println("Person = " + pAuth.toString)
+        compareP(pAuth.get, fakePerson) must equalTo(true)
 
-        //
-        // Update the fake person
-        //
+
+        /**
+         * Update the fake person
+         */
         val p1up = Person.findByLogin(fakePerson.portalLogin)
         p1up.get.firstName mustEqual fakePerson.firstName
 
@@ -142,11 +98,9 @@ object PersonSpec extends Specification {
         val p3up = Person.findById(p1up.get.id)
 
 
-
-
-        //
-        // Delete the fake user
-        //
+        /**
+         * Delete the fake person
+         */
         val p1del = Person.findByLogin(fakePerson2.portalLogin)
         p1del.get.firstName mustEqual fakePerson2.firstName
 
