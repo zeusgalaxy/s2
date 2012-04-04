@@ -61,15 +61,26 @@ package object security {
    */
   // (Ignore the IntelliJ syntax error on request, below.)
   case class CtxRqst[A](context: Context, request: Request[A]) extends WrappedRequest(request) {
+
     def canCreate = context.rights.canCreate
+
+    def canCreate(t: Target) = Rights(context.user, t).canCreate
 
     def canRead = context.rights.canRead
 
+    def canRead(t: Target) = Rights(context.user, t).canRead
+
     def canUpdate = context.rights.canUpdate
+
+    def canUpdate(t: Target) = Rights(context.user, t).canUpdate
 
     def canDelete = context.rights.canDelete
 
+    def canDelete(t: Target) = Rights(context.user, t).canDelete
+
     def isFiltered = context.rights.isFiltered
+
+    def isFiltered(t: Target) = Rights(context.user, t).isFiltered
 
   }
 
@@ -169,8 +180,9 @@ package object security {
         println("Session in IfCan is: " + request.session.toString)
         val ctxReq = CtxRqst(target, request)
         ctxReq.context.user match {
-          case Some(u) => if (ok(ctxReq)) withSession(ctxReq, f(ctxReq)) else
-                            Results.Redirect(routes.AuthController.unauthorized())
+          case Some(u) => if (ok(ctxReq)) withSession(ctxReq, f(ctxReq))
+          else
+            Results.Redirect(routes.AuthController.unauthorized())
           case _ => Results.Redirect(routes.AuthController.promptLogin(request.path))
         }
     }

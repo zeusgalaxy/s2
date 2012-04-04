@@ -219,7 +219,7 @@ object ApiController extends Controller {
    *         An example call to test locally, when in the test/controllers directory:
    *         curl --header "Content-Type: text/xml; charset=UTF-8" -d@setChannels.xml http://localhost:9000/setChannels
    */
-  def setChannels = Unrestricted(parse.xml) {
+  def setChannels() = Unrestricted(parse.xml) {
     implicit request =>
 
       implicit val loc = VL("Api.setChannels")

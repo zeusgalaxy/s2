@@ -11,9 +11,10 @@ object ApiControllerSpec extends Specification {
   val id = org.joda.time.DateTime.now.getMillis.toString.takeRight(10)
   val pwd = id
   val email = "kgs" + id + "@stross.com"
+  val channel = (Math.random * 100).round
 
   "The API" should {
-    "register a new exerciser, then log her in, then try to link" in {
+    "make all of its calls properly" in {
 
       running(FakeApplication()) {
 
@@ -32,6 +33,60 @@ object ApiControllerSpec extends Specification {
         contentAsString(result) must contain("adunit")
         contentAsString(result) must contain("virtualTrainer")
         contentAsString(result) must contain("workoutSegments")
+
+        /**
+         * http://localhost:9000/exerciserStatus?id=2115180443
+         * http://localhost:9000/getChannels?id=2115180443,location_id=87
+         *
+         * setChannels:
+         *         An example call to test locally, when in the test/controllers directory:
+         *         curl --header "Content-Type: text/xml; charset=UTF-8" -d@setChannels.xml http://localhost:9000/setChannels
+         *
+         */
+
+        pth = "http://localhost:9000/vtLogin?machine_id=1070&id=" + id + "&vt_password=" + pwd
+        result = controllers.ApiController.vtLogin(id, pwd, 1070L)(FakeRequest("GET", pth))
+
+        status(result) must equalTo(OK)
+        contentAsString(result) must contain("virtualTrainer")
+        contentAsString(result) must contain("workoutSegments")
+
+        pth = "http://localhost:9000/vtLogout?id=" + id
+        result = controllers.ApiController.vtLogout(id)(FakeRequest("GET", pth))
+
+        status(result) must equalTo(OK)
+
+        pth = "http://localhost:9000/vtRegister?machine_id=1070&id=" + id
+        result = controllers.ApiController.vtRegister(id, 1070L)(FakeRequest("GET", pth))
+
+        status(result) must equalTo(OK)
+        contentAsString(result) must contain("api error=\"2\"") // They're already registered with vt!
+
+        pth = "http://localhost:9000/exerciserStatus?id=" + id
+        result = controllers.ApiController.exerciserStatus(id)(FakeRequest("GET", pth))
+
+        status(result) must equalTo(OK)
+        contentAsString(result) must contain("homeClub")
+        contentAsString(result) must contain("email")
+
+        pth = "http://localhost:9000/setChannels"
+        // TODO - Need a real record that we can pollute with our test data
+        val cnt = <channels npLogin='s2@netpulse.com' locationId='99'>
+          <channel>{channel}</channel>
+        </channels>
+
+        val fr = FakeRequest("POST", pth, FakeHeaders(Map("Content-Type" -> List("text/xml"))), cnt)
+        result = controllers.ApiController.setChannels()(fr)
+
+        status(result) must equalTo(OK)
+        contentAsString(result) must contain("api error=\"0\"")
+
+        pth = "http://localhost:9000/getChannels?id=" + id + "&location_id=99"
+        result = controllers.ApiController.getChannels(id, 99L)(FakeRequest("GET", pth))
+
+        status(result) must equalTo(OK)
+        contentAsString(result) must contain("api error=\"0\"")
+        contentAsString(result) must contain(channel.toString)
 
         pth = "http://localhost:9000/vtLinkUser?machine_id=1070&id=" + id + "&vt_password=" + pwd
         result = controllers.ApiController.vtLinkUser(id, pwd, 1070L)(FakeRequest("GET", pth))
