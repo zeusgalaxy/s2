@@ -5,11 +5,11 @@ import org.specs2.mutable._
 
 import play.api.test._
 import play.api.test.Helpers._
+import play.api.Play._
 
 object MiscControllerSpec extends Specification {
 
   "access the unrestricted hello page, restricted hello page with login, restricted hello page without login" in {
-
 
     running(FakeApplication()) {
       //
@@ -22,13 +22,21 @@ object MiscControllerSpec extends Specification {
       contentAsString(result) must contain("Hello Everybody!")
 
       //
-      // access the restricted hello page with login
+      // access the restricted hello page with a user that can
       //
-      val rq1 = FakeRequest().withHeaders(("Cookie" -> "PLAY_SESSION=7861299e9d14d7716f0d23389576ffb2db9e825c-id%3A8234"))
+      val rq1 = FakeRequest().withHeaders(("Cookie" -> current.configuration.getString("user.test.cookie").get))
       val result1 = controllers.MiscController.restrictedHello()(rq1)
 
-      status(result1) must equalTo(SEE_OTHER)
-//      contentAsString(result1) must contain("Sorry")
+      status(result1) must equalTo(OK)
+      contentAsString(result1) must contain("Hello to")
+
+      //
+      // access the restricted hello page with a user that cannot
+      //
+      val rq1a = FakeRequest().withHeaders(("Cookie" -> current.configuration.getString("user.report.cookie").get))
+      val result1a = controllers.MiscController.restrictedHello()(rq1a)
+
+      status(result1a) must equalTo(SEE_OTHER)
 
       //
       // access the restricted hello page without login

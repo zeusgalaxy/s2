@@ -9,8 +9,8 @@ import play.api.test.Helpers._
 object ApiControllerSpec extends Specification {
 
   val id = org.joda.time.DateTime.now.getMillis.toString.takeRight(10)
-  val pwd = "kgs" + id + "@stross.com"
-  val email = pwd
+  val pwd = id
+  val email = "kgs" + id + "@stross.com"
 
   "The API" should {
     "register a new exerciser, then log her in, then try to link" in {
@@ -45,7 +45,9 @@ object ApiControllerSpec extends Specification {
          * for that we'd need to look at the log output).
          */
         status(result) must equalTo(OK)
-        contentAsString(result) must contain("<api error=\"1\"")
+        contentAsString(result) must contain("<api error=\"0\"")
+        contentAsString(result) must contain("virtualTrainer")
+        contentAsString(result) must contain("workoutSegments")
       }
     }
   }
