@@ -258,10 +258,11 @@ object ApiController extends Controller {
     implicit request =>
 
       val response = Gigya.call(method, request.queryString)
-      if (response.getErrorCode == 0) {
-        Ok(response.getResponseText)
-      } else {
-        Ok(response.getLog)
-      }
+      Ok(response.getResponseText)
+    //      if (response.getErrorCode == 0) {
+    //        Ok(response.getResponseText)
+    //      } else {
+    //        Ok(response.getLog)
+    //      }
   }
 }
