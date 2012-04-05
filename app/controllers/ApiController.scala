@@ -259,9 +259,9 @@ object ApiController extends Controller {
 
       val response = Gigya.call(method, request.queryString)
       if (response.getErrorCode == 0) {
-        Ok(<api error={apiNoError.toString}><gigya>{response.getResponseText}</gigya></api>)
+        Ok(response.getResponseText)
       } else {
-        Ok(<api error={apiGeneralError.toString}><gigya>{response.getLog}</gigya></api>)
+        Ok(response.getLog)
       }
   }
 }
