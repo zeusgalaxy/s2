@@ -26,6 +26,7 @@ POST    /gigyaLogin                         controllers.ApiController.gigyaLogin
 GET     /s2/gigyaLogin                      controllers.ApiController.gigyaLogin
 POST    /s2/gigyaLogin                      controllers.ApiController.gigyaLogin
 GET     /gigyaProxy/:method                 controllers.ApiController.gigyaProxy(method: String)
+GET     /s2/gigyaProxy/:method              controllers.ApiController.gigyaProxy(method: String)
 
 
 GET     /vtLinkUser                         controllers.ApiController.vtLinkUser(id: String, vt_password: String, machine_id: Long)

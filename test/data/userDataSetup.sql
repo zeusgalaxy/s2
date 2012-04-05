@@ -15,4 +15,28 @@ insert into person_role values(null, 0, 0, 0, null, 8235, 2);
 insert into rights values(null, 1, 1, 1, 1, 0, 0, 0, 0, 0, 2, 2);
 
 
+mysql> desc exerciser_profile;
++-----------------+---------------+------+-----+---------------------+-------+
+| Field           | Type          | Null | Key | Default             | Extra |
++-----------------+---------------+------+-----+---------------------+-------+
+| person_id       | int(11)       | NO   | PRI | NULL                |       |
+| client_login    | varchar(40)   | YES  |     | NULL                |       |
+| client_password | varchar(40)   | NO   |     | NULL                |       |
+| weight          | decimal(6,2)  | NO   |     | 0.00                |       |
+| gender          | char(1)       | NO   |     |                     |       |
+| date_of_birth   | date          | NO   |     | 0000-00-00          |       |
+| pic             | tinyint(4)    | NO   |     | NULL                |       |
+| vt_token        | varchar(1000) | YES  |     |                     |       |
+| vt_token_secret | varchar(1000) | YES  |     |                     |       |
+| vt_user_id      | varchar(1000) | NO   |     | NULL                |       |
+| vt_status       | tinyint(4)    | NO   |     | 0                   |       |
+| home_club_id    | int(11)       | NO   |     | NULL                |       |
+| created_at      | datetime      | NO   |     | NULL                |       |
+| updated_at      | datetime      | NO   |     | 0000-00-00 00:00:00 |       |
+| created_by      | int(11)       | NO   |     | NULL                |       |
+| updated_by      | int(11)       | YES  |     | NULL                |       |
++-----------------+---------------+------+-----+---------------------+-------+
+
+insert into exerciser_profile values(8233, "s2", "55", 180, "M", 0, 55, "", "", "", 0, 99, 0, 0, 0, null);
+insert into exerciser_profile values(8236, "s2a", "55", 180, "M", 0, 55, "", "", "", 0, 99, 0, 0, 0, null);
 
