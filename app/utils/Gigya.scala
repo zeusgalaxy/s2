@@ -29,6 +29,7 @@ object Gigya {
      */
 
     val grq = new GSRequest(Gigya.gApiKey, Gigya.gApiSecret, "socialize." + method, true)
+    for ((k, v) <- queryStr) grq.setParam(k, v(0))
     grq.send()
   }
 
