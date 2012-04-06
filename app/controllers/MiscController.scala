@@ -26,7 +26,7 @@ object MiscController extends Controller {
 
   def index = Unrestricted {
     implicit request =>
-      Ok(html.index("This is the main page parameter"))
+      Ok(html.index("This is the main page parameter: "+PersonRole.findByPersonId(8234L).get ))
   }
 
 
@@ -38,7 +38,7 @@ object MiscController extends Controller {
     mapping(
       "firstName"   -> optional(text),
       "lastName"    -> optional(text),
-      "portalLogin" -> optional(text),
+      "portalLogin" -> nonEmptyText,
       "password"    -> optional(text),
       "email"       -> email
     )(PersonEdit.apply)(PersonEdit.unapply)
@@ -50,7 +50,7 @@ object MiscController extends Controller {
   def userEdit(id: Long) = IfCanUpdate(tgUser) {             // IfCanUpdate(tgUsers)
     implicit request =>
       Person.findById(id).map(user => {
-        Ok(html.userEdit(id, personForm.fill(PersonEdit(Some(user.firstName), Some(user.lastName), Some(user.portalLogin), None, user.email))))
+        Ok(html.userEdit(id, personForm.fill(PersonEdit(Some(user.firstName), Some(user.lastName), user.portalLogin, None, user.email))))
       }).getOrElse(Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred.")))
   }
 
@@ -73,7 +73,6 @@ object MiscController extends Controller {
   }
   
   /** Controller for Adding a user.
-   * @param - none
    */
   def userAdd() = IfCanUpdate(tgUser) {              // IfCanUpdate(tgUsers)
     implicit request => {
@@ -83,7 +82,6 @@ object MiscController extends Controller {
   }
 
   /** Handle form submission from an edit.
-   * @param - none
    */
   def userAddSubmit() = IfCanUpdate(tgUser) {                // IfCanUpdate(tgUsers)
     implicit request => {

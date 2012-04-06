@@ -44,7 +44,7 @@ object PersonSpec extends Specification {
 
         /**
          * Set up for the tests
-         * Delete existing test person(s) then Add a test user
+         * existing test person(s) then Add a test user
          */
         var pGet = Person.findByLogin(fakePerson.portalLogin)
         if (pGet != None) Person.hardDelete(pGet.get.id)
@@ -91,7 +91,7 @@ object PersonSpec extends Specification {
         val p1up = Person.findByLogin(fakePerson.portalLogin)
         p1up.get.firstName mustEqual fakePerson.firstName
 
-        val p2up = Person.update(p1up.get.id, PersonEdit(Some(fakePerson2.firstName), Some(fakePerson2.lastName), Some(fakePerson2.portalLogin),
+        val p2up = Person.update(p1up.get.id, PersonEdit(Some(fakePerson2.firstName), Some(fakePerson2.lastName), fakePerson2.portalLogin,
           fakePerson2.portalPassword, fakePerson2.email))
         p2up mustEqual (1L)
 

@@ -20,11 +20,11 @@ case class Person(id: Long, firstName: String, lastName: String, portalLogin: St
  * @param portalPassword
  * @param email
  */
-case class PersonEdit(firstName: Option[String], lastName: Option[String], portalLogin: Option[String], portalPassword: Option[String], email: String) {
+case class PersonEdit(firstName: Option[String], lastName: Option[String], portalLogin: String, portalPassword: Option[String], email: String) {
 
   def toPerson: Person = Person(id = -1, firstName = firstName.map(p => p).getOrElse(""), lastName = lastName.map(p => p).getOrElse(""),
     portalPassword = portalPassword, email = email, phone = "",
-    lastLogin = (new DateTime()), activeStatus = 1, portalLogin = portalLogin.map(p => p).getOrElse(" "))
+    lastLogin = (new DateTime()), activeStatus = 1, portalLogin = portalLogin)
 }
 
 /**
@@ -42,7 +42,7 @@ object Person {
     " person.email, person.phone, date(person.last_login_dt) as lastLogin, person.active_status "
 
   val simple = {
-    get[Int]("person.id") ~
+    get[Long]("person.id") ~
       get[String]("person.first_name") ~
       get[String]("person.last_name") ~
       get[String]("person.portal_login") ~
@@ -176,7 +176,7 @@ object Person {
   def insert(person: Person): Option[Long] = {
 
     implicit val loc = VL("Person.insert")
-    println(loc + " YOP!")
+
     val result = vld {
       DB.withConnection("s2") {
         implicit connection => {
@@ -228,7 +228,7 @@ object Person {
           'id             -> id,
           'firstName      -> person.firstName,
           'lastName       -> person.lastName,
-          'portalLogin    -> person.portalLogin.get,
+          'portalLogin    -> person.portalLogin,
           'portalPassword -> person.portalPassword.map { portalPassword => Blowfish.encrypt(portalPassword) },
           'email          -> person.email
         ).executeUpdate()
