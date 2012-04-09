@@ -37,20 +37,21 @@ package object utils {
   /**Replaces the subdomain portion of a request received by S2 so it may be forwarded
    * on for further processing by Dino. The replacement logic is:
    *
-   * localhost:9000 --> localhost:8080
+   * localhost:9000 --> qa-s1.netpulse.ws (our "dev" environment for dino is qa)
    * ec2 --> s1
    * s2 --> s1
    *
-   * The idea is that we came into S2 either because 1) we are running play locally, in which case we are
-   * presumably also running Dino locally on port 8080, or 2) because the client specified "ec2" as the
+   * The idea is that we came into S2 either because 1) we are running play locally, in which case we need
+   * to use qa to run the dino portion, or 2) because the client specified "ec2" as the
    * subdomain and the front-end routed to here, or 3) because the client specified "s2" explicitly.
    * In either of these last two cases, we need to be explicit with "s1" as the subdomain so that
-   * it can route properly to Dino.
+   * it can route properly to Dino; in the first case, we need to be explicit about "s1" AND the
+   * fact that it needs to go to "qa."
    *
    * @param s The string containing the host value as it arrived here in S2.
    * @return The host string with the above substitutions applied.
    */
-  def switchHosts(s: String) = s.replaceFirst("localhost:9000", "localhost:8080").
+  def switchHosts(s: String) = s.replaceFirst("localhost:9000", "qa-s1.netpulse.ws").
     replaceFirst("ec2", "s1").replaceFirst("s2", "s1")
 
   /**Repackages an incoming request into an outgoing request so it can be sent to Dino

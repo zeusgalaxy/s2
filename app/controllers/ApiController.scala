@@ -241,11 +241,11 @@ object ApiController extends Controller {
 
   /**Landing page to give to Gigya so they can call back to Netpulse after completing social login.
    *
-   * @return An html page that contains javascript code necessary to complete the social login process.
+   * @return A blank page
    */
   def gigyaLogin = Unrestricted {
     implicit request =>
-      Ok(html.gigya(request))
+      Ok(html.gigya())
   }
 
   /**Proxy any Gigya call by building the request as needed by Gigya (i.e, with the proper security headers, etc.)
@@ -257,11 +257,14 @@ object ApiController extends Controller {
   def gigyaProxy(method: String) = Unrestricted {
     implicit request =>
 
-      val response = Gigya.call(method, request.queryString)
-      if (response.getErrorCode == 0) {
-        Ok(<api error={apiNoError.toString}><gigya>{response.getResponseText}</gigya></api>)
-      } else {
-        Ok(<api error={apiGeneralError.toString}><gigya>{response.getLog}</gigya></api>)
-      }
+      implicit val loc = VL("ApiController.gigyaProxy")
+
+      val gigyaResp = Gigya.call(method, request.queryString)
+      val ourResp = tst(gigyaResp)(_.getErrorCode == 0).
+        add("gigya response log", gigyaResp.getLog).error.
+        fold(e => Ok(gigyaResp.getResponseText), s => Ok(gigyaResp.getResponseText))
+//      ourResp.withHeaders() // TODO - Can we get the gigya headers some how and use their content-type?
+      ourResp
+
   }
 }

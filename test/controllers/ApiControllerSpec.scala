@@ -71,7 +71,7 @@ object ApiControllerSpec extends Specification {
 
         pth = "http://localhost:9000/setChannels"
         // TODO - Need a real record that we can pollute with our test data
-        val cnt = <channels npLogin='s2@netpulse.com' locationId='99'>
+        val cnt = <channels npLogin='s2' locationId='99'>
           <channel>{channel}</channel>
         </channels>
 
@@ -81,8 +81,8 @@ object ApiControllerSpec extends Specification {
         status(result) must equalTo(OK)
         contentAsString(result) must contain("api error=\"0\"")
 
-        pth = "http://localhost:9000/getChannels?id=" + id + "&location_id=99"
-        result = controllers.ApiController.getChannels(id, 99L)(FakeRequest("GET", pth))
+        pth = "http://localhost:9000/getChannels?id=s2&location_id=99"
+        result = controllers.ApiController.getChannels("s2", 99L)(FakeRequest("GET", pth))
 
         status(result) must equalTo(OK)
         contentAsString(result) must contain("api error=\"0\"")
@@ -103,6 +103,11 @@ object ApiControllerSpec extends Specification {
         contentAsString(result) must contain("<api error=\"0\"")
         contentAsString(result) must contain("virtualTrainer")
         contentAsString(result) must contain("workoutSegments")
+
+        pth = "http://localhost:9000/gigyaProxy/notifyLogin?siteUID=" + id + "&newUser=true"
+        result = controllers.ApiController.gigyaProxy("notifyLogin")(FakeRequest("GET", pth))
+
+        contentAsString(result) must contain("UIDSignature")
       }
     }
   }
