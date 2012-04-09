@@ -130,11 +130,12 @@ object Role {
   //
 
 /* Summary of person, role and rights by target...
-  select p.email, ro.name as Role, ro.role_group, ri.c, ri.r, ri.u, ri.d, ri.filter, t.name from person p
-  join person_role pr on p.id = pr.person_id
-  join role ro on pr.role_id = ro.id
+  select p.email, ro.name as role, ro.role_group, ri.c, ri.r, ri.u, ri.d, ri.filter, t.name from person p
+  join role ro on ro.id = p.role_id
   join rights ri on ri.role_id = ro.id
-  join target t on ri.target_id = t.id
+  join target t on ri.target_id = t.id;
+
+   c.name,     join company c on c.id = p.company_id
 */
 
   /** find a role ID by role name
