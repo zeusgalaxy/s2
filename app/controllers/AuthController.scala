@@ -46,13 +46,6 @@ object AuthController extends Controller {
       Ok(html.unauthorized.apply)
   }
 
-  /**
-   * insert into person values(null, "s2", "netpulse", "s2@netpulse.com", "19e359d99f3c4e3bdf8592078de921bc", "s2@netpulse.com", "5103369779", now(), 1, now(), now(), 0, 0, null, null);
-   * insert into target values (null, "reportWorkoutLocations", 0, 0, 0, null);
-   * insert into role values (null, "netpulse-admin", 0, 0, 0, null);
-   * insert into person_role values(null, 0, 0, 0, null, 8234, 1);
-   * insert into rights values(null, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1);
-   */
   /**Handles login form submission
    *
    * Handles the login form submission by validating the submitted user name and password against the

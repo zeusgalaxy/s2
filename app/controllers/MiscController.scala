@@ -13,10 +13,16 @@ import security._
 
 object MiscController extends Controller {
 
-  def restrictedHello = IfCanRead(tgTest) {
+  def helloForA = IfCanRead(tgTestA) {
     implicit request =>
-      println("we were allowed in to restrictedHello")
-      Ok(html.kenner("Hello " + request.context.user.get.firstName))
+      println("we were allowed in to helloForA")
+      Ok(html.kenner("Hello (A)" + request.context.user.get.firstName))
+  }
+
+  def helloForB = IfCanRead(tgTestB) {
+    implicit request =>
+      println("we were allowed in to helloForB")
+      Ok(html.kenner("Hello (B)" + request.context.user.get.firstName))
   }
 
   def unrestrictedHello = Unrestricted {

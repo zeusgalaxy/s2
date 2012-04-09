@@ -11,7 +11,7 @@ import play.api.Logger
 import scalaz.{Node => _, _}
 
 case class Person(id: Long, firstName: String, lastName: String, portalLogin: String, portalPassword: Option[String],
-                  email: String, phone: String, lastLogin: DateTime, activeStatus: Int)
+                  email: String, phone: String, lastLogin: Option[DateTime], activeStatus: Int)
 
 /**PersonEdit Class
  * Subset of the Person class that is displayable and editable for using in edit and add forms.
@@ -20,11 +20,12 @@ case class Person(id: Long, firstName: String, lastName: String, portalLogin: St
  * @param portalPassword
  * @param email
  */
-case class PersonEdit(firstName: Option[String], lastName: Option[String], portalLogin: Option[String], portalPassword: Option[String], email: String) {
+case class PersonEdit(firstName: Option[String], lastName: Option[String], portalLogin: Option[String],
+                      portalPassword: Option[String], email: String) {
 
   def toPerson: Person = Person(id = -1, firstName = firstName.map(p => p).getOrElse(""), lastName = lastName.map(p => p).getOrElse(""),
     portalPassword = portalPassword, email = email, phone = "",
-    lastLogin = (new DateTime()), activeStatus = 1, portalLogin = portalLogin.map(p => p).getOrElse(" "))
+    lastLogin = Some((new DateTime())), activeStatus = 1, portalLogin = portalLogin.map(p => p).getOrElse(" "))
 }
 
 /**
@@ -49,10 +50,11 @@ object Person {
       get[Option[String]]("person.portal_password") ~
       get[String]("person.email") ~
       get[String]("person.phone") ~
-      get[java.util.Date]("lastLogin") ~
+      get[Option[java.util.Date]]("lastLogin") ~
       get[Int]("person.active_status") map {
       case id ~ firstName ~ lastName ~ portalLogin ~ portalPassword ~ email ~ phone ~ lastLogin ~ activeStatus =>
-        Person(id, firstName, lastName, portalLogin, portalPassword, email, phone, new DateTime(lastLogin.toString), activeStatus)
+        Person(id, firstName, lastName, portalLogin, portalPassword, email, phone,
+          lastLogin.map(ll => Some(new DateTime(ll.toString))).getOrElse(None), activeStatus)
     }
   }
 

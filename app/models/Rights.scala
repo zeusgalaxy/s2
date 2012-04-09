@@ -48,8 +48,8 @@ object Rights {
             implicit connection =>
               SQL("select c, r, u, d, filter from rights " +
                 " join target on rights.target_id = target.id " +
-                " join person_role on rights.role_id = person_role.role_id " +
-                " where person_role.person_id = {personId} and target.name = {targetName}").
+                " join person on rights.role_id = person.role_id " +
+                " where person.id = {personId} and target.name = {targetName}").
                 on('personId -> user.id,
                 'targetName -> t.t).
                 as(Rights.simple.singleOpt)

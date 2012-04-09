@@ -27,11 +27,11 @@ object PersonSpec extends Specification {
 
         val fakePerson = Person(id = 0, firstName = "Joe", lastName = "Sample", portalLogin = "loginstring",
           portalPassword = Some("testPassword"), email = "joe@sample.com", phone = "(555) 555-1212",
-          lastLogin = (new DateTime), activeStatus = 1)
+          lastLogin = Some((new DateTime)), activeStatus = 1)
 
         val fakePerson2 = Person(id = 0, firstName = "JimBo", lastName = "Peebles", portalLogin = "JimBologin",
           portalPassword = Some("JimboPassword"), email = "jimbo@sample.com", phone = "(555) 555-1212",
-          lastLogin = (new DateTime), activeStatus = 1)
+          lastLogin = Some((new DateTime)), activeStatus = 1)
 
         var fpID = -1L
 

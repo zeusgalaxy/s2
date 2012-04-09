@@ -11,7 +11,8 @@ GET     /unauthorized                       controllers.AuthController.unauthori
 # Home page
 GET     /                                   controllers.MiscController.index()
 GET     /index                              controllers.MiscController.index()
-GET     /restrictedHello                    controllers.MiscController.restrictedHello()
+GET     /helloForA                          controllers.MiscController.helloForA()
+GET     /helloForB                          controllers.MiscController.helloForB()
 GET     /unrestrictedHello                  controllers.MiscController.unrestrictedHello()
 
 # User admin

@@ -50,6 +50,8 @@ package object security {
   val tgAdminPortal = Target("adminPortal")
   val tgUsers = Target("users")
   val tgTest = Target("test")
+  val tgTestA = Target("test-a")
+  val tgTestB = Target("test-b")
   val tgReportWorkoutLocations = Target("reportWorkoutLocations")
 
   /**Subclasses and wraps a normal request so we can associate some "context" with the request.

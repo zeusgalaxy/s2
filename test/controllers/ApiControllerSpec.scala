@@ -103,6 +103,11 @@ object ApiControllerSpec extends Specification {
         contentAsString(result) must contain("<api error=\"0\"")
         contentAsString(result) must contain("virtualTrainer")
         contentAsString(result) must contain("workoutSegments")
+
+        pth = "http://localhost:9000/gigyaProxy/notifyLogin?siteUID=" + id + "&newUser=true"
+        result = controllers.ApiController.gigyaProxy("notifyLogin")(FakeRequest("GET", pth))
+
+        contentAsString(result) must contain("UIDSignature")
       }
     }
   }

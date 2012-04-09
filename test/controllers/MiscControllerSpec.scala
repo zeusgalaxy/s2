@@ -6,12 +6,16 @@ import org.specs2.mutable._
 import play.api.test._
 import play.api.test.Helpers._
 import play.api.Play._
+import play.api.mvc.Session
 
 object MiscControllerSpec extends Specification {
 
   "access the unrestricted hello page, restricted hello page with login, restricted hello page without login" in {
 
     running(FakeApplication()) {
+
+      val s2aEncoded = Session.encode(Map("id" -> "186953"))
+      val s2bEncoded = Session.encode(Map("id" -> "186954"))
       //
       //  access the unrestricted hello page
       //
@@ -24,25 +28,25 @@ object MiscControllerSpec extends Specification {
       //
       // access the restricted hello page with a user that can
       //
-      val rq1 = FakeRequest().withHeaders(("Cookie" -> current.configuration.getString("user.test.cookie").get))
-      val result1 = controllers.MiscController.restrictedHello()(rq1)
+      val rqA = FakeRequest().withHeaders(("Cookie" -> (Session.COOKIE_NAME + "=" + s2aEncoded)))
+      val resultA = controllers.MiscController.helloForA()(rqA)
+      status(resultA) must equalTo(OK)
 
-      status(result1) must equalTo(OK)
-      contentAsString(result1) must contain("Hello to")
-
+      contentAsString(resultA) must contain("Hello to")
       //
       // access the restricted hello page with a user that cannot
       //
-      val rq1a = FakeRequest().withHeaders(("Cookie" -> current.configuration.getString("user.report.cookie").get))
-      val result1a = controllers.MiscController.restrictedHello()(rq1a)
 
-      status(result1a) must equalTo(SEE_OTHER)
+      val rqB = FakeRequest().withHeaders(("Cookie" -> (Session.COOKIE_NAME + "=" + s2aEncoded)))
+      val resultB = controllers.MiscController.helloForB()(rqB)
+
+      status(resultB) must equalTo(SEE_OTHER)
 
       //
       // access the restricted hello page without login
       //
       val rq2 = FakeRequest()
-      val result2 = controllers.MiscController.restrictedHello()(rq2)
+      val result2 = controllers.MiscController.helloForA()(rq2)
 
       status(result2) must equalTo(SEE_OTHER)
     }
