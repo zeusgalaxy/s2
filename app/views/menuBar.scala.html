@@ -14,8 +14,10 @@
                   <li class="@{if(active == 'admin) "active" else "inactive"}"><a href="@routes.MiscController.userList()">@Messages("menu.admin")</a></li>
                 }
 
+                @if(rq.canUpdate(security.tgUser) && rq.context.user.isDefined) {
+                    <li class="@{if(active == 'account) "active" else "inactive"}"><a href="@routes.MiscController.userEdit(rq.context.user.get.id)">@Messages("menu.account")</a></li>
+                }
 
-             @*   <li class="@{if(active == 'account) "active" else "inactive"}"><a href="@routes.MiscController.userEdit">@Messages("menu.account")</a></li> *@
                 <li class="@{if(active == 'contact) "active" else "inactive"}"><a href="">@Messages("menu.contact")</a></li>
 
                 @if(rq.context.user.isDefined) {

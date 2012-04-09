@@ -26,7 +26,7 @@ object MiscController extends Controller {
 
   def index = Unrestricted {
     implicit request =>
-      Ok(html.index("This is the main page parameter: "+PersonRole.findByPersonId(8234L).get ))
+      Ok(html.index("This is the main page parameter: "+PersonRole.findByPersonId(8234L) ))
   }
 
 
@@ -47,7 +47,7 @@ object MiscController extends Controller {
   /** Use the passed in ID value to get the user from the DB. Present that info in the form above.
    * @param id - User ID
    */
-  def userEdit(id: Long) = IfCanUpdate(tgUser) {             // IfCanUpdate(tgUsers)
+  def userEdit(id: Long) = IfCanUpdate(tgUser) {
     implicit request =>
       Person.findById(id).map(user => {
         Ok(html.userEdit(id, personForm.fill(PersonEdit(Some(user.firstName), Some(user.lastName), user.portalLogin, None, user.email))))
@@ -57,7 +57,7 @@ object MiscController extends Controller {
   /** Controller to Handle form submission from an edit.
    * @param id User ID
    */
-  def userEditSubmit(id: Long) = IfCanUpdate(tgUser) {        //    IfCanUpdate(tgUsers)
+  def userEditSubmit(id: Long) = IfCanUpdate(tgUser) {
     implicit request => {
       personForm.bindFromRequest.fold(
         formErrors => BadRequest(html.userEdit(id, formErrors)),
@@ -74,7 +74,7 @@ object MiscController extends Controller {
   
   /** Controller for Adding a user.
    */
-  def userAdd() = IfCanUpdate(tgUser) {              // IfCanUpdate(tgUsers)
+  def userAdd() = IfCanUpdate(tgUser) {
     implicit request => {
       Logger.debug("in userAdd controller")
       Ok(html.userEdit(-1, personForm))
@@ -83,7 +83,7 @@ object MiscController extends Controller {
 
   /** Handle form submission from an edit.
    */
-  def userAddSubmit() = IfCanUpdate(tgUser) {                // IfCanUpdate(tgUsers)
+  def userAddSubmit() = IfCanUpdate(tgUser) {
     implicit request => {
       personForm.bindFromRequest.fold(
         formErrors => BadRequest(html.userEdit(-1, formErrors)),
@@ -106,7 +106,7 @@ object MiscController extends Controller {
    * @param orderBy - column to sort by
    * @param filter - partial last name to use as a match string
    */
-  def userList(page: Int, orderBy: Int, filter: String) = IfCanRead(tgUser) {      // = IfCanRead(tgUsers)
+  def userList(page: Int, orderBy: Int, filter: String) = IfCanRead(tgUser) {
     implicit request =>
       Ok(html.userList(
         Person.list(page = page, orderBy = orderBy, filter = ("%" + filter + "%")),

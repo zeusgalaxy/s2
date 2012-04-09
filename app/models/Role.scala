@@ -120,6 +120,23 @@ object Role {
   val oemAdmin = "oemAdmin"
   val oemUser  = "oemUser"
 
+  // insert into role values (0, 'npAdmin', 1, now(), 0, 0, null);
+  // insert into role values (0, 'npUser',  1, now(), 0, 0, null);
+  // insert into role values (0, 'oemAdmin',2, now(), 0, 0, null);
+  // insert into role values (0, 'oemUser', 2, now(), 0, 0, null);
+  //
+  // insert into target values (0, 'roleSetup', now(), 0, 0, null);
+  // insert into target values (0, 'userAccount', now(), 0, 0, null);
+  //
+
+/* Summary of person, role and rights by target...
+  select p.email, ro.name as Role, ro.role_group, ri.c, ri.r, ri.u, ri.d, ri.filter, t.name from person p
+  join person_role pr on p.id = pr.person_id
+  join role ro on pr.role_id = ro.id
+  join rights ri on ri.role_id = ro.id
+  join target t on ri.target_id = t.id
+*/
+
   /** find a role ID by role name
    *
    * @param roleName  the role to find. See Role case class above

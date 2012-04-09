@@ -15,10 +15,11 @@ case class Person(id: Long, firstName: String, lastName: String, portalLogin: St
 
 /**PersonEdit Class
  * Subset of the Person class that is displayable and editable for using in edit and add forms.
- * @param firstName
- * @param lastName
- * @param portalPassword
- * @param email
+ * @param firstName  fn
+ * @param lastName   ln
+ * @param portalLogin login string, usually email
+ * @param portalPassword  login pw
+ * @param email  email
  */
 case class PersonEdit(firstName: Option[String], lastName: Option[String], portalLogin: String, portalPassword: Option[String], email: String) {
 
