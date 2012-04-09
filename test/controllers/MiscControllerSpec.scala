@@ -3,6 +3,7 @@ package test
 import utils._
 import org.specs2.mutable._
 
+import models._
 import play.api.test._
 import play.api.test.Helpers._
 import play.api.Play._
@@ -14,8 +15,13 @@ object MiscControllerSpec extends Specification {
 
     running(FakeApplication()) {
 
-      val s2aEncoded = Session.encode(Map("id" -> "186953"))
-      val s2bEncoded = Session.encode(Map("id" -> "186954"))
+      val setupOk = TestData.setup
+      setupOk must equalTo(true)
+
+      val s2a = Person.findByLogin("s2-a@netpulse.com")
+      val s2b = Person.findByLogin("s2-b@netpulse.com")
+      val s2aEncoded = Session.encode(Map("id" -> s2a.get.id.toString))
+      val s2bEncoded = Session.encode(Map("id" -> s2b.get.id.toString))
       //
       //  access the unrestricted hello page
       //
