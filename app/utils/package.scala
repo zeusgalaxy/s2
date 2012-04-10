@@ -7,6 +7,7 @@ import models._
 import java.io.StringWriter
 import org.apache.commons.lang.RandomStringUtils
 import org.joda.time.{DateTimeZone, DateTime}
+import play.api.Play._
 import scala.xml._
 import play.api._
 import play.api.mvc._
@@ -51,7 +52,7 @@ package object utils {
    * @param s The string containing the host value as it arrived here in S2.
    * @return The host string with the above substitutions applied.
    */
-  def switchHosts(s: String) = s.replaceFirst("localhost:9000", "qa-s1.netpulse.ws").
+  def switchHosts(s: String) = s.replaceFirst("localhost:9000", dinoTestHost).
     replaceFirst("ec2", "s1").replaceFirst("s2", "s1")
 
   /**Repackages an incoming request into an outgoing request so it can be sent to Dino
@@ -347,4 +348,7 @@ package object utils {
   def dateToInt(dateStr: String,  default: Int = 0) = {
     try{ (dateStr filter (_ != '-'  )).toInt } catch { case _ => default }
   }
+
+  lazy val dinoTestHost = current.configuration.getString("dino.test.host").getOrElse(throw new Exception("dino.test.host is not set in config"))
+
 }
