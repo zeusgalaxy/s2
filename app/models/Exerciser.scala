@@ -10,12 +10,13 @@ import anorm.SqlParser._
 import play.api.Logger
 import xml._
 import scalaz.{Node => _, _}
+import Scalaz._
 
 case class Exerciser(dbId: Long, login: String, email: String, pic: Int,
                      membershipId: Option[String], gender: Boolean, dob: DateTime,
                      emailPrefs: Int, weight: Long, homeClubId: Option[Long], homeClubName: Option[String],
                      vtUserId: String, vtToken: String, vtTokenSecret: String, vtStatus: Int,
-                     gigyaUid: String) {
+                     gigyaUid: String, showProfilePic: Boolean) {
 
   def hasVtConnection = (!vtUserId.isEmpty && !vtToken.isEmpty && !vtTokenSecret.isEmpty)
 
@@ -23,6 +24,7 @@ case class Exerciser(dbId: Long, login: String, email: String, pic: Int,
     XmlMutator(x).add(parent,
       <exerciser>
       <email>{email}</email>
+      <showProfilePic>{(showProfilePic ? 1 | 0)}</showProfilePic>
       <virtualTrainerStatus>{vtStatus.toString}</virtualTrainerStatus>
       <gigyaUserId>{gigyaUid}</gigyaUserId>
       <homeClub>
@@ -49,7 +51,7 @@ object Exerciser {
     " exerciser.membership_id, exerciser.gender," +
     " date(exerciser.date_of_birth) as dob, exerciser.email_prefs, exerciser.weight, exerciser.location_id," +
     " exerciser.vt_user_id, exerciser.vt_token, exerciser.vt_token_secret, exerciser.vt_status, " +
-    " exerciser.gigya_uid "
+    " exerciser.gigya_uid, exerciser.show_profile_pic "
 
   val simple = {
     get[Long]("exerciser.id") ~
@@ -67,11 +69,13 @@ object Exerciser {
       get[String]("exerciser.vt_token_secret") ~
       get[Int]("exerciser.vt_status") ~
       get[String]("exerciser.gigya_uid") ~
-      get[Option[String]]("location.name") map {
+      get[Option[String]]("location.name") ~
+      get[Boolean]("exerciser.show_profile_pic") map {
       case dbId ~ login ~ email ~ pic ~ membershipId ~ gender ~ dob ~ emailPrefs ~
-        weight ~ homeClubId ~ vtUserId ~ vtToken ~ vtTokenSecret ~ vtStatus ~ gigyaUid ~ homeClubName =>
+        weight ~ homeClubId ~ vtUserId ~ vtToken ~ vtTokenSecret ~ vtStatus ~ gigyaUid ~ homeClubName ~
+        showProfilePic =>
         Exerciser(dbId, login, email, pic, membershipId, gender, new DateTime(dob.toString), emailPrefs,
-          weight, homeClubId, homeClubName, vtUserId, vtToken, vtTokenSecret, vtStatus, gigyaUid)
+          weight, homeClubId, homeClubName, vtUserId, vtToken, vtTokenSecret, vtStatus, gigyaUid, showProfilePic)
     }
   }
 
@@ -303,6 +307,33 @@ object Exerciser {
           ).on(
             'login -> npLogin,
             'gigyaUid -> gigyaUid
+          ).executeUpdate()
+      }
+    }.info.fold(e => false, s => true)
+  }
+
+  /** Sets the "show_profile_pic" option in the exerciser record.
+   *
+   * @param npLogin The exerciser's login identifier.
+   * @param show Boolean indicating whether or not to show the profile picture
+   * @return True if successful, else False.
+   */
+  def setShowProfilePic(npLogin: String, show: Boolean): Boolean = {
+
+    implicit val loc = VL("Exerciser.setShowProfilePic")
+
+    vld {
+      DB.withConnection {
+        implicit connection =>
+          SQL(
+            """
+              update exerciser
+              set show_profile_pic = {showPic}
+              where login = {login}
+            """
+          ).on(
+            'login -> npLogin,
+            'showPic -> (show ? 1 | 0)
           ).executeUpdate()
       }
     }.info.fold(e => false, s => true)

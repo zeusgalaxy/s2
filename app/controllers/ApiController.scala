@@ -190,7 +190,7 @@ object ApiController extends Controller {
   /**Retrieves previously saved "favorite" tv channels for a given exerciser and location.
    *
    * An example call to test:
-   * http://localhost:9000/getChannels?id=2115180443,location_id=87
+   * http://localhost:9000/getChannels?id=2115180443&location_id=87
    *
    * @param npLogin Id used by the exerciser to log into Netpulse.
    * @param locationId Club id where the exercise is currently located.
@@ -263,8 +263,27 @@ object ApiController extends Controller {
       val ourResp = tst(gigyaResp)(_.getErrorCode == 0).
         add("gigya response log", gigyaResp.getLog).error.
         fold(e => Ok(gigyaResp.getResponseText), s => Ok(gigyaResp.getResponseText))
-//      ourResp.withHeaders() // TODO - Can we get the gigya headers some how and use their content-type?
+      //      ourResp.withHeaders() // TODO - Can we get the gigya headers some how and use their content-type?
       ourResp
 
+  }
+
+  /**Sets the exerciser's "show profile pic" flag to control whether or not their
+   * profile picture is shown.
+   *
+   * An example call to test:
+   * http://localhost:9000/setProfilePic?id=2115180443&show=0
+   *
+   * @param npLogin Id used by the exerciser to log into Netpulse.
+   * @param show Boolean flag indicating whether or not to show the profile picture (must be 0 or 1)
+   * @return HTTP status 200, with an xml body indicating whether the call was successful.
+   */
+  def setShowProfilePic(npLogin: String, show: Boolean) = Unrestricted {
+    implicit request =>
+
+      implicit val loc = VL("Api.setShowProfilePic")
+      val result = Exerciser.setShowProfilePic(npLogin, show)
+      result ? Ok(<api error={apiNoError.toString}></api>) |
+        Ok(<api error={apiGeneralError.toString}></api>)
   }
 }

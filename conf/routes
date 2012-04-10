@@ -46,6 +46,7 @@ GET     /getChannels                        controllers.ApiController.getChannel
 GET     /s2/getChannels                     controllers.ApiController.getChannels(id: String, location_id: Long)
 POST    /setChannels                        controllers.ApiController.setChannels
 POST    /s2/setChannels                     controllers.ApiController.setChannels
+GET     /setShowProfilePic                  controllers.ApiController.setShowProfilePic(id: String, show: Boolean)
 
 GET     /n5iregister.jsp                    controllers.DinoController.register
 GET     /n5ilogin.jsp                       controllers.DinoController.login(id: String, machine_id: Long)
