@@ -10,6 +10,7 @@ import anorm._
 import views._
 import models._
 import security._
+import org.joda.time.DateTime
 
 object MiscController extends Controller {
 
@@ -31,8 +32,10 @@ object MiscController extends Controller {
   }
 
   def index = Unrestricted {
-    implicit request =>
-      Ok(html.index("This is the main page parameter: "+PersonRole.findByPersonId(8234L) ))
+    implicit request => {
+      // Insert SQL test code here to see in log.
+      Ok(html.index("This is the main page parameter: " ))
+    }
   }
 
 
@@ -42,8 +45,8 @@ object MiscController extends Controller {
    */
   val personForm = Form(
     mapping(
-      "firstName"   -> optional(text),
-      "lastName"    -> optional(text),
+      "firstName"   -> text,
+      "lastName"    -> text,
       "portalLogin" -> nonEmptyText,
       "password"    -> optional(text),
       "email"       -> email
@@ -56,18 +59,18 @@ object MiscController extends Controller {
   def userEdit(id: Long) = IfCanUpdate(tgUser) {
     implicit request =>
       Person.findById(id).map(user => {
-        Ok(html.userEdit(id, personForm.fill(PersonEdit(Some(user.firstName), Some(user.lastName), user.portalLogin, None, user.email))))
+        Ok(html.userEdit(id, personForm.fill(PersonEdit(user.firstName, user.lastName, user.portalLogin, None, user.email))))
       }).getOrElse(Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred.")))
   }
 
   /** Controller to Handle form submission from an edit.
    * @param id User ID
    */
-  def userEditSubmit(id: Long) = IfCanUpdate(tgUser) {
+  def userEditSubmit(id: Long ) = IfCanUpdate(tgUser) {
     implicit request => {
       personForm.bindFromRequest.fold(
         formErrors => BadRequest(html.userEdit(id, formErrors)),
-        uE => Person.update(id, uE)
+        uE => Person.update(id, uE.toPerson(companyId = request.context.user.get.companyId, roleId = request.context.user.get.roleId), request.context.user.get.id )
         match {
           case 1 =>
             Redirect(routes.MiscController.userList()).flashing("success" -> ("User: " + uE.email + " updated."))
@@ -95,8 +98,9 @@ object MiscController extends Controller {
         formErrors => BadRequest(html.userEdit(-1, formErrors)),
         pE => {
           Logger.debug("UserAddSubmit uE to be added: "+pE.toString)
-          Logger.debug("UserAddSubmit user from uE: "+pE.toPerson)
-          Person.insert(pE.toPerson)  match {
+          val adminUser = request.context.user
+          Logger.debug("UserAddSubmit user from uE: "+pE.toPerson(companyId = adminUser.get.companyId, roleId = adminUser.get.roleId))
+          Person.insert(pE.toPerson(companyId = adminUser.get.companyId, roleId = adminUser.get.roleId), request.context.user.get.id )  match {
             case Some(u) =>
               Redirect(routes.MiscController.userList()).flashing("success" -> ("User added."))
             case _ =>

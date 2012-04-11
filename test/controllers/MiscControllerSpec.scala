@@ -15,7 +15,7 @@ object MiscControllerSpec extends Specification {
 
     running(FakeApplication()) {
 
-      val setupOk = TestData.setup
+      val setupOk = TestData.setup(TestData.testSqlStmts)
       setupOk must equalTo(true)
 
       val s2a = Person.findByLogin("s2-a@netpulse.com")
