@@ -12,24 +12,8 @@ import scalaz.{Node => _, _}
 
 case class Person(id: Long, companyId: Long, roleId: Long, firstName: String, lastName: String,
                   portalLogin: String, portalPassword: Option[String],
-                  email: String, phone: String, lastLogin: Option[DateTime], activeStatus: Int)
-
-/**PersonEdit Class
- * Subset of the Person class that is displayable and editable for using in edit and add forms.
- * @param firstName  fn
- * @param lastName   ln
- * @param portalLogin login string, usually email
- * @param portalPassword  login pw
- * @param email  email
- */
-case class PersonEdit(firstName: String, lastName: String, portalLogin: String,
-                      portalPassword: Option[String], email: String) {
-
-  def toPerson(companyId: Long, roleId: Long): Person = Person(id = -1, companyId = companyId, roleId = roleId,
-    firstName = firstName, lastName = lastName,
-    portalPassword = portalPassword, email = email, phone = "",
-    lastLogin = Some((new DateTime())), activeStatus = 1, portalLogin = portalLogin)
-}
+                  email: String, phone: String)
+// lastLogin: Option[DateTime], activeStatus: Int)
 
 /**
  * Anorm-based model representing any person having a relationship to Netpulse.
@@ -38,7 +22,6 @@ object Person {
 
   implicit val loc = VL("Person")
 
-//  val check: Person = PersonEdit(firstName = "dennis", lastName = "faust", portalLogin = "login", portalPassword = Some("test"), email="dennis@dennisfaust.com").toPerson(companyId = 2, roleId = 1)
   /**
    * Basic parsing of a person from the database.
    */
@@ -61,8 +44,8 @@ object Person {
       get[Option[java.util.Date]]("lastLogin") ~
       get[Int]("person.active_status") map {
       case id ~ companyId ~ roleId ~ firstName ~ lastName ~ portalLogin ~ portalPassword ~ email ~ phone ~ lastLogin ~ activeStatus =>
-        Person(id, companyId, roleId, firstName, lastName, portalLogin, portalPassword, email, phone,
-          lastLogin.map(ll => Some(new DateTime(ll.toString))).getOrElse(None), activeStatus)
+        Person( id, companyId, roleId, firstName, lastName, portalLogin, portalPassword, email, phone)
+          // lastLogin.map(ll => Some(new DateTime(ll.toString))).getOrElse(None), activeStatus)
     }
   }
 
@@ -128,7 +111,7 @@ object Person {
       case None =>
         Logger.info("No match found in db for login " + login + " and password " + password + " in Person.authenticate")
         None
-      case u => u
+      case u => u        // TODO: Update last login here.
     })
   }
 

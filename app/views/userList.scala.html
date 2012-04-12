@@ -75,7 +75,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
                 <td><a href="@routes.MiscController.userEdit(u.id)">@u.email</a></td>
 
-                <td>Admin</td>
+                <td>@Role.findById(u.roleId).getOrElse((0,"",0))._2</td>
                 </a>
             </tr>
             }

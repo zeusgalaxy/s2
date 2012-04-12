@@ -49,18 +49,24 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
             </div>
             *@
 
-            <div class="control-group">
-                <label class="control-label" for="input01">@Messages("workouts.location.field.company")</label>
-                <div class="controls">
-                    <select name="f" value="@currentFilter" class="span3">
-                        <option value="">@Messages("workouts.location.field.company.options")</option>
-                        @Company.reportCompanyOptions.map { opt =>
-                        <option value="@opt._1" @if(opt._1.toString == currentFilter){selected="yes"}>@opt._2</option>
-                        }
-                    </select>
-                    <p class="help-block"></p>
+            @* If the user has no filter on their rights in the area show them the company list. *@
+            @* otherwise, filter on their company ID  *@
+            @if(rq.isFiltered(security.tgReportWorkoutLocations)) {
+                <input name="f" type="hidden" value="@rq.context.user.get.companyId" />
+            }  else {
+                <div class="control-group">
+                    <label class="control-label" for="input01">@Messages("workouts.location.field.company")</label>
+                    <div class="controls">
+                        <select name="f" value="@currentFilter" class="span3">
+                            <option value="">@Messages("workouts.location.field.company.options")</option>
+                            @Company.reportCompanyOptions.map { opt =>
+                            <option value="@opt._1" @if(opt._1.toString == currentFilter){selected="yes"}>@opt._2</option>
+                            }
+                        </select>
+                        <p class="help-block"></p>
+                    </div>
                 </div>
-            </div>
+            }
 
 
             <div class="control-group">

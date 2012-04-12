@@ -67,17 +67,16 @@ object Role {
    * @param roleGroup  the roleGroup to find. See Role case class above
    * @return  list of optional [id, Name, roleGroup] tuples  on success
    */
-  def groupList(roleGroup: Long): Seq[(Long, String, Long)] = {
+  def groupList(roleGroup: Long): Seq[(Long, String)] = {
     implicit val loc = VL("Role.groupList")
 
     vld {
       DB.withConnection("s2") {
         implicit connection =>
-          SQL(
-            """
-              select id, name, role_group from role where role_group = {roleGroup}
-            """
-          ).on('roleGroup -> roleGroup).as( (get[Long]("id")~get[String]("name")~get[Long]("role_group")).map(flatten) *)
+          // NOTE: returns all role_groups for Netpulse users since they have role_group 1
+          SQL("select id, name from role " + ( if(roleGroup == 1 ) "" else  " where role_group = {roleGroup} ")
+
+          ).on('roleGroup -> roleGroup).as( (get[Long]("id")~get[String]("name")).map(flatten) *)
       }
     }.info.fold(e => Seq(), s => s)
   }

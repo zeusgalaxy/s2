@@ -1,16 +1,16 @@
-@(id: Long, form: Form[PersonEdit])(implicit rq: security.CtxRqst[_], flash: Flash)
+@(id: Long, form: Form[Person])(implicit rq: security.CtxRqst[_], flash: Flash)
 
 @main( if(id == -1L) {"useradd.title"} else {"useredit.title"}, 'userEdit) {
 
     <h1>@Messages( if(id == -1L) "useradd.title" else "useredit.title" )</h1>
 
-    @form.errors.map { error =>
-        <p class="alert alert-error">
-            <strong>Please correct:</strong> @error.message       @* form.errors.foreach(e => e.message) *@
-        </p>
+    @if(form.hasErrors) {
+        <div class="alert alert-error">
+            <p><strong>Please correct:</strong> @form.errors.toString</p>
+        </div>
     }
 
-    <div class="row">
+<div class="row">
         <div class="span8">
         @if(id == -1L) {
             <form action="@routes.MiscController.userAddSubmit()"  method="POST" class="form-horizontal">
@@ -21,16 +21,35 @@
                 <fieldset>
                     <legend></legend>
 
+                    @* If the user has no filter on their rights in the area show them the company list. *@
+                    @* otherwise, use a hidden input with their company ID in it - lame security  *@
+                    @if(rq.isFiltered(security.tgUser)) {
+                        <input name="companyId" type="hidden" value="@form("companyId").value.getOrElse(0).toString" />
+                    }  else {
+                        <div class="control-group">
+                            <label class="control-label" for="companyId">@Messages("workouts.location.field.company")</label>
+                            <div class="controls">
+                                <select name="companyId" value="@form("companyId").value" class="span4">
+                                    <option value="">@Messages("workouts.location.field.company.options")</option>
+                                    @Company.reportCompanyOptions.map { opt =>
+                                    <option value="@opt._1" @if(opt._1 == form("companyId").value.getOrElse(0).toString){selected="yes"}>@opt._2</option>
+                                    }
+                                </select>
+                                <p class="help-block"></p>
+                            </div>
+                        </div>
+                    }
+
                     <div class="control-group">
-                        <label class="control-label" for="portalLogin"></label>
+                        <label class="control-label" for="portalLogin">@Messages("useredit.portalLogin")</label>
                         <div class="controls">
                             <input type="text" name="portalLogin" id="portalLogin" class="input-xlarge" placeholder="@Messages("useredit.portalLogin")"  value="@form("portalLogin").value">
-                            <p class="help-block">@Messages("user.edit.portalLogin.help")</p>
+                            <p class="help-block">@Messages("useredit.portalLogin.help")</p>
                         </div>
                     </div>
 
                     <div class="control-group">
-                        <label class="control-label" for="firstName"></label>
+                        <label class="control-label" for="firstName">@Messages("useredit.fname")</label>
                         <div class="controls">
                             <input type="text" name="firstName" id="firstName" class="input-xlarge" placeholder="@Messages("useredit.fname")"  value="@form("firstName").value">
                             <p class="help-block"></p>
@@ -38,7 +57,7 @@
                     </div>
 
                     <div class="control-group">
-                        <label class="control-label" for="lastName"></label>
+                        <label class="control-label" for="lastName">@Messages("useredit.lname")</label>
                         <div class="controls">
                             <input type="text" name="lastName" id="lastName" class="input-xlarge" placeholder="@Messages("useredit.lname")"  value="@form("lastName").value">
                             <p class="help-block"></p>
@@ -46,7 +65,7 @@
                     </div>
 
                     <div class="control-group">
-                        <label class="control-label" for="email"></label>
+                        <label class="control-label" for="email">@Messages("useredit.email")</label>
                         <div class="controls">
                             <input type="email" name="email" id="email" class="input-xlarge" placeholder="@Messages("useredit.email")"  value="@form("email").value">
                             <p class="help-block"></p>
@@ -54,7 +73,18 @@
                     </div>
 
                     <div class="control-group">
-                        <label class="control-label" for="password"></label>
+                        <label class="control-label" for="phone">@Messages("useredit.phone")</label>
+                        <div class="controls">
+                            <input type="phone" name="phone" id="phone" class="input-xlarge" placeholder="@Messages("useredit.phone")"  value="@form("phone").value">
+                            <p class="help-block"></p>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label" for="password">
+                            @if(id == -1L)  { @Messages("useredit.password") } else { @Messages("useredit.newpw") }
+                        </label>
+
                         <div class="controls">
                             @if(id == -1L)  {
                                 <input type="password" name="password" id="password" class="input-xlarge" placeholder="@Messages("useredit.password")" >
@@ -65,18 +95,30 @@
                         </div>
                     </div>
 
-@* TODO: - This should only be shown to Admin users  *@
 
-                    <div class="control-group">
-                        @* <label class="control-label" for="optionsCheckboxList">Checkboxes</label>  *@
-                        <div class="controls">
-                            <label class="checkbox">
-                                <input type="checkbox" name="optionsCheckboxList1" value="option1">
-                                @Messages("useredit.admin")
-                            </label>
-                            <p class="help-block">@Messages("useredit.adminhelp")</p>
+                    @*
+                    @Role.groupList(1).toString
+                    form Role = @form("roleId").value.getOrElse(0)
+                    *@
+
+                    @* This will only be shown to users who have Create rights here  *@
+                    @* otherwise, hidden input with their role in it.  *@
+                    @if(!rq.canCreate(security.tgUser)) {
+                        <input name="roleId" type="hidden" value="@form("roleId").value.getOrElse(0).toString" />
+                    }  else {
+                        <div class="control-group">
+                            <label class="control-label" for="roleId">@Messages("useredit.role")</label>
+                            <div class="controls">
+                                <select name="roleId" value="@form("roleId").value" class="span3">
+                                @* <option value="">@Messages("useredit.role.options")</option>  *@
+                                @Role.groupList(rq.context.user.get.roleId).map { opt =>
+                                <option value="@opt._1.toString" @if(opt._1.toString == form("roleId").value.getOrElse(0).toString){selected="yes"}>@opt._2</option>
+                                }
+                                </select>
+                                <p class="help-block">@Messages("useredit.role.help")</p>
+                            </div>
                         </div>
-                    </div>
+                    }
 
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary">@Messages("button.save")</button>

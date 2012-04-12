@@ -45,12 +45,16 @@ object MiscController extends Controller {
    */
   val personForm = Form(
     mapping(
+      "id"          -> ignored(-1L),
+      "companyId"   -> longNumber,
+      "roleId"      -> longNumber,
       "firstName"   -> text,
       "lastName"    -> text,
       "portalLogin" -> nonEmptyText,
       "password"    -> optional(text),
-      "email"       -> email
-    )(PersonEdit.apply)(PersonEdit.unapply)
+      "email"       -> email,
+      "phone"       -> text
+    )(Person.apply)(Person.unapply)
   )
 
   /** Use the passed in ID value to get the user from the DB. Present that info in the form above.
@@ -59,7 +63,7 @@ object MiscController extends Controller {
   def userEdit(id: Long) = IfCanUpdate(tgUser) {
     implicit request =>
       Person.findById(id).map(user => {
-        Ok(html.userEdit(id, personForm.fill(PersonEdit(user.firstName, user.lastName, user.portalLogin, None, user.email))))
+        Ok(html.userEdit(id, personForm.fill(user)) )
       }).getOrElse(Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred.")))
   }
 
@@ -69,11 +73,11 @@ object MiscController extends Controller {
   def userEditSubmit(id: Long ) = IfCanUpdate(tgUser) {
     implicit request => {
       personForm.bindFromRequest.fold(
-        formErrors => BadRequest(html.userEdit(id, formErrors)),
-        uE => Person.update(id, uE.toPerson(companyId = request.context.user.get.companyId, roleId = request.context.user.get.roleId), request.context.user.get.id )
+        formErrors => BadRequest(html.userEdit(id, formErrors)),                          // TODO: verify the user rights and role make sense = security
+        person => Person.update(id, person, request.context.user.get.id )                 // uE.toPerson(companyId = request.context.user.get.companyId, roleId = request.context.user.get.roleId),
         match {
           case 1 =>
-            Redirect(routes.MiscController.userList()).flashing("success" -> ("User: " + uE.email + " updated."))
+            Redirect(routes.MiscController.userList()).flashing("success" -> ("User: " + person.email + " updated."))
           case _ =>
             Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred. Make sure the email address is unique."))
         }
@@ -96,13 +100,12 @@ object MiscController extends Controller {
     implicit request => {
       personForm.bindFromRequest.fold(
         formErrors => BadRequest(html.userEdit(-1, formErrors)),
-        pE => {
-          Logger.debug("UserAddSubmit uE to be added: "+pE.toString)
-          val adminUser = request.context.user
-          Logger.debug("UserAddSubmit user from uE: "+pE.toPerson(companyId = adminUser.get.companyId, roleId = adminUser.get.roleId))
-          Person.insert(pE.toPerson(companyId = adminUser.get.companyId, roleId = adminUser.get.roleId), request.context.user.get.id )  match {
+        person => {
+          Logger.debug("UserAddSubmit to be add: "+person)
+          Logger.debug("UserAddSubmit user from uE: "+person)
+          Person.insert(person, request.context.user.get.id )  match {               // (companyId = adminUser.get.companyId, roleId = adminUser.get.roleId),
             case Some(u) =>
-              Redirect(routes.MiscController.userList()).flashing("success" -> ("User added."))
+              Redirect(routes.MiscController.userList()).flashing("success" -> ("User " + person.portalLogin+ " added."))
             case _ =>
               Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred. Make sure the email address is unique."))
             }
