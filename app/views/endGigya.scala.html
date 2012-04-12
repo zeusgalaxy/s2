@@ -1,0 +1,36 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Netpulse</title>
+    <script type="text/javascript" src="http://ec2.netpulse.ws/js/jquery-1.4.4.min.js"></script>
+    <script type="text/javascript"
+            src="http://cdn.gigya.com/js/socialize.js?apiKey=2_7kdDan99DJTVE_z9QKYSno1AvTyz8h5bM9UiEfq_HaTfQgIeeCmRY7wvf11WJhcz">
+        {
+            siteName: 'netpulse.ws (Netpulse Fitness Entertai)',
+                    enabledProviders: 'facebook'
+        }
+    </script>
+    <script type="text/javascript">
+        gigya.socialize.getUserInfo({
+            callback: function(response) {
+                if (response.errorCode == 0)
+                {
+                    var query = [];
+                    $.each(response.user, function(index, value) {
+                        query.push( index + '=' + value );
+                    });
+                    window.location = window.location + '&' + query.join('&');
+                }
+                /* 	    else
+                        {
+                            //handle errors
+                            alert("An error has occurred!" + '\n' +
+                                "Error details: " + response.errorMessage + '\n' +
+                                "In method: " + response.operation);
+                        }
+                */
+            }
+        });
+    </script>
+</head>
+</html>

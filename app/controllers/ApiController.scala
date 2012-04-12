@@ -239,13 +239,31 @@ object ApiController extends Controller {
         Ok(<api error={apiGeneralError.toString}></api>)
   }
 
+  /**Initiates the gigya/facebook login sequence.
+   *
+   * @return HTML/Javascript provided by gigya
+   */
+  def beginLogin = Unrestricted {
+    implicit request =>
+      Ok(html.beginLogin())
+  }
+
+  /**Initiates the gigya/facebook connection sequence.
+   *
+   * @return HTML/Javascript provided by gigya
+   */
+  def beginConnection = Unrestricted {
+    implicit request =>
+      Ok(html.beginConnection())
+  }
+
   /**Landing page to give to Gigya so they can call back to Netpulse after completing social login.
    *
-   * @return A blank page
+   * @return HTML/Javascript provided by gigya
    */
-  def gigyaLogin = Unrestricted {
+  def endGigya = Unrestricted {
     implicit request =>
-      Ok(html.gigya())
+      Ok(html.endGigya())
   }
 
   /**Proxy any Gigya call by building the request as needed by Gigya (i.e, with the proper security headers, etc.)

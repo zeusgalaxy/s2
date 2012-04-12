@@ -1,0 +1,109 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Netpulse</title>
+    <script type="text/javascript" src="http://ec2.netpulse.ws/js/jquery-1.4.4.min.js"></script>
+    <script type="text/javascript">
+        /* AUTHORIZATION: -------------------------------- */
+        // Authorization sub-routine to regain js control.
+
+        /*
+        * Local file testing only
+        */
+        npfunctions = {
+            getServerLocation : function() {
+                return 'http://qa-s2.netpulse.ws';
+            }
+        };
+
+        // Parses a URL into discrete components
+        function parseURL(url) {
+            var a =  document.createElement('a');
+            a.href = url;
+            return {
+                source: url,
+                protocol: a.protocol.replace(':',''),
+                host: a.host,
+                hostname: a.hostname,
+                port: a.port,
+                query: a.search,
+                params: (function(){
+                    var ret = {},
+                            seg = a.search.replace(/^\?/,'').split('&'),
+                            len = seg.length, i = 0, s;
+                    for (;i<len;i++) {
+                        if (!seg[i]) { continue; }
+                        s = seg[i].split('=');
+                        ret[s[0]] = s[1];
+                    }
+                    return ret;
+                })(),
+                file: (a.pathname.match(/\/([^\/?#]+)$/i) || [,''])[1],
+                hash: a.hash.replace('#',''),
+                path: a.pathname.replace(/^([^\/])/,'/$1'),
+                relative: (a.href.match(/tps?:\/\/[^\/]+(.+)/) || [,''])[1],
+                segments: a.pathname.replace(/^\//,'').split('/')
+            };
+        };
+
+        // Authorization routine constructor.
+        function authorize(provider) { // Used in Login & Registration.
+            var auth = this;
+            // More information on settings can be found at
+            // http://developers.gigya.com/020_Client_API/020_Methods/socialize.login
+            auth.APIKey = '2_7kdDan99DJTVE_z9QKYSno1AvTyz8h5bM9UiEfq_HaTfQgIeeCmRY7wvf11WJhcz'; // Netpulse production
+//  auth.APIKey = '2_yM8ACPAsEmp9GNWZaf9pms70VCJ317NzLHdkDRNHsAwIgLFrt1xKmOjmqt1lnTS1'; // Gigya Test
+            auth.gcidStorageKey = 'gcid_' + auth.APIKey;
+            auth.provider = (!provider) ? "facebook" : provider;
+            return(auth);
+        }
+
+        // Authorization sub-routine to setup login.
+        authorize.prototype.setup = function(provider) {
+            var auth = this;
+
+            auth.params = {
+                provider: (provider ? provider : auth.provider),
+                redirectURL: npfunctions.getServerLocation( ) + '/s2/endGigya?provider=' + auth.provider,
+                authFlow:'redirect',
+                context: auth
+            };
+            return(auth);
+        };
+
+        // Authorization sub-routine for login.
+        // Override if different from default
+        authorize.prototype.login = function() {
+            var auth = this;
+            $.getScript('https://cdns.gigya.com/js/socialize.js?apiKey=' + auth.APIKey, function(data, textStatus) {
+                auth.gigya = gigya;
+                auth.params.cid = 'login.' + loc.params.skin;
+                auth.gigya.services.socialize.login(auth.params);
+            });
+            return(auth);
+        };
+
+        //Authorization sub-routine for addConnection.
+        //Override if different from default
+        authorize.prototype.addConnection = function() {
+            var auth = this;
+            $.getScript('https://cdns.gigya.com/js/socialize.js?apiKey=' + auth.APIKey, function(data, textStatus) {
+                auth.gigya = gigya;
+                auth.params.cid = 'addConnection.' + loc.params.skin;
+                auth.gigya.services.socialize.addConnection(auth.params);
+            });
+            return(auth);
+        };
+        /* END AUTHORIZATION: General ----------------------------- */
+    </script>
+
+    <script type="text/javascript">
+        var provider = 'facebook';  // Default
+        var loc = parseURL(window.location);
+        if (loc.params.provider) {
+            provider = loc.params.provider;
+        }
+        var authorizeFacebook = new authorize(provider).setup().login();
+    </script>
+</head>
+</html>

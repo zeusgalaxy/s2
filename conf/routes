@@ -22,10 +22,12 @@ GET     /userAdd                            controllers.MiscController.userAdd()
 POST    /userAddSubmit                      controllers.MiscController.userAddSubmit()
 GET     /userList                           controllers.MiscController.userList(p:Int ?= 0, s:Int ?= 1, f ?= "" )
 
-GET     /gigyaLogin                         controllers.ApiController.gigyaLogin
-POST    /gigyaLogin                         controllers.ApiController.gigyaLogin
-GET     /s2/gigyaLogin                      controllers.ApiController.gigyaLogin
-POST    /s2/gigyaLogin                      controllers.ApiController.gigyaLogin
+GET     /beginLogin                         controllers.ApiController.beginLogin
+GET     /s2/beginLogin                      controllers.ApiController.beginLogin
+GET     /beginConnection                    controllers.ApiController.beginConnection
+GET     /s2/beginConnection                 controllers.ApiController.beginConnection
+GET     /endGigya                           controllers.ApiController.endGigya
+GET     /s2/endGigya                        controllers.ApiController.endGigya
 GET     /gigyaProxy/:method                 controllers.ApiController.gigyaProxy(method: String)
 GET     /s2/gigyaProxy/:method              controllers.ApiController.gigyaProxy(method: String)
 

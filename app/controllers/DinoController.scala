@@ -16,7 +16,7 @@ import play.api.Logger
  * Controller for server API functions which "wrap" around old Dino functions.
  */
 object DinoController extends Controller {
-  
+
   lazy val dinoTimeout = current.configuration.getString("dino.timeout").getOrElse(throw new Exception("dino.timeout not in configuration")).toInt
 
   /** Forwards a request received by S2 on to Dino for processing. This method is used instead
@@ -119,6 +119,7 @@ object DinoController extends Controller {
    * we know that the link to gigya has already been established.
    *
    * An example call to test:
+   * http://localhost:9000/n5iregister.jsp?machine_id=18&id=9194247300&membership_id=1&email=dOxHaxVE73%91900stross.com&pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15&first_name=kenner&last_name=stross&city=denver&state=CO&country=usa
    * http://localhost:9000/n5iregister.jsp?machine_id=1070&id=2115180102&membership_id=1&email=sOCClkoE102%40stross.com&pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15&gigya_id=123
    */
   def register = Unrestricted {
