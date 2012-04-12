@@ -17,7 +17,8 @@ case class Company(id: Long, name: String)
  */
 object Company {
 
-  /** Basic parsing of companies derived from location table in report data warehouse.
+  /**
+   * Basic parsing of companies table.
    *
    */
   val reportBasic = {

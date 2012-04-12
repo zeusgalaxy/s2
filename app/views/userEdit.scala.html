@@ -23,10 +23,11 @@
 
                     @* If the user has no filter on their rights in the area show them the company list. *@
                     @* otherwise, use a hidden input with their company ID in it - lame security  *@
-                    @if(rq.isFiltered(security.tgUser)) {
+                    <div class="control-group">
+                     @if(rq.isFiltered(security.tgUser)) {
                         <input name="companyId" type="hidden" value="@form("companyId").value.getOrElse(0).toString" />
-                    }  else {
-                        <div class="control-group">
+                     }  else {
+
                             <label class="control-label" for="companyId">@Messages("workouts.location.field.company")</label>
                             <div class="controls">
                                 <select name="companyId" value="@form("companyId").value" class="span4">
@@ -37,8 +38,8 @@
                                 </select>
                                 <p class="help-block"></p>
                             </div>
-                        </div>
-                    }
+                     }
+                    </div>
 
                     <div class="control-group">
                         <label class="control-label" for="portalLogin">@Messages("useredit.portalLogin")</label>
@@ -96,29 +97,31 @@
                     </div>
 
 
-                    @*
-                    @Role.groupList(1).toString
+                    @* TODO: Remove these test statements...
+                    userRole = @rq.context.user.get.roleId
+                    GroupList = @Role.groupList(1).toString
+                    userGroupList = @Role.groupList(rq.context.user.get.roleId).toString
                     form Role = @form("roleId").value.getOrElse(0)
                     *@
 
                     @* This will only be shown to users who have Create rights here  *@
                     @* otherwise, hidden input with their role in it.  *@
+                    <div class="control-group">
                     @if(!rq.canCreate(security.tgUser)) {
                         <input name="roleId" type="hidden" value="@form("roleId").value.getOrElse(0).toString" />
                     }  else {
-                        <div class="control-group">
+
                             <label class="control-label" for="roleId">@Messages("useredit.role")</label>
                             <div class="controls">
                                 <select name="roleId" value="@form("roleId").value" class="span3">
-                                @* <option value="">@Messages("useredit.role.options")</option>  *@
-                                @Role.groupList(rq.context.user.get.roleId).map { opt =>
-                                <option value="@opt._1.toString" @if(opt._1.toString == form("roleId").value.getOrElse(0).toString){selected="yes"}>@opt._2</option>
+                                @Role.groupList(rq.context.user.get.roleId).map { role =>
+                                <option value="@role.id.toString" @if(role.id.toString == form("roleId").value.getOrElse(0).toString){selected="yes"}>@role.name</option>
                                 }
                                 </select>
                                 <p class="help-block">@Messages("useredit.role.help")</p>
                             </div>
-                        </div>
                     }
+                    </div>
 
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary">@Messages("button.save")</button>

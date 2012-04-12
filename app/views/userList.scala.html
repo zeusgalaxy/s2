@@ -60,7 +60,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
             <tr>
                 @header(7, "Last Name")
                 @header(6, "First Name")
-                @header(5, "Email")
+                @header(5, "Login")
                 @header(1, "Role")
             </tr>
             </thead>
@@ -73,9 +73,9 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
                 <td>@u.firstName</td>
 
-                <td><a href="@routes.MiscController.userEdit(u.id)">@u.email</a></td>
+                <td><a href="@routes.MiscController.userEdit(u.id)">@u.portalLogin</a></td>
 
-                <td>@Role.findById(u.roleId).getOrElse((0,"",0))._2</td>
+                <td>@Role.findById(u.roleId).getOrElse(Role(0,"",0)).name</td>
                 </a>
             </tr>
             }

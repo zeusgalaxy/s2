@@ -15,7 +15,7 @@ object PersonSpec extends Specification {
   import models._
 
   "The Person Model " should {
-    " if exists and then add back a test user, " +
+    " check if exists and add a test user if not, " +
       "find them by email and id, " +
       "Authenticate them, " +
       "reject bad auth attempts, " +
@@ -25,13 +25,12 @@ object PersonSpec extends Specification {
 
         val devMode = true
 
-        val fakePerson = Person(id = 0, companyId=2, roleId=1, firstName = "Joe", lastName = "Sample", portalLogin = "loginstring",
-          portalPassword = Some("testPassword"), email = "joe@sample.com", phone = "(555) 555-1212",
-          lastLogin = Some((new DateTime)), activeStatus = 1)
+        val fakePerson = Person(id = 0, companyId=1, roleId=1, firstName = "Joe", lastName = "Sample", portalLogin = "loginstring",
+          portalPassword = Some("testPassword"), email = "joe@sample.com", phone = "(555) 555-1212")
+          // lastLogin = Some((new DateTime)), activeStatus = 1
 
-        val fakePerson2 = Person(id = 0, companyId=2, roleId=1, firstName = "JimBo", lastName = "Peebles", portalLogin = "JimBologin",
-          portalPassword = Some("JimboPassword"), email = "jimbo@sample.com", phone = "(555) 555-1212",
-          lastLogin = Some((new DateTime)), activeStatus = 1)
+        val fakePerson2 = Person(id = 0, companyId=1, roleId=1, firstName = "JimBo", lastName = "Peebles", portalLogin = "JimBologin",
+          portalPassword = Some("JimboPassword"), email = "jimbo@sample.com", phone = "(555) 555-1212")
 
         var fpID = -1L
 
@@ -48,8 +47,12 @@ object PersonSpec extends Specification {
          */
         var pGet = Person.findByLogin(fakePerson.portalLogin)
         if (pGet != None) Person.hardDelete(pGet.get.id, fpID)
+        var pGet1 = Person.findByLogin(fakePerson2.portalLogin)
+        if (pGet1 != None) Person.hardDelete(pGet1.get.id, fpID)
 
-        val pAdd = Person.insert(fakePerson)
+        val pAdd = Person.insert(fakePerson, 8234)
+        if (devMode) println("pAdd = " + pAdd.toString)
+        // Cannot add or update a child row: a foreign key constraint fails (`s2`.`person`, CONSTRAINT `company_person_fk` FOREIGN KEY (`company_id`) REFERENCES `company` (`id`))
         pAdd.get must be_>(-1L)
 
 
@@ -57,9 +60,11 @@ object PersonSpec extends Specification {
          * get the fake user's ID from their email and check via findById
          */
         val pCheck = Person.findByLogin(fakePerson.portalLogin)
+        if (devMode) println("pCheck = " + pCheck.toString)
         pCheck.get.firstName must equalTo(fakePerson.firstName)
 
         val pCheck1 = Person.findById(pCheck.get.id)
+        if (devMode) println("pCheck1 = " + pCheck1.toString)
         pCheck1.get.firstName must equalTo(pCheck.get.firstName)
 
         compareP(pCheck1.get, fakePerson) must equalTo(true)
@@ -89,25 +94,29 @@ object PersonSpec extends Specification {
          * Update the fake person
          */
         val p1up = Person.findByLogin(fakePerson.portalLogin)
+        if (devMode) println("p1up = " + p1up.toString)
         p1up.get.firstName mustEqual fakePerson.firstName
 
-//        val p2up = Person.update(p1up.get.id, PersonEdit(fakePerson2.firstName, fakePerson2.lastName, fakePerson2.portalLogin,
-//          fakePerson2.portalPassword, fakePerson2.email).toPerson, fpID )
-//        p2up mustEqual (1L)
+        val p2up = Person.update(p1up.get.id, fakePerson2, fpID )
+        if (devMode) println("p2up = " + p2up.toString)
+        p2up mustEqual (1L)
 
         val p3up = Person.findById(p1up.get.id)
-
+        if (devMode) println("p3up = " + p3up.toString)
+        p3up.get.companyId mustEqual(fakePerson2.companyId)
+        p3up.get.firstName mustEqual(fakePerson2.firstName)
+        p3up.get.lastName mustEqual(fakePerson2.lastName)
+        p3up.get.email mustEqual(fakePerson2.email)
 
         /**
-         * Delete the fake person
+         * Delete the updated fake person
          */
         val p1del = Person.findByLogin(fakePerson2.portalLogin)
-        p1del.get.firstName mustEqual fakePerson2.firstName
-
+        if (devMode) println("p1del = " + p1del.toString)
         val delcnt = Person.hardDelete(p1del.get.id, fpID)
         delcnt mustEqual(1L)
 
-        val p2del = Person.findByLogin(fakePerson2.portalLogin)
+        val p2del = Person.findByLogin(fakePerson.portalLogin)
         p2del mustEqual None
 
 

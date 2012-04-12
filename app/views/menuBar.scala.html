@@ -21,7 +21,7 @@
                 <li class="@{if(active == 'contact) "active" else "inactive"}"><a href="">@Messages("menu.contact")</a></li>
 
                 @if(rq.context.user.isDefined) {
-                    <li class="@{if(active == 'logout) "active" else "inactive"}"><a href="@routes.AuthController.logout()">@Messages("menu.logout")</a></li>
+                    <li class="@{if(active == 'logout) "active" else "inactive"}"><a href="@routes.AuthController.logout()">@Messages("menu.logout") @rq.context.user.get.firstName</a></li>
                 } else {
                     <li class="@{if(active == 'login) "active" else "inactive"}"><a href="@routes.AuthController.promptLogin(rq.request.path)">@Messages("menu.login")</a></li>
                 }

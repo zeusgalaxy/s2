@@ -29,13 +29,13 @@ object RoleSpec extends Specification {
         val npA = Role.findByName("npAdmin")
         if (dev) println("npA = "+npA.toString)
         npA mustNotEqual(None)
-        npA mustEqual(Role.findById(npA.get._1 ))
+        npA mustEqual(Role.findById(npA.get.id ))
 
 
         val npU = Role.findByName("npUser")
         if (dev) println("npU = "+npU.toString)
         npU mustNotEqual(None)
-        npU mustEqual(Role.findById(npU.get._1 ))
+        npU mustEqual(Role.findById(npU.get.id ))
 
         val oemA = Role.findByName("oemAdmin")
         if (dev) println("oemA = "+oemA.toString)
@@ -48,11 +48,9 @@ object RoleSpec extends Specification {
         /**
          *  test the listing of groups
          */
-        val groupList = Role.groupList(npA.get._3)
+        val groupList = Role.groupList(npA.get.id)
         if (dev) println("groupList ="+groupList)
-        groupList mustNotEqual(None)
-        val badList = groupList.filter( g => g._3 != 1)
-        badList mustEqual(List())
+        groupList mustNotEqual(Seq())
 
       }
     }

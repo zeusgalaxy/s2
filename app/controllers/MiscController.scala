@@ -34,6 +34,16 @@ object MiscController extends Controller {
   def index = Unrestricted {
     implicit request => {
       // Insert SQL test code here to see in log.
+      val fakePerson = Person(id = 0, companyId=1, roleId=1, firstName = "Joe", lastName = "Sample", portalLogin = "loginstring",
+        portalPassword = Some("testPassword"), email = "joe@sample.com", phone = "(555) 555-1212")
+
+      val fakePerson2 = Person(id = 0, companyId=1, roleId=1, firstName = "JimBo", lastName = "Peebles", portalLogin = "JimBologin",
+        portalPassword = Some("JimboPassword"), email = "jimbo@sample.com", phone = "(555) 555-1212")
+
+      // val pAdd = Person.insert(fakePerson, 8234)
+      val p2up = Person.update(186994, fakePerson2, 8234 )
+
+
       Ok(html.index("This is the main page parameter: " ))
     }
   }
