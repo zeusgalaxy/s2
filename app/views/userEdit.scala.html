@@ -21,13 +21,13 @@
                 <fieldset>
                     <legend></legend>
 
-                    @* If the user has no filter on their rights in the area show them the company list. *@
-                    @* otherwise, use a hidden input with their company ID in it - lame security  *@
+                    @* If the user has no filter on their rights in the user area show them the company list. *@
+                    @* otherwise their company_id is added in the controller  *@
                     <div class="control-group">
                      @if(rq.isFiltered(security.tgUser)) {
+                        @* the company id is set in the controller but on an add the form needs something or it gives an error *@
                         <input name="companyId" type="hidden" value="@form("companyId").value.getOrElse(0).toString" />
-                     }  else {
-
+                     } else {
                             <label class="control-label" for="companyId">@Messages("workouts.location.field.company")</label>
                             <div class="controls">
                                 <select name="companyId" value="@form("companyId").value" class="span4">
@@ -105,12 +105,10 @@
                     *@
 
                     @* This will only be shown to users who have Create rights here  *@
-                    @* otherwise, hidden input with their role in it.  *@
                     <div class="control-group">
-                    @if(!rq.canCreate(security.tgUser)) {
-                        <input name="roleId" type="hidden" value="@form("roleId").value.getOrElse(0).toString" />
-                    }  else {
-
+                        @if(!rq.canCreate(security.tgUser)) {
+                            <input name="roleId" type="hidden" value="@form("roleId").value.getOrElse(0).toString" />
+                        }  else {
                             <label class="control-label" for="roleId">@Messages("useredit.role")</label>
                             <div class="controls">
                                 <select name="roleId" value="@form("roleId").value" class="span3">
@@ -120,7 +118,7 @@
                                 </select>
                                 <p class="help-block">@Messages("useredit.role.help")</p>
                             </div>
-                    }
+                        }
                     </div>
 
                     <div class="form-actions">

@@ -124,31 +124,33 @@ object Person {
    * @param filter Filter applied on the firstName column
    * @return a list of users to display a page with
    */
-  def list(page: Int = 0, pageSize: Int = 15, orderBy: Int = 1, filter: String = "%"): Page[Person] = {
+  def list(page: Int = 0, pageSize: Int = 15, orderBy: Int = 1, userFilter: String = "%", companyFilter: String): Page[Person] = {
 
     implicit val loc = VL("Person.list")
 
     val offset = pageSize * page
-
+    Logger.debug("orderBy = "+orderBy.toString)
     vld {
       DB.withConnection("s2") {
         implicit connection =>
 
+          val companyWhere = if (companyFilter.isEmpty) "" else " and company_id = "+companyFilter+" "
+
           val p = SQL(
             "select " + selectFields + " from person " +
-              "where ifnull(last_name,'') like {filter} " + standardWhere +
+              "where ifnull(last_name,'') like {filter} " + standardWhere +  companyWhere +
               " order by {orderBy} limit {pageSize} offset {offset} "
           ).on(
             'pageSize -> pageSize,
             'offset -> offset,
-            'filter -> filter,
+            'filter -> userFilter,
             'orderBy -> orderBy
           ).as(Person.simple *)
 
           val totalRows = SQL(
             "select count(*) from person where ifnull(last_name,'') like {filter} "+ standardWhere
           ).on(
-            'filter -> filter
+            'filter -> userFilter
           ).as(scalar[Long].single)
 
           Page(p, Seq(), page, offset, totalRows)
@@ -161,10 +163,12 @@ object Person {
    * Insert a new Person.
    *
    * @param person The person values.
+   * @param companyId Override the company id in the person object. This is passed in here so the controller
+   *                  can decide if the user should be allowed to add users not in their company.
    * @param createdBy the person ID of the user making this change.
    *@return Optional Long ID
    */
-  def insert(person: Person, createdBy: Long): Option[Long] = {
+  def insert(person: Person, companyId: Long, createdBy: Long): Option[Long] = {
 
     implicit val loc = VL("Person.insert")
 
@@ -181,7 +185,7 @@ object Person {
 
             """
           ).on(
-            'companyId      -> person.companyId,
+            'companyId      -> companyId,
             'roleId         -> person.roleId,
             'firstName      -> person.firstName,
             'lastName       -> person.lastName,
@@ -209,7 +213,7 @@ object Person {
    * @param updatedBy, The person ID of the user updating this record.
    * @return int the number of rows updated
    */
-  def update(id: Long, person: Person, updatedBy: Long) = {
+  def update(id: Long, person: Person, companyId: Long, roleId: Long,  updatedBy: Long) = {
 
     implicit val loc = VL("Person.update")
 
@@ -228,8 +232,8 @@ object Person {
             """
         ).on(
           'id             -> id,
-          'companyId      -> person.companyId,
-          'roleId         -> person.roleId,
+          'companyId      -> (if (companyId != -1) companyId else person.companyId),
+          'roleId         -> (if (roleId != -1 ) roleId else person.roleId),
           'firstName      -> person.firstName,
           'lastName       -> person.lastName,
           'portalLogin    -> person.portalLogin,

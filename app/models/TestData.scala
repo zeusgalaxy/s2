@@ -108,6 +108,10 @@ vt_user_id = '', vt_status = 0, home_club_id = 99, created_at = now(), updated_a
       select 1, 1, 1, 1, 1, now(), 8234, id, col2 from role join
       (select id as col2 from target where name ='roleSetup') u where name='oemAdmin';
 
+    insert into rights (c, r, u, d, filter, created_at, created_by, role_id, target_id)
+      select 1, 1, 1, 1, 1, now(), 8234, id, col2 from role join
+      (select id as col2 from target where name ='reportWorkoutLocations') u where name='oemAdmin';
+
   """
 
 

@@ -34,16 +34,6 @@ object MiscController extends Controller {
   def index = Unrestricted {
     implicit request => {
       // Insert SQL test code here to see in log.
-      val fakePerson = Person(id = 0, companyId=1, roleId=1, firstName = "Joe", lastName = "Sample", portalLogin = "loginstring",
-        portalPassword = Some("testPassword"), email = "joe@sample.com", phone = "(555) 555-1212")
-
-      val fakePerson2 = Person(id = 0, companyId=1, roleId=1, firstName = "JimBo", lastName = "Peebles", portalLogin = "JimBologin",
-        portalPassword = Some("JimboPassword"), email = "jimbo@sample.com", phone = "(555) 555-1212")
-
-      // val pAdd = Person.insert(fakePerson, 8234)
-      val p2up = Person.update(186994, fakePerson2, 8234 )
-
-
       Ok(html.index("This is the main page parameter: " ))
     }
   }
@@ -83,8 +73,16 @@ object MiscController extends Controller {
   def userEditSubmit(id: Long ) = IfCanUpdate(tgUser) {
     implicit request => {
       personForm.bindFromRequest.fold(
-        formErrors => BadRequest(html.userEdit(id, formErrors)),                          // TODO: verify the user rights and role make sense = security
-        person => Person.update(id, person, request.context.user.get.id )                 // uE.toPerson(companyId = request.context.user.get.companyId, roleId = request.context.user.get.roleId),
+        formErrors => BadRequest(html.userEdit(id, formErrors)),
+        person =>
+          Person.update(
+            id,
+            person,
+            // Control the companyId and roleId values here based on user rights
+            if (request.isFiltered) request.context.user.get.companyId else person.companyId,
+            if (request.canCreate(security.tgUser)) request.context.user.get.roleId else person.roleId,
+            request.context.user.get.id
+          )
         match {
           case 1 =>
             Redirect(routes.MiscController.userList()).flashing("success" -> ("User: " + person.email + " updated."))
@@ -99,12 +97,11 @@ object MiscController extends Controller {
    */
   def userAdd() = IfCanUpdate(tgUser) {
     implicit request => {
-      Logger.debug("in userAdd controller")
       Ok(html.userEdit(-1, personForm))
     } 
   }
 
-  /** Handle form submission from an edit.
+  /** Handle form submission from an add.
    */
   def userAddSubmit() = IfCanUpdate(tgUser) {
     implicit request => {
@@ -112,8 +109,12 @@ object MiscController extends Controller {
         formErrors => BadRequest(html.userEdit(-1, formErrors)),
         person => {
           Logger.debug("UserAddSubmit to be add: "+person)
-          Logger.debug("UserAddSubmit user from uE: "+person)
-          Person.insert(person, request.context.user.get.id )  match {               // (companyId = adminUser.get.companyId, roleId = adminUser.get.roleId),
+          Person.insert(
+              person,
+              // If isFiltered put the admin user's company_id into the case class to be added
+              if (request.isFiltered) request.context.user.get.companyId else person.companyId,
+              request.context.user.get.id
+          )  match {               // (companyId = adminUser.get.companyId, roleId = adminUser.get.roleId),
             case Some(u) =>
               Redirect(routes.MiscController.userList()).flashing("success" -> ("User " + person.portalLogin+ " added."))
             case _ =>
@@ -132,7 +133,8 @@ object MiscController extends Controller {
   def userList(page: Int, orderBy: Int, filter: String) = IfCanRead(tgUser) {
     implicit request =>
       Ok(html.userList(
-        Person.list(page = page, orderBy = orderBy, filter = ("%" + filter + "%")),
+        // If the user is filtered pass Person.list their company info to limit their access here.
+        Person.list(page = page, orderBy = orderBy, userFilter = ("%" + filter + "%"),  companyFilter = if (!request.isFiltered) "" else request.context.user.get.companyId.toString  ),
         orderBy, filter
       ))
   }

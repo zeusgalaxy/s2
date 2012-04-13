@@ -95,7 +95,6 @@ object WorkoutLocation {
 
     Logger.info("Date range =" + sDate.toString + " to "+eDate.toString)
 
-    // TODO Wrap this block with a vld returning a Page[WorkoutLocation]
     vld {
 
        DB.withConnection("report") { implicit connection =>
