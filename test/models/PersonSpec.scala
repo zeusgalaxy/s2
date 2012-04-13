@@ -50,7 +50,7 @@ object PersonSpec extends Specification {
         var pGet1 = Person.findByLogin(fakePerson2.portalLogin)
         if (pGet1 != None) Person.hardDelete(pGet1.get.id, fpID)
 
-        val pAdd = Person.insert(fakePerson, 8234)
+        val pAdd = Person.insert(fakePerson, fakePerson.companyId, 8234)
         if (devMode) println("pAdd = " + pAdd.toString)
         // Cannot add or update a child row: a foreign key constraint fails (`s2`.`person`, CONSTRAINT `company_person_fk` FOREIGN KEY (`company_id`) REFERENCES `company` (`id`))
         pAdd.get must be_>(-1L)
@@ -97,13 +97,14 @@ object PersonSpec extends Specification {
         if (devMode) println("p1up = " + p1up.toString)
         p1up.get.firstName mustEqual fakePerson.firstName
 
-        val p2up = Person.update(p1up.get.id, fakePerson2, fpID )
+        val p2up = Person.update(p1up.get.id, fakePerson2, fakePerson2.companyId, fakePerson2.roleId, fpID )
         if (devMode) println("p2up = " + p2up.toString)
         p2up mustEqual (1L)
 
         val p3up = Person.findById(p1up.get.id)
         if (devMode) println("p3up = " + p3up.toString)
         p3up.get.companyId mustEqual(fakePerson2.companyId)
+        p3up.get.roleId mustEqual(fakePerson2.roleId)
         p3up.get.firstName mustEqual(fakePerson2.firstName)
         p3up.get.lastName mustEqual(fakePerson2.lastName)
         p3up.get.email mustEqual(fakePerson2.email)

@@ -210,6 +210,9 @@ object Person {
    *
    * @param id The person id
    * @param person, The person values from the Person class.
+   * @param companyId Allows the caller (controller) to override the companyId coming from the edit form for
+   *                  security reasons.
+   * @param roleId override the roleId for security reasons.
    * @param updatedBy, The person ID of the user updating this record.
    * @return int the number of rows updated
    */
