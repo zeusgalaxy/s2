@@ -2,7 +2,8 @@
 <html>
 <head>
     <title>Netpulse</title>
-    <script type="text/javascript" src="http://ec2.netpulse.ws/js/jquery-1.4.4.min.js"></script>
+    <!-- <script type="text/javascript" src="http://ec2.netpulse.ws/js/jquery-1.4.4.min.js"></script> -->
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
     <script type="text/javascript">
         /* AUTHORIZATION: -------------------------------- */
         // Authorization sub-routine to regain js control.
@@ -10,11 +11,11 @@
         /*
         * Local file testing only
         */
-        npfunctions = {
-            getServerLocation : function() {
-                return 'http://qa-s2.netpulse.ws';
-            }
-        };
+        function getServerLocation() {
+//  return 'http://qa-s2.netpulse.ws';
+// TODO TEST ONLY
+            return 'http://qa-ec2.netpulse.ws/pantheon/tmp';
+        }
 
         // Parses a URL into discrete components
         function parseURL(url) {
@@ -52,8 +53,7 @@
             // More information on settings can be found at
             // http://developers.gigya.com/020_Client_API/020_Methods/socialize.login
             auth.APIKey = '2_7kdDan99DJTVE_z9QKYSno1AvTyz8h5bM9UiEfq_HaTfQgIeeCmRY7wvf11WJhcz'; // Netpulse production
-//  auth.APIKey = '2_yM8ACPAsEmp9GNWZaf9pms70VCJ317NzLHdkDRNHsAwIgLFrt1xKmOjmqt1lnTS1'; // Gigya Test
-            auth.gcidStorageKey = 'gcid_' + auth.APIKey;
+//    auth.APIKey = '2_yM8ACPAsEmp9GNWZaf9pms70VCJ317NzLHdkDRNHsAwIgLFrt1xKmOjmqt1lnTS1'; // Gigya Test
             auth.provider = (!provider) ? "facebook" : provider;
             return(auth);
         }
@@ -64,7 +64,7 @@
 
             auth.params = {
                 provider: (provider ? provider : auth.provider),
-                redirectURL: npfunctions.getServerLocation( ) + '/s2/endGigya?provider=' + auth.provider,
+                redirectURL: getServerLocation( ) + '/s2/endGigya.html?provider=' + auth.provider,
                 authFlow:'redirect',
                 context: auth
             };
@@ -73,14 +73,19 @@
 
         // Authorization sub-routine for login.
         // Override if different from default
-        authorize.prototype.login = function() {
+        authorize.prototype.login = function () {
             var auth = this;
-            $.getScript('https://cdns.gigya.com/js/socialize.js?apiKey=' + auth.APIKey, function(data, textStatus) {
+            $.getScript('https://cdns.gigya.com/js/socialize.js?apiKey=' + auth.APIKey, function (data, textStatus) {
                 auth.gigya = gigya;
                 auth.params.cid = 'login.' + loc.params.skin;
-                auth.gigya.services.socialize.login(auth.params);
+
+                auth.gigya.socialize.getUserInfo({
+                    callback: function (e) {
+                        auth.gigya.services.socialize.login(auth.params);
+                    }
+                });
             });
-            return(auth);
+            return (auth);
         };
 
         //Authorization sub-routine for addConnection.
@@ -94,16 +99,32 @@
             });
             return(auth);
         };
+
         /* END AUTHORIZATION: General ----------------------------- */
     </script>
 
     <script type="text/javascript">
         var provider = 'facebook';  // Default
+        var skin = 'none';
         var loc = parseURL(window.location);
         if (loc.params.provider) {
             provider = loc.params.provider;
         }
-        var authorizeFacebook = new authorize(provider).setup().login();
+        if (loc.params.skin) {
+            skin = loc.params.skin;
+        }
+
+        //setTimeout(function() {
+        $(document).ready(function() {
+            if (typeof(npfunctions.remove_file) == 'function') {
+                npfunctions.remove_file('/tmp/gigya.json');
+                npfunctions.remove_file('/tmp/gigya.cookies');
+            }
+            var authorizeFacebook = new authorize(provider).setup().login();
+        });
+        //}, 1000);
     </script>
 </head>
+<body>
+</body>
 </html>

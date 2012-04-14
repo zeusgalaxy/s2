@@ -2,35 +2,73 @@
 <html>
 <head>
     <title>Netpulse</title>
-    <script type="text/javascript" src="http://ec2.netpulse.ws/js/jquery-1.4.4.min.js"></script>
-    <script type="text/javascript"
-            src="http://cdn.gigya.com/js/socialize.js?apiKey=2_7kdDan99DJTVE_z9QKYSno1AvTyz8h5bM9UiEfq_HaTfQgIeeCmRY7wvf11WJhcz">
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="http://cdn.gigya.com/js/socialize.js?apiKey=2_7kdDan99DJTVE_z9QKYSno1AvTyz8h5bM9UiEfq_HaTfQgIeeCmRY7wvf11WJhcz">
         {
             siteName: 'netpulse.ws (Netpulse Fitness Entertai)',
                     enabledProviders: 'facebook'
         }
     </script>
     <script type="text/javascript">
-        gigya.socialize.getUserInfo({
-            callback: function(response) {
-                if (response.errorCode == 0)
-                {
-                    var query = [];
-                    $.each(response.user, function(index, value) {
-                        query.push( index + '=' + value );
-                    });
-                    window.location = window.location + '&' + query.join('&');
-                }
-                /* 	    else
-                        {
-                            //handle errors
-                            alert("An error has occurred!" + '\n' +
-                                "Error details: " + response.errorMessage + '\n' +
-                                "In method: " + response.operation);
+        //Parses a URL into discrete components
+        function parseURL(url) {
+            var a =  document.createElement('a');
+            a.href = url;
+            return {
+                source: url,
+                protocol: a.protocol.replace(':',''),
+                host: a.host,
+                hostname: a.hostname,
+                port: a.port,
+                query: a.search,
+                params: (function(){
+                    var ret = {},
+                            seg = a.search.replace(/^\?/,'').split('&'),
+                            len = seg.length, i = 0, s;
+                    for (;i<len;i++) {
+                        if (!seg[i]) { continue; }
+                        s = seg[i].split('=');
+                        ret[s[0]] = s[1];
+                    }
+                    return ret;
+                })(),
+                file: (a.pathname.match(/\/([^\/?#]+)$/i) || [,''])[1],
+                hash: a.hash.replace('#',''),
+                path: a.pathname.replace(/^([^\/])/,'/$1'),
+                relative: (a.href.match(/tps?:\/\/[^\/]+(.+)/) || [,''])[1],
+                segments: a.pathname.replace(/^\//,'').split('/')
+            };
+        };
+
+        $(document).ready(function() {
+            var loc = parseURL(window.location);
+            if (typeof(loc.params.status) == 'undefined' || loc.params.status != 'done') {
+                // Initial access to this redirected page.  Get the user info and
+                // save it to disk
+                gigya.socialize.getUserInfo({
+                    callback: function(response) {
+                        var json = JSON.stringify(response);
+                        var cookies = document.cookie;
+                        $('body').append(
+                                '<h1>Response</h1>\n' +
+                                        json +
+                                        '<br /><h1>Cookies</h1>' +
+                                        cookies
+                        );
+                        if (typeof(npfunctions.writeToFile) == 'function') {
+                            // Write the data to the filesystem for later retrieval
+                            npfunctions.writeToFile('/tmp/gigya.json', json);
+                            npfunctions.writeToFile('/tmp/gigya.cookies', cookies);
+
+                            // Append "done" status and refresh page to notify client
+                            // that the information is ready
+                            window.location.href += '&status=done'
                         }
-                */
+                    }
+                });
             }
         });
+
     </script>
 </head>
 </html>
