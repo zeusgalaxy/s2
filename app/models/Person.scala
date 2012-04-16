@@ -10,23 +10,10 @@ import anorm.SqlParser._
 import play.api.Logger
 import scalaz.{Node => _, _}
 
-case class Person(id: Long, firstName: String, lastName: String, portalLogin: String, portalPassword: Option[String],
-                  email: String, phone: String, lastLogin: Option[DateTime], activeStatus: Int)
-
-/**PersonEdit Class
- * Subset of the Person class that is displayable and editable for using in edit and add forms.
- * @param firstName
- * @param lastName
- * @param portalPassword
- * @param email
- */
-case class PersonEdit(firstName: Option[String], lastName: Option[String], portalLogin: Option[String],
-                      portalPassword: Option[String], email: String) {
-
-  def toPerson: Person = Person(id = -1, firstName = firstName.map(p => p).getOrElse(""), lastName = lastName.map(p => p).getOrElse(""),
-    portalPassword = portalPassword, email = email, phone = "",
-    lastLogin = Some((new DateTime())), activeStatus = 1, portalLogin = portalLogin.map(p => p).getOrElse(" "))
-}
+case class Person(id: Long, companyId: Long, roleId: Long, firstName: String, lastName: String,
+                  portalLogin: String, portalPassword: Option[String],
+                  email: String, phone: String)
+// lastLogin: Option[DateTime], activeStatus: Int)
 
 /**
  * Anorm-based model representing any person having a relationship to Netpulse.
@@ -39,11 +26,15 @@ object Person {
    * Basic parsing of a person from the database.
    */
 
-  val selectFields = " person.id, person.first_name, person.last_name, person.portal_login, person.portal_password, " +
+  val selectFields = " person.id, person.company_id, person.role_id, person.first_name, person.last_name, person.portal_login, person.portal_password, " +
     " person.email, person.phone, date(person.last_login_dt) as lastLogin, person.active_status "
 
+  val standardWhere = " and active_status = 1 and company_id IS NOT NULL "
+
   val simple = {
-    get[Int]("person.id") ~
+    get[Long]("person.id") ~
+      get[Long]("person.company_id") ~
+      get[Long]("person.role_id") ~
       get[String]("person.first_name") ~
       get[String]("person.last_name") ~
       get[String]("person.portal_login") ~
@@ -52,9 +43,9 @@ object Person {
       get[String]("person.phone") ~
       get[Option[java.util.Date]]("lastLogin") ~
       get[Int]("person.active_status") map {
-      case id ~ firstName ~ lastName ~ portalLogin ~ portalPassword ~ email ~ phone ~ lastLogin ~ activeStatus =>
-        Person(id, firstName, lastName, portalLogin, portalPassword, email, phone,
-          lastLogin.map(ll => Some(new DateTime(ll.toString))).getOrElse(None), activeStatus)
+      case id ~ companyId ~ roleId ~ firstName ~ lastName ~ portalLogin ~ portalPassword ~ email ~ phone ~ lastLogin ~ activeStatus =>
+        Person( id, companyId, roleId, firstName, lastName, portalLogin, portalPassword, email, phone)
+          // lastLogin.map(ll => Some(new DateTime(ll.toString))).getOrElse(None), activeStatus)
     }
   }
 
@@ -71,7 +62,7 @@ object Person {
       DB.withConnection("s2") {
         implicit connection =>
           SQL("select " + selectFields + " from person " +
-            " where id = {id}").on('id -> id).as(Person.simple.singleOpt)
+            " where id = {id} and company_id IS NOT NULL").on('id -> id).as(Person.simple.singleOpt)
       }
     }.info.fold(e => None, s => s)
   }
@@ -89,7 +80,7 @@ object Person {
       DB.withConnection("s2") {
         implicit connection =>
           SQL("select " + selectFields + " from person " +
-            " where portal_login = {login}").on('login -> login).as(Person.simple.singleOpt)
+            " where portal_login = {login} " + standardWhere ).on('login -> login).as(Person.simple.singleOpt)
       }
     }.info.fold(e => None, s => s)
   }
@@ -110,7 +101,7 @@ object Person {
         implicit connection =>
           SQL(
             "select " + selectFields + " from person where " +
-              "portal_login = {login} and portal_password = {password} and active_status = 1"
+              "portal_login = {login} and portal_password = {password} " + standardWhere
           ).on(
             'login -> login,
             'password -> Blowfish.encrypt(password)
@@ -120,7 +111,7 @@ object Person {
       case None =>
         Logger.info("No match found in db for login " + login + " and password " + password + " in Person.authenticate")
         None
-      case u => u
+      case u => u        // TODO: Update last login here.
     })
   }
 
@@ -133,34 +124,33 @@ object Person {
    * @param filter Filter applied on the firstName column
    * @return a list of users to display a page with
    */
-  def list(page: Int = 0, pageSize: Int = 15, orderBy: Int = 1, filter: String = "%"): Page[Person] = {
+  def list(page: Int = 0, pageSize: Int = 15, orderBy: Int = 1, userFilter: String = "%", companyFilter: String): Page[Person] = {
 
     implicit val loc = VL("Person.list")
 
     val offset = pageSize * page
-
+    Logger.debug("orderBy = "+orderBy.toString)
     vld {
       DB.withConnection("s2") {
         implicit connection =>
 
+          val companyWhere = if (companyFilter.isEmpty) "" else " and company_id = "+companyFilter+" "
+
           val p = SQL(
             "select " + selectFields + " from person " +
-              "where ifnull(last_name,'') like {filter} AND active_status = 1 " +
+              "where ifnull(last_name,'') like {filter} " + standardWhere +  companyWhere +
               " order by {orderBy} limit {pageSize} offset {offset} "
           ).on(
             'pageSize -> pageSize,
             'offset -> offset,
-            'filter -> filter,
+            'filter -> userFilter,
             'orderBy -> orderBy
           ).as(Person.simple *)
 
           val totalRows = SQL(
-            """
-              select count(*) from person
-              where ifnull(last_name,'') like {filter} AND active_status = 1
-            """
+            "select count(*) from person where ifnull(last_name,'') like {filter} "+ standardWhere
           ).on(
-            'filter -> filter
+            'filter -> userFilter
           ).as(scalar[Long].single)
 
           Page(p, Seq(), page, offset, totalRows)
@@ -173,27 +163,37 @@ object Person {
    * Insert a new Person.
    *
    * @param person The person values.
-   * @return Optional Long ID
+   * @param companyId Override the company id in the person object. This is passed in here so the controller
+   *                  can decide if the user should be allowed to add users not in their company.
+   * @param createdBy the person ID of the user making this change.
+   *@return Optional Long ID
    */
-  def insert(person: Person): Option[Long] = {
+  def insert(person: Person, companyId: Long, createdBy: Long): Option[Long] = {
 
     implicit val loc = VL("Person.insert")
-    println(loc + " YOP!")
+
     val result = vld {
       DB.withConnection("s2") {
         implicit connection => {
           SQL(
             """
-              insert into person values ( 0, {firstName}, {lastName}, {portalLogin}, {portalPassword},
-                {email}, {phone}, NOW(), 1, NOW(), NOW(), NOW(), 1, NULL, NULL  )
+              insert into person set company_id={companyId}, role_id={roleId},
+               first_name={firstName}, last_name={lastName},
+                portal_login = {portalLogin}, portal_password = {portalPassword},
+                email = {email}, phone={phone}, active_status = 1, status_dt = NOW(), created_at = NOW(),
+                created_by={createdBy}
+
             """
           ).on(
+            'companyId      -> companyId,
+            'roleId         -> person.roleId,
             'firstName      -> person.firstName,
             'lastName       -> person.lastName,
             'portalLogin    -> person.portalLogin,
-            'portalPassword -> Blowfish.encrypt(person.portalPassword.map(s => s).getOrElse("")),
+            'portalPassword -> Blowfish.encrypt(person.portalPassword.getOrElse("")),
             'email          -> person.email,
-            'phone          -> person.phone
+            'phone          -> person.phone,
+            'createdBy      -> createdBy
           ).executeInsert()
         }
       }
@@ -209,10 +209,14 @@ object Person {
    * Password not encrypted here. Decrypt it only when needed.
    *
    * @param id The person id
-   * @param person, The person values from the PersonEdit class NOT the Person class.
+   * @param person, The person values from the Person class.
+   * @param companyId Allows the caller (controller) to override the companyId coming from the edit form for
+   *                  security reasons.
+   * @param roleId override the roleId for security reasons.
+   * @param updatedBy, The person ID of the user updating this record.
    * @return int the number of rows updated
    */
-  def update(id: Long, person: PersonEdit) = {
+  def update(id: Long, person: Person, companyId: Long, roleId: Long,  updatedBy: Long) = {
 
     implicit val loc = VL("Person.update")
 
@@ -222,17 +226,24 @@ object Person {
         SQL(
           """
             update person
-              set first_name = {firstName}, last_name = {lastName}, portal_login = {portalLogin}, email={email}, updated_at=NOW() """ +
+              set company_id={companyId}, role_id={roleId},
+              first_name = {firstName}, last_name = {lastName},
+              portal_login = {portalLogin}, email={email}, phone={phone},
+              updated_at=NOW(), updated_by={updatedBy} """ +
               person.portalPassword.map{ portalPassword => ", portal_password={portalPassword} "}.getOrElse("")  + """
               where id = {id}
             """
         ).on(
           'id             -> id,
+          'companyId      -> (if (companyId != -1) companyId else person.companyId),
+          'roleId         -> (if (roleId != -1 ) roleId else person.roleId),
           'firstName      -> person.firstName,
           'lastName       -> person.lastName,
-          'portalLogin    -> person.portalLogin.map(p => p).getOrElse(""),
+          'portalLogin    -> person.portalLogin,
           'portalPassword -> person.portalPassword.map { portalPassword => Blowfish.encrypt(portalPassword) },
-          'email          -> person.email
+          'email          -> person.email,
+          'phone          -> person.phone,
+          'updatedBy      -> updatedBy
         ).executeUpdate()
       }
     }.error.fold(e => None, s => s)
@@ -246,15 +257,15 @@ object Person {
    * @param id Id to delete.
    * @return int, number of rows affected - should be 1
    */
-  def delete(id: Long) = {
+  def delete(id: Long, updatedBy: Long) = {
 
     implicit val loc = VL("Person.delete")
 
     vld {
       DB.withConnection("s2") {
         implicit connection =>
-          SQL("update person set active_status = 3 where id = {id}").
-            on('id -> id).executeUpdate()
+          SQL("update person set active_status = 3, status_dt=NOW(), updated_at=now(), updated_by={updatedBy} where id = {id}").
+            on('id -> id, 'updatedBy -> updatedBy).executeUpdate()
       }
     }.error.fold(e => None, s => s)
   }
@@ -262,18 +273,21 @@ object Person {
   /**
    * Delete person permanently and completely - see delete also
    *
-   * @param id Id of the computer to delete.
+   * @param id Id of the person to delete.
+   * @param updatedBy person ID of the user performing this operation
    * @return int, number of rows affected - should be 1
    */
-  def hardDelete(id: Long) = {
+  def hardDelete(id: Long, updatedBy: Long) = {
 
     implicit val loc = VL("Person.hardDelete")
 
     vld {
       DB.withConnection("s2") {
-        implicit connection =>
+        implicit connection => {
+          Logger.warn("User ID: "+id.toString+" deleted permanently by person id: "+updatedBy)
           SQL("delete from person where id = {id}").
             on('id -> id).executeUpdate()
+        }
       }
     }.error.fold(e => None, s => s)
   }

@@ -41,8 +41,9 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         <div class="span12">
             <form action="@routes.MiscController.userList()" class="well form-search">
 
-                <a href="@routes.MiscController.userAdd()" id="add" class="btn btn-success pull-right" >@Messages("button.add.user")</a>
-
+                @if(rq.canCreate(security.tgUser)) {
+                   <a href="@routes.MiscController.userAdd()" id="add" class="btn btn-success pull-right" >@Messages("button.add.user")</a>
+                }
                 <input type="search" name="f" id="searchbox" value="@currentFilter" class="input-medium search-query" placeholder="@Messages("userlist.filter.lastname")"  >
 
                 <button type="submit" id="searchsubmit" class="btn btn-primary">@Messages("button.go")</button>
@@ -57,9 +58,9 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
         <table class="table table-striped table-bordered table-condensed">
             <thead>
             <tr>
-                @header(7, "Last Name")
-                @header(6, "First Name")
-                @header(5, "Email")
+                @header(5, "Last Name")
+                @header(4, "First Name")
+                @header(6, "Login")
                 @header(1, "Role")
             </tr>
             </thead>
@@ -72,9 +73,9 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
 
                 <td>@u.firstName</td>
 
-                <td><a href="@routes.MiscController.userEdit(u.id)">@u.email</a></td>
+                <td><a href="@routes.MiscController.userEdit(u.id)">@u.portalLogin</a></td>
 
-                <td>Admin</td>
+                <td>@Role.findById(u.roleId).getOrElse(Role(0,"",0)).name</td>
                 </a>
             </tr>
             }

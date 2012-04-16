@@ -17,7 +17,8 @@ object ReportController extends Controller {
         val maybePage = WorkoutLocation.list(
           page = page,
           orderBy = orderBy,
-          filter = filter,
+          // If this is not a netpulse user limit their company selection here
+          filter = if (!request.isFiltered) filter else request.context.user.get.companyId.toString,
           startDate = startDate,
           endDate = endDate)
 

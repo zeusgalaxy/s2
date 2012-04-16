@@ -7,7 +7,7 @@ import anorm._
 import anorm.SqlParser._
 import utils._
 
-case class Company(id: Pk[Long] = NotAssigned, name: String)
+case class Company(id: Long, name: String)
 
 /** Anorm-based model representation of company. The underlying data for the company
  * may come from either a reporting data warehouse or the titan transactional
@@ -17,12 +17,13 @@ case class Company(id: Pk[Long] = NotAssigned, name: String)
  */
 object Company {
 
-  /** Basic parsing of companies derived from location table in report data warehouse.
+  /**
+   * Basic parsing of companies table.
    *
    */
   val reportBasic = {
-    get[Pk[Long]]("location.company_id") ~
-      get[String]("location.company_name") map {
+    get[Long]("company.id") ~
+      get[String]("company.name") map {
       case id~name => Company(id, name)
     }
   }
@@ -37,9 +38,9 @@ object Company {
     implicit val loc = VL("Company.reportCompanyOptions")
 
     vld { 
-      DB.withConnection("report") { 
+      DB.withConnection("s2") {
         implicit connection =>
-          SQL("select distinct(company_id), company_name from report.location order by company_name").
+          SQL("select id, name from company order by name").
           as(Company.reportBasic *).map(c => c.id.toString -> c.name)
       }
     }.error.fold(e => Seq(), s => s )

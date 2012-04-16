@@ -16,7 +16,7 @@ object CompanySpec extends Specification {
       running(FakeApplication()) {
         val l = Company.reportCompanyOptions
         // println(l.toString)
-        ( l.exists(e => e._2 == "Netpulse") && l.exists(e => e._2 == "New York Sports Clubs") && l.exists(e => e._2 == "Life Fitness") )
+        ( l.exists(e => e._2 == "Netpulse") &&  l.exists(e => e._2 == "LifeFitness") )
         }
       }
 

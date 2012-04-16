@@ -10,6 +10,7 @@ import anorm._
 import views._
 import models._
 import security._
+import org.joda.time.DateTime
 
 object MiscController extends Controller {
 
@@ -31,8 +32,10 @@ object MiscController extends Controller {
   }
 
   def index = Unrestricted {
-    implicit request =>
-      Ok(html.index("This is the main page parameter"))
+    implicit request => {
+      // Insert SQL test code here to see in log.
+      Ok(html.index("This is the main page parameter: " ))
+    }
   }
 
 
@@ -42,35 +45,47 @@ object MiscController extends Controller {
    */
   val personForm = Form(
     mapping(
-      "firstName"   -> optional(text),
-      "lastName"    -> optional(text),
-      "portalLogin" -> optional(text),
+      "id"          -> ignored(-1L),
+      "companyId"   -> longNumber,
+      "roleId"      -> longNumber,
+      "firstName"   -> text,
+      "lastName"    -> text,
+      "portalLogin" -> nonEmptyText,
       "password"    -> optional(text),
-      "email"       -> email
-    )(PersonEdit.apply)(PersonEdit.unapply)
+      "email"       -> email,
+      "phone"       -> text
+    )(Person.apply)(Person.unapply)
   )
 
   /** Use the passed in ID value to get the user from the DB. Present that info in the form above.
    * @param id - User ID
    */
-  def userEdit(id: Long) = Unrestricted {             // IfCanUpdate(tgUsers)
+  def userEdit(id: Long) = IfCanUpdate(tgUser) {
     implicit request =>
       Person.findById(id).map(user => {
-        Ok(html.userEdit(id, personForm.fill(PersonEdit(Some(user.firstName), Some(user.lastName), None, None, user.email))))
+        Ok(html.userEdit(id, personForm.fill(user)) )
       }).getOrElse(Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred.")))
   }
 
   /** Controller to Handle form submission from an edit.
    * @param id User ID
    */
-  def userEditSubmit(id: Long) = Unrestricted {        //    IfCanUpdate(tgUsers)
+  def userEditSubmit(id: Long ) = IfCanUpdate(tgUser) {
     implicit request => {
       personForm.bindFromRequest.fold(
         formErrors => BadRequest(html.userEdit(id, formErrors)),
-        uE => Person.update(id, uE)
+        person =>
+          Person.update(
+            id,
+            person,
+            // Control the companyId and roleId values here based on user rights
+            if (request.isFiltered) request.context.user.get.companyId else person.companyId,
+            if (request.canCreate(security.tgUser)) request.context.user.get.roleId else person.roleId,
+            request.context.user.get.id
+          )
         match {
           case 1 =>
-            Redirect(routes.MiscController.userList()).flashing("success" -> ("User: " + uE.email + " updated."))
+            Redirect(routes.MiscController.userList()).flashing("success" -> ("User: " + person.email + " updated."))
           case _ =>
             Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred. Make sure the email address is unique."))
         }
@@ -79,28 +94,29 @@ object MiscController extends Controller {
   }
   
   /** Controller for Adding a user.
-   * @param - none
    */
-  def userAdd() = Unrestricted {              // IfCanUpdate(tgUsers)
+  def userAdd() = IfCanUpdate(tgUser) {
     implicit request => {
-      Logger.debug("in userAdd controller")
       Ok(html.userEdit(-1, personForm))
     } 
   }
 
-  /** Handle form submission from an edit.
-   * @param - none
+  /** Handle form submission from an add.
    */
-  def userAddSubmit() = Unrestricted {                // IfCanUpdate(tgUsers)
+  def userAddSubmit() = IfCanUpdate(tgUser) {
     implicit request => {
       personForm.bindFromRequest.fold(
         formErrors => BadRequest(html.userEdit(-1, formErrors)),
-        pE => {
-          Logger.debug("UserAddSubmit uE to be added: "+pE.toString)
-          Logger.debug("UserAddSubmit user from uE: "+pE.toPerson)
-          Person.insert(pE.toPerson)  match {
+        person => {
+          Logger.debug("UserAddSubmit to be add: "+person)
+          Person.insert(
+              person,
+              // If isFiltered put the admin user's company_id into the case class to be added
+              if (request.isFiltered) request.context.user.get.companyId else person.companyId,
+              request.context.user.get.id
+          )  match {               // (companyId = adminUser.get.companyId, roleId = adminUser.get.roleId),
             case Some(u) =>
-              Redirect(routes.MiscController.userList()).flashing("success" -> ("User added."))
+              Redirect(routes.MiscController.userList()).flashing("success" -> ("User " + person.portalLogin+ " added."))
             case _ =>
               Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred. Make sure the email address is unique."))
             }
@@ -114,10 +130,11 @@ object MiscController extends Controller {
    * @param orderBy - column to sort by
    * @param filter - partial last name to use as a match string
    */
-  def userList(page: Int, orderBy: Int, filter: String) = Unrestricted {      // = IfCanRead(tgUsers)
+  def userList(page: Int, orderBy: Int, filter: String) = IfCanRead(tgUser) {
     implicit request =>
       Ok(html.userList(
-        Person.list(page = page, orderBy = orderBy, filter = ("%" + filter + "%")),
+        // If the user is filtered pass Person.list their company info to limit their access here.
+        Person.list(page = page, orderBy = orderBy, userFilter = ("%" + filter + "%"),  companyFilter = if (!request.isFiltered) "" else request.context.user.get.companyId.toString  ),
         orderBy, filter
       ))
   }
