@@ -15,15 +15,15 @@ object PersonSpec extends Specification {
   import models._
 
   "The Person Model " should {
-    " check if exists and add a test user if not, " +
-      "find them by email and id, " +
-      "Authenticate them, " +
-      "reject bad auth attempts, " +
-      "update them, then delete them" in {
+    " check if exists and add a test user if not,\n " +
+      "find them by email and id, \n" +
+      "Authenticate them, \n" +
+      "reject bad auth attempts, \n" +
+      "update them, then delete them \n" in {
 
       running(FakeApplication()) {
 
-        val devMode = true
+        val devMode = false
 
         val fakePerson = Person(id = 0, companyId=1, roleId=1, firstName = "Joe", lastName = "Sample", portalLogin = "loginstring",
           portalPassword = Some("testPassword"), email = "joe@sample.com", phone = "(555) 555-1212")
