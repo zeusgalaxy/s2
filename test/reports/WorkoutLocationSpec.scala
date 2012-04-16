@@ -13,7 +13,7 @@ import models.WorkoutLocation
 
 object WorkoutLocationSpec extends Specification {
 
-  val devMode = true
+  val devMode = false
 
   /***
    *  Model Tests
