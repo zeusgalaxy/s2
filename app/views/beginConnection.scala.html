@@ -9,12 +9,10 @@
         // Authorization sub-routine to regain js control.
 
         /*
-        * Local file testing only
+        * For testing outside of QT
         */
-        function getServerLocation() {
-//  return 'http://qa-s2.netpulse.ws';
-// TODO TEST ONLY
-            return 'http://qa-ec2.netpulse.ws/pantheon/tmp';
+        if (typeof(npfunctions) == 'undefined') {
+            npfunctions = {};
         }
 
         // Parses a URL into discrete components
@@ -62,30 +60,17 @@
         authorize.prototype.setup = function(provider) {
             var auth = this;
 
+            var redirectURL = loc.protocol + '://' + loc.hostname
+                    + (parseInt(loc.port) > 0 ? ':' + loc.port : '')
+                    + loc.path.replace('beginConnection', 'endGigya');
+
             auth.params = {
                 provider: (provider ? provider : auth.provider),
-                redirectURL: getServerLocation( ) + '/s2/endGigya.html?provider=' + auth.provider,
+                redirectURL: redirectURL + '?provider=' + auth.provider,
                 authFlow:'redirect',
                 context: auth
             };
             return(auth);
-        };
-
-        // Authorization sub-routine for login.
-        // Override if different from default
-        authorize.prototype.login = function () {
-            var auth = this;
-            $.getScript('https://cdns.gigya.com/js/socialize.js?apiKey=' + auth.APIKey, function (data, textStatus) {
-                auth.gigya = gigya;
-                auth.params.cid = 'login.' + loc.params.skin;
-
-                auth.gigya.socialize.getUserInfo({
-                    callback: function (e) {
-                        auth.gigya.services.socialize.login(auth.params);
-                    }
-                });
-            });
-            return (auth);
         };
 
         //Authorization sub-routine for addConnection.
@@ -94,8 +79,13 @@
             var auth = this;
             $.getScript('https://cdns.gigya.com/js/socialize.js?apiKey=' + auth.APIKey, function(data, textStatus) {
                 auth.gigya = gigya;
-                auth.params.cid = 'addConnection.' + loc.params.skin;
-                auth.gigya.services.socialize.addConnection(auth.params);
+                auth.params.cid = 'addConnection.' + loc.params.skin
+
+                auth.gigya.socialize.getUserInfo({
+                    callback: function (e) {
+                        gigya.services.socialize.addConnection(auth.params);
+                    }
+                });
             });
             return(auth);
         };
@@ -114,7 +104,6 @@
             skin = loc.params.skin;
         }
 
-        //setTimeout(function() {
         $(document).ready(function() {
             if (typeof(npfunctions.remove_file) == 'function') {
                 npfunctions.remove_file('/tmp/gigya.json');
@@ -122,9 +111,6 @@
             }
             var authorizeFacebook = new authorize(provider).setup().addConnection();
         });
-        //}, 1000);
-
-        //
     </script>
 </head>
 <body>

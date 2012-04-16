@@ -10,6 +10,13 @@
         }
     </script>
     <script type="text/javascript">
+        /*
+        * For testing outside of QT
+        */
+        if (typeof(npfunctions) == 'undefined') {
+            npfunctions = {};
+        }
+
         //Parses a URL into discrete components
         function parseURL(url) {
             var a =  document.createElement('a');
@@ -49,21 +56,22 @@
                     callback: function(response) {
                         var json = JSON.stringify(response);
                         var cookies = document.cookie;
-                        $('body').append(
-                                '<h1>Response</h1>\n' +
-                                        json +
-                                        '<br /><h1>Cookies</h1>' +
-                                        cookies
-                        );
                         if (typeof(npfunctions.writeToFile) == 'function') {
                             // Write the data to the filesystem for later retrieval
                             npfunctions.writeToFile('/tmp/gigya.json', json);
                             npfunctions.writeToFile('/tmp/gigya.cookies', cookies);
 
-                            // Append "done" status and refresh page to notify client
-                            // that the information is ready
-                            window.location.href += '&status=done'
+                        } else {
+                            $('body').append(
+                                    '<h1>Response</h1>\n' +
+                                            json +
+                                            '<br /><h1>Cookies</h1>' +
+                                            cookies
+                            );
                         }
+                        // Append "done" status and refresh page to notify client
+                        // that the information is ready
+                        window.location.href += '&status=done'
                     }
                 });
             }

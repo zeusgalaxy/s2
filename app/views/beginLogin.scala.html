@@ -9,12 +9,10 @@
         // Authorization sub-routine to regain js control.
 
         /*
-        * Local file testing only
+        * For testing outside of QT
         */
-        function getServerLocation() {
-//  return 'http://qa-s2.netpulse.ws';
-// TODO TEST ONLY
-            return 'http://qa-ec2.netpulse.ws/pantheon/tmp';
+        if (typeof(npfunctions) == 'undefined') {
+            npfunctions = {};
         }
 
         // Parses a URL into discrete components
@@ -53,7 +51,7 @@
             // More information on settings can be found at
             // http://developers.gigya.com/020_Client_API/020_Methods/socialize.login
             auth.APIKey = '2_7kdDan99DJTVE_z9QKYSno1AvTyz8h5bM9UiEfq_HaTfQgIeeCmRY7wvf11WJhcz'; // Netpulse production
-//    auth.APIKey = '2_yM8ACPAsEmp9GNWZaf9pms70VCJ317NzLHdkDRNHsAwIgLFrt1xKmOjmqt1lnTS1'; // Gigya Test
+//    auth.APIKey = '2_yM8ACPAsEmp9GNWZaf9pms70VCJ317NzLHdkDRNHsAwIgLFrt1xKmOjmqt1lnTS1'; // Gigya Test 
             auth.provider = (!provider) ? "facebook" : provider;
             return(auth);
         }
@@ -62,9 +60,13 @@
         authorize.prototype.setup = function(provider) {
             var auth = this;
 
+            var redirectURL = loc.protocol + '://' + loc.hostname
+                    + (parseInt(loc.port) > 0 ? ':' + loc.port : '')
+                    + loc.path.replace('beginLogin', 'endGigya');
+
             auth.params = {
                 provider: (provider ? provider : auth.provider),
-                redirectURL: getServerLocation( ) + '/s2/endGigya.html?provider=' + auth.provider,
+                redirectURL: redirectURL + '?provider=' + auth.provider,
                 authFlow:'redirect',
                 context: auth
             };
@@ -88,18 +90,6 @@
             return (auth);
         };
 
-        //Authorization sub-routine for addConnection.
-        //Override if different from default
-        authorize.prototype.addConnection = function() {
-            var auth = this;
-            $.getScript('https://cdns.gigya.com/js/socialize.js?apiKey=' + auth.APIKey, function(data, textStatus) {
-                auth.gigya = gigya;
-                auth.params.cid = 'addConnection.' + loc.params.skin;
-                auth.gigya.services.socialize.addConnection(auth.params);
-            });
-            return(auth);
-        };
-
         /* END AUTHORIZATION: General ----------------------------- */
     </script>
 
@@ -114,7 +104,6 @@
             skin = loc.params.skin;
         }
 
-        //setTimeout(function() {
         $(document).ready(function() {
             if (typeof(npfunctions.remove_file) == 'function') {
                 npfunctions.remove_file('/tmp/gigya.json');
@@ -122,7 +111,6 @@
             }
             var authorizeFacebook = new authorize(provider).setup().login();
         });
-        //}, 1000);
     </script>
 </head>
 <body>
