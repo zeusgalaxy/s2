@@ -1,0 +1,33 @@
+#!/bin/sh
+# Start and stop the s2, scala play server
+#
+# Copy this file into /etc/init.d and give it execute rights: chmod _x /etc/init.d
+#
+S2PATH=/root/s2
+S2USER=root
+
+case "$1" in
+  start)
+    if [ ! -f $S2PATH/RUNNING_PID ]; then
+      echo "Starting s2"
+      cd $S2PATH
+      sudo -u $S2USER nohup ./start &
+    else
+      echo "A $S2PATH/RUNNING_PID means s2 might already be running."
+    fi
+    ;;
+  stop)
+    if [ -f $S2PATH/RUNNING_PID ]; then
+      PID=`cat $S2PATH/RUNNING_PID`
+      echo "Stopping s2 pid=$PID"
+      sudo -u $S2USER kill $PID
+    else
+      echo "It doesn't look like s2 is running"
+    fi
+    ;;
+  # Anything else
+  *)
+    echo "Usage: service s2 [start|stop] to restart, stop then start."
+    ;;
+esac
+exit 0
