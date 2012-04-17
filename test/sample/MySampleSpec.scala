@@ -23,6 +23,12 @@ object MySampleSpec extends Specification {
     running(FakeApplication()) {
 
       SampleGlobal.useMocks = true
+      Env.mockDb = true
+      Env.mockVT = true
+      Env.mockSomeElse = true
+      Env.mockAllBut(x,y)
+      Env.mock = myPredefMock(A)
+
       import sample.MyFactory._
       val wsMock: MyExternalWsLike = implicitly[MyExternalWsLike]
       wsMock.getX must equalTo(2)

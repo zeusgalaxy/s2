@@ -107,7 +107,7 @@ object RegParams {
 /**
  * Provides various functions for interfacing with the Virtual Trainer servers.
  */
-object VT {
+object VirtualTrainer {
 
   /** Calculates an age, in years, from a given birth date.
    *
