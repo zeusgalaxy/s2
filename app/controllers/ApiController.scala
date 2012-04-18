@@ -12,10 +12,19 @@ import scala.xml._
 import scalaz._
 import Scalaz._
 
+object ApiController extends ApiController
+                        with VirtualTrainer
+                        with ExerciserDao
+                        with MachineDao
+                        with EquipmentDao
 /**
  * Controller for general server API functions.
  */
-object ApiController extends Controller {
+class ApiController extends Controller {
+  this: Controller  with VirtualTrainer
+                    with ExerciserDao
+                    with MachineDao
+                    with EquipmentDao =>
 
   /**Links a Netpulse user with their Virtual Trainer account in those situations where the
    * exerciser had created the Virtual Trainer account prior to creating their Netpulse account. The
@@ -41,21 +50,21 @@ object ApiController extends Controller {
       val finalResult =
         for {
 
-          model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
+          model <- mchGetWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
             toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
-          ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found")
-          vtAuth <- VirtualTrainer.vtLogin(ex.email, vtPassword) // tuple(token, tokenSecret)
+          ex <- exFindByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found")
+          vtAuth <- vtLogin(ex.email, vtPassword) // tuple(token, tokenSecret)
           (vtUid, vtToken, vtTokenSecret) = vtAuth
 
           // Only notify them if never linked before
-          linkStatus <- if (ex.vtUserId.isEmpty) VirtualTrainer.vtLink(npLogin, vtUid) else true.successNel[String]
+          linkStatus <- if (ex.vtUserId.isEmpty) vtLink(npLogin, vtUid) else true.successNel[String]
 
-          updResult <- vld(Exerciser.loginVt(npLogin, vtUid, vtToken, vtTokenSecret))
+          updResult <- vld(exLoginVt(npLogin, vtUid, vtToken, vtTokenSecret))
 
-          vtPredefinedPresets <- VirtualTrainer.vtPredefinedPresets(vtToken, vtTokenSecret, model)
-          vtWorkouts <- VirtualTrainer.vtWorkouts(vtToken, vtTokenSecret, model)
+          vtPredefinedPresets <- vtPredefinedPresets(vtToken, vtTokenSecret, model)
+          vtWorkouts <- vtWorkouts(vtToken, vtTokenSecret, model)
 
-        } yield VirtualTrainer.vtAsApiResult(vtPredefinedPresets, vtWorkouts)
+        } yield vtAsApiResult(vtPredefinedPresets, vtWorkouts)
 
       finalResult.error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
@@ -85,18 +94,18 @@ object ApiController extends Controller {
       val finalResult =
         for {
 
-          model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
+          model <- mchGetWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
             toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
-          ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found")
-          vtAuth <- VirtualTrainer.vtLogin(ex.email, vtPassword) // tuple(token, tokenSecret)
+          ex <- exFindByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found")
+          vtAuth <- vtLogin(ex.email, vtPassword) // tuple(token, tokenSecret)
           (vtUid, vtToken, vtTokenSecret) = vtAuth
 
-          updResult <- vld(Exerciser.loginVt(npLogin, vtUid, vtToken, vtTokenSecret))
+          updResult <- vld(exLoginVt(npLogin, vtUid, vtToken, vtTokenSecret))
 
-          vtPredefinedPresets <- VirtualTrainer.vtPredefinedPresets(vtToken, vtTokenSecret, model)
-          vtWorkouts <- VirtualTrainer.vtWorkouts(vtToken, vtTokenSecret, model)
+          vtPredefinedPresets <- vtPredefinedPresets(vtToken, vtTokenSecret, model)
+          vtWorkouts <- vtWorkouts(vtToken, vtTokenSecret, model)
 
-        } yield VirtualTrainer.vtAsApiResult(vtPredefinedPresets, vtWorkouts)
+        } yield vtAsApiResult(vtPredefinedPresets, vtWorkouts)
 
       finalResult.error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
@@ -117,9 +126,9 @@ object ApiController extends Controller {
 
       val finalResult =
         for {
-          ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found")
-          logoutStatus <- VirtualTrainer.vtLogout(ex.vtToken, ex.vtTokenSecret)
-          updResult <- vld(Exerciser.logoutVt(npLogin))
+          ex <- exFindByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found")
+          logoutStatus <- vtLogout(ex.vtToken, ex.vtTokenSecret)
+          updResult <- vld(exLogoutVt(npLogin))
 
         } yield <api error={apiNoError.toString}/>
 
@@ -144,9 +153,9 @@ object ApiController extends Controller {
 
       // either error code or object encapsulating vt user
       val rVal: Either[Int, VtUser] = (for {
-        ex: Exerciser <- vld(Exerciser.findByLogin(npLogin).get)
+        ex: Exerciser <- vld(exFindByLogin(npLogin).get)
         rp <- vld(VtRegistrationParams(ex, machineId))
-        vtUser <- vld(VirtualTrainer.vtRegister(rp))
+        vtUser <- vld(vtRegister(rp))
       } yield {
         vtUser
       }).error.fold(e => Left(apiGeneralError), s => s)
@@ -157,15 +166,15 @@ object ApiController extends Controller {
           vld(<api error={err.toString}></api>)
         case Right(vtUser) =>
           for {
-            vtAuth <- VirtualTrainer.vtLogin(vtUser.vtNickname, vtUser.vtNickname)
+            vtAuth <- vtLogin(vtUser.vtNickname, vtUser.vtNickname)
             (vtUid, vtToken, vtTokenSecret) = vtAuth
-            updResult <- vld(Exerciser.loginVt(npLogin, vtUid, vtToken, vtTokenSecret))
-            model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
+            updResult <- vld(exLoginVt(npLogin, vtUid, vtToken, vtTokenSecret))
+            model <- mchGetWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
               toSuccess(NonEmptyList("Unable to rtrv mach/equip/model"))
 
-            vtPredefinedPresets <- VirtualTrainer.vtPredefinedPresets(vtToken, vtTokenSecret, model)
+            vtPredefinedPresets <- vtPredefinedPresets(vtToken, vtTokenSecret, model)
 
-          } yield VirtualTrainer.vtAsApiResult(vtPredefinedPresets)
+          } yield vtAsApiResult(vtPredefinedPresets)
       }).error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
 
@@ -182,7 +191,7 @@ object ApiController extends Controller {
     implicit request =>
 
       implicit val loc = VL("Api.exerciserStatus")
-      val ex = Exerciser.findByLogin(npLogin)
+      val ex = exFindByLogin(npLogin)
       Ok(ex.isDefined ? ex.get.insertStatus(<api error={apiNoError.toString}></api>, "api") |
           <api error={apiUnableToRetrieveExerciser.toString}/>)
   }
@@ -201,7 +210,7 @@ object ApiController extends Controller {
     implicit request =>
 
       implicit val loc = VL("Api.getChannels")
-      val channels = Exerciser.getSavedChannels(npLogin, locationId)
+      val channels = exGetSavedChannels(npLogin, locationId)
       Ok(<api error={apiNoError.toString}>
         <channels>
           {for (ch <- channels) yield
@@ -231,7 +240,7 @@ object ApiController extends Controller {
         val channels = request.body \\ "channel"
         val chList = (for (ch <- channels) yield ch.text.toLong).toList
 
-        Exerciser.setSavedChannels(npLogin, locationId, chList)
+        exSetSavedChannels(npLogin, locationId, chList)
 
       }.error.fold(e => false, s => s)
 
@@ -300,7 +309,7 @@ object ApiController extends Controller {
     implicit request =>
 
       implicit val loc = VL("Api.setShowProfilePic")
-      val result = Exerciser.setShowProfilePic(npLogin, show)
+      val result = exSetShowProfilePic(npLogin, show)
       result ? Ok(<api error={apiNoError.toString}></api>) |
         Ok(<api error={apiGeneralError.toString}></api>)
   }

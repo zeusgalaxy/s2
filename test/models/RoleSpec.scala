@@ -20,35 +20,37 @@ object RoleSpec extends Specification {
       running(FakeApplication()) {
 
         val dev = true
+        class RlDao extends RoleDao
+        val rlDao = new RlDao
 
         val fakeUserId = 8234L        // TODO: create a fakeUser here and remove below
 
         /**
          * verify the basic roles are in the DB
          */
-        val npA = Role.findByName("npAdmin")
+        val npA = rlDao.rlFindByName("npAdmin")
         if (dev) println("npA = "+npA.toString)
         npA mustNotEqual(None)
-        npA mustEqual(Role.findById(npA.get.id ))
+        npA mustEqual(rlDao.rlFindById(npA.get.id ))
 
 
-        val npU = Role.findByName("npUser")
+        val npU = rlDao.rlFindByName("npUser")
         if (dev) println("npU = "+npU.toString)
         npU mustNotEqual(None)
-        npU mustEqual(Role.findById(npU.get.id ))
+        npU mustEqual(rlDao.rlFindById(npU.get.id ))
 
-        val oemA = Role.findByName("oemAdmin")
+        val oemA = rlDao.rlFindByName("oemAdmin")
         if (dev) println("oemA = "+oemA.toString)
         oemA mustNotEqual(None)
 
-        val oemU = Role.findByName("oemUser")
+        val oemU = rlDao.rlFindByName("oemUser")
         if (dev) println("oemU = "+oemU.toString)
         oemU mustNotEqual(None)
 
         /**
          *  test the listing of groups
          */
-        val groupList = Role.groupList(npA.get.id)
+        val groupList = rlDao.rlGroupList(npA.get.id)
         if (dev) println("groupList ="+groupList)
         groupList mustNotEqual(Seq())
 

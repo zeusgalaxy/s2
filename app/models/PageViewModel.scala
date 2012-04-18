@@ -16,26 +16,29 @@ import anorm.SqlParser._
 
 case class PageViewModel(id: Long, machineId: Long, date: Date, pageCounts: Seq[(String, Long)])
 
-object PageViewModel {
+trait PageViewDao {
+  this: PageViewDao
+      with MachineDao
+      with EquipmentDao =>
 
-  val dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd") // format.format(new java.util.Date())
+  lazy val pvmDateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd") // format.format(new java.util.Date())
 
-  def parseXML(node: scala.xml.NodeSeq): ValidationNEL[String, PageViewModel] =
+  def pvmParseXML(node: scala.xml.NodeSeq): ValidationNEL[String, PageViewModel] =
 
     vld {
       PageViewModel(
         id = 0L,
         machineId = (node \ "@machine_id").toString().toLong,
-        date = dateFormat.parse((node \ "@date").toString()),
+        date = pvmDateFormat.parse((node \ "@date").toString()),
         pageCounts = for ((p, c) <- (node \\ "page" \\ "@name") zip (node \\ "page" \\ "@count"))
         yield (p.toString(), c.toString().toLong)
       )
     }
 
-  def verifyData(pvm: PageViewModel): ValidationNEL[String, PageViewModel] = {
+  def pvmVerifyData(pvm: PageViewModel): ValidationNEL[String, PageViewModel] = {
 
     def checkMachine(pvm: PageViewModel): Validation[String, PageViewModel] = {
-      Machine.getBasic(pvm.machineId) match {
+      mchGetBasic(pvm.machineId) match {
         case Some(_) => pvm.success;
         case None => ("Machine id " + pvm.machineId.toString + " not found in database").fail
       }
@@ -54,7 +57,7 @@ object PageViewModel {
   // We can't determine if the incoming record is a duplicate. Therefore this is intentionally loose
   // and adds the record with a new timestamp/machineID as the only unique identifiers.
   //
-  def insertSQL(pvm: PageViewModel): ValidationNEL[String, Int] = {
+  def pvmInsertSQL(pvm: PageViewModel): ValidationNEL[String, Int] = {
 
     vld {
       DB.withConnection {
@@ -79,12 +82,12 @@ object PageViewModel {
     }
   }
 
-  def insert(node: scala.xml.NodeSeq): ValidationNEL[String, Int] = {
+  def pvmInsert(node: scala.xml.NodeSeq): ValidationNEL[String, Int] = {
 
     for {
-      a <- parseXML(node)
-      b <- verifyData(a)
-      c <- insertSQL(b)
+      a <- pvmParseXML(node)
+      b <- pvmVerifyData(a)
+      c <- pvmInsertSQL(b)
     } yield c
   }
 }

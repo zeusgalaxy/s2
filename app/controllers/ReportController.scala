@@ -9,7 +9,11 @@ import security._
  *
  * Handle report requests
  */
-object ReportController extends Controller {
+object ReportController extends ReportController
+                          with CompanyDao
+
+class ReportController extends Controller {
+  this: Controller with CompanyDao =>
 
   def showWorkoutLocations(page: Int, orderBy: Int, filter: String, startDate: String, endDate: String) =
     IfCanRead(tgReportWorkoutLocations) {
@@ -24,7 +28,7 @@ object ReportController extends Controller {
 
         maybePage match {
           case Some(p) =>
-            Ok(html.listWorkoutLocations(p, orderBy, filter, startDate, endDate))
+            Ok(html.listWorkoutLocations(this, p, orderBy, filter, startDate, endDate))
           case _ => Redirect(routes.MiscController.index()).flashing("failure" -> ("An error occured."))
         }
       }

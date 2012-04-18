@@ -12,10 +12,21 @@ import utils._
 import models._
 import play.api.Logger
 
+object DinoController extends DinoController
+                        with VirtualTrainer
+                        with ExerciserDao
+                        with MachineDao
+                        with EquipmentDao
+                        with PageViewDao
 /**
  * Controller for server API functions which "wrap" around old Dino functions.
  */
-object DinoController extends Controller {
+class DinoController extends Controller {
+  this: Controller  with VirtualTrainer
+                    with ExerciserDao
+                    with MachineDao
+                    with EquipmentDao
+                    with PageViewDao =>
 
   lazy val dinoTimeout = current.configuration.getString("dino.timeout").getOrElse(throw new Exception("dino.timeout not in configuration")).toInt
 
@@ -100,7 +111,7 @@ object DinoController extends Controller {
             r => Ok(r.toString()))
         else {
 
-          val cnt = PageViewModel.insert(~request.body.asXml).getOrThrow
+          val cnt = pvmInsert(~request.body.asXml).getOrThrow
           Ok("PageView load succeeded with " + cnt.toString + "inserts")
         }
       }.add("request body", request.body.toString).error.
@@ -134,7 +145,7 @@ object DinoController extends Controller {
       // either error code or object encapsulating vt user
       val rVal: Either[Int, VtUser] = (for {
         code <- tst((oldXml \\ "response" \ "@code").text)(_ == "0", "oldXml response code != 0").add("oldXml", oldXml.text)
-        vtUser <- vld(VirtualTrainer.vtRegister(rp))
+        vtUser <- vld(vtRegister(rp))
       } yield {
         vtUser
       }).error.fold(e => Left(apiGeneralError), s => s)
@@ -145,20 +156,20 @@ object DinoController extends Controller {
           vld(XmlMutator(oldXml).add("response", <api error={err.toString}></api>))
         case Right(vtUser) =>
           for {
-            vtAuth <- VirtualTrainer.vtLogin(vtUser.vtNickname, vtUser.vtNickname)
+            vtAuth <- vtLogin(vtUser.vtNickname, vtUser.vtNickname)
             (vtUid, vtToken, vtTokenSecret) = vtAuth
-            updResult <- vld(Exerciser.loginVt(rp.npLogin, vtUid, vtToken, vtTokenSecret))
+            updResult <- vld(exLoginVt(rp.npLogin, vtUid, vtToken, vtTokenSecret))
             machineId <- vld(rp.machineId.toLong)
-            model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
+            model <- mchGetWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
               toSuccess(NonEmptyList("Unable to rtrv mach/equip/model"))
 
-            vtPredefinedPresets <- VirtualTrainer.vtPredefinedPresets(vtToken, vtTokenSecret, model)
+            vtPredefinedPresets <- vtPredefinedPresets(vtToken, vtTokenSecret, model)
 
-          } yield VirtualTrainer.vtInsertIntoXml(oldXml, "response", vtPredefinedPresets)
+          } yield vtInsertIntoXml(oldXml, "response", vtPredefinedPresets)
       }
 
       val gigyaUid = request.queryString.get("gigya_uid")
-      if (gigyaUid.isDefined) Exerciser.setGigyaUid(rp.npLogin, gigyaUid.get(0))
+      if (gigyaUid.isDefined) exSetGigyaUid(rp.npLogin, gigyaUid.get(0))
       finalResult.error.fold(e => Ok(e.list.mkString(", ")), s => Ok(s))
   }
 
@@ -179,7 +190,7 @@ object DinoController extends Controller {
     implicit request =>
       implicit val loc = VL("ApiWrapper.login")
 
-      val ex: Option[Exerciser] = Exerciser.findByLogin(npLogin)
+      val ex: Option[Exerciser] = exFindByLogin(npLogin)
 
       val responseXml = (for {
         dinoResult <- forward(request)
@@ -190,13 +201,13 @@ object DinoController extends Controller {
           case Some(code) if (code.text == "0" && ex.isDefined && ex.get.hasVtConnection) => {
 
             for {
-              model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
+              model <- mchGetWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
                 toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
 
-              vtPredefinedPresets <- VirtualTrainer.vtPredefinedPresets(ex.get.vtToken, ex.get.vtTokenSecret, model)
-              vtWorkouts <- VirtualTrainer.vtWorkouts(ex.get.vtToken, ex.get.vtTokenSecret, model)
+              vtPredefinedPresets <- vtPredefinedPresets(ex.get.vtToken, ex.get.vtTokenSecret, model)
+              vtWorkouts <- vtWorkouts(ex.get.vtToken, ex.get.vtTokenSecret, model)
 
-            } yield VirtualTrainer.vtInsertIntoXml(oldXml, "response", vtPredefinedPresets, vtWorkouts)
+            } yield vtInsertIntoXml(oldXml, "response", vtPredefinedPresets, vtWorkouts)
           }.error.toOption.getOrElse(XmlMutator(oldXml).add("response", <api error={apiGeneralError.toString}/>))
 
           case _ => XmlMutator(oldXml).add("response", <api error={apiNoError.toString}/>)

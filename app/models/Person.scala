@@ -9,8 +9,9 @@ import anorm._
 import anorm.SqlParser._
 import play.api.Logger
 import scalaz.{Node => _, _}
+import Scalaz._
 
-case class Person(id: Long, companyId: Long, roleId: Long, firstName: String, lastName: String,
+case class Person(id: Long, companyId: Option[Long], roleId: Long, firstName: String, lastName: String,
                   portalLogin: String, portalPassword: Option[String],
                   email: String, phone: String)
 // lastLogin: Option[DateTime], activeStatus: Int)
@@ -18,22 +19,22 @@ case class Person(id: Long, companyId: Long, roleId: Long, firstName: String, la
 /**
  * Anorm-based model representing any person having a relationship to Netpulse.
  */
-object Person {
+trait PersonDao {
 
-  implicit val loc = VL("Person")
+  val prPageLength = 15
 
   /**
    * Basic parsing of a person from the database.
    */
 
-  val selectFields = " person.id, person.company_id, person.role_id, person.first_name, person.last_name, person.portal_login, person.portal_password, " +
+  lazy val prSelectFields = " person.id, person.company_id, person.role_id, person.first_name, person.last_name, person.portal_login, person.portal_password, " +
     " person.email, person.phone, date(person.last_login_dt) as lastLogin, person.active_status "
 
-  val standardWhere = " and active_status = 1 and company_id IS NOT NULL "
+  lazy val psStandardWhere = " and active_status = 1 and company_id IS NOT NULL "
 
-  val simple = {
+  lazy val prSimple = {
     get[Long]("person.id") ~
-      get[Long]("person.company_id") ~
+      get[Option[Long]]("person.company_id") ~
       get[Long]("person.role_id") ~
       get[String]("person.first_name") ~
       get[String]("person.last_name") ~
@@ -54,15 +55,15 @@ object Person {
    * @param id Person's numeric id (as assigned by the db).
    * @return Some(Person), if found; else None.
    */
-  def findById(id: Long): Option[Person] = {
+  def prFindById(id: Long): Option[Person] = {
 
     implicit val loc = VL("Person.findById")
 
     vld {
       DB.withConnection("s2") {
         implicit connection =>
-          SQL("select " + selectFields + " from person " +
-            " where id = {id} and company_id IS NOT NULL").on('id -> id).as(Person.simple.singleOpt)
+          SQL("select " + prSelectFields + " from person " +
+            " where id = {id} and company_id IS NOT NULL").on('id -> id).as(prSimple.singleOpt)
       }
     }.info.fold(e => None, s => s)
   }
@@ -72,17 +73,19 @@ object Person {
    * @param login Person's login identifier used when accessing the portal
    * @return Some(Person), if found; else None
    */
-  def findByLogin(login: String): Option[Person] = {
+  def prFindByLogin(login: String, activeOnly: Boolean = false): Option[Person] = {
 
-    implicit val loc = VL("Person.findByEmail")
+    implicit val loc = VL("Person.findByLogin")
 
     vld {
       DB.withConnection("s2") {
         implicit connection =>
-          SQL("select " + selectFields + " from person " +
-            " where portal_login = {login} " + standardWhere ).on('login -> login).as(Person.simple.singleOpt)
+          SQL("select " + prSelectFields + " from person " +
+            " where portal_login = {login} " +
+            (activeOnly ? psStandardWhere | "")
+          ).on('login -> login).as(prSimple.singleOpt)
       }
-    }.info.fold(e => None, s => s)
+    }.info.fold(e => {println (e.toString()); None}, s => s)
   }
 
   /**
@@ -92,7 +95,7 @@ object Person {
    * @param password, Person's portal password, unencrypted
    * @return Some(Person) if the person found in the db and the password matches, None otherwise.
    */
-  def authenticate(login: String, password: String): Option[Person] = {
+  def prAuthenticate(login: String, password: String): Option[Person] = {
 
     implicit val loc = VL("Person.authenticate")
 
@@ -100,12 +103,12 @@ object Person {
       DB.withConnection("s2") {
         implicit connection =>
           SQL(
-            "select " + selectFields + " from person where " +
-              "portal_login = {login} and portal_password = {password} " + standardWhere
+            "select " + prSelectFields + " from person where " +
+              "portal_login = {login} and portal_password = {password} " + psStandardWhere
           ).on(
             'login -> login,
             'password -> Blowfish.encrypt(password)
-          ).as(Person.simple.singleOpt)
+          ).as(prSimple.singleOpt)
       }
     }.error.fold(e => None, s => s match {
       case None =>
@@ -124,7 +127,7 @@ object Person {
    * @param filter Filter applied on the firstName column
    * @return a list of users to display a page with
    */
-  def list(page: Int = 0, pageSize: Int = 15, orderBy: Int = 1, userFilter: String = "%", companyFilter: String): Page[Person] = {
+  def prList(page: Int = 0, pageSize: Int = 15, orderBy: Int = 1, userFilter: String = "%", companyFilter: String): Page[Person] = {
 
     implicit val loc = VL("Person.list")
 
@@ -137,18 +140,18 @@ object Person {
           val companyWhere = if (companyFilter.isEmpty) "" else " and company_id = "+companyFilter+" "
 
           val p = SQL(
-            "select " + selectFields + " from person " +
-              "where ifnull(last_name,'') like {filter} " + standardWhere +  companyWhere +
+            "select " + prSelectFields + " from person " +
+              "where ifnull(last_name,'') like {filter} " + psStandardWhere +  companyWhere +
               " order by {orderBy} limit {pageSize} offset {offset} "
           ).on(
             'pageSize -> pageSize,
             'offset -> offset,
             'filter -> userFilter,
             'orderBy -> orderBy
-          ).as(Person.simple *)
+          ).as(prSimple *)
 
           val totalRows = SQL(
-            "select count(*) from person where ifnull(last_name,'') like {filter} "+ standardWhere
+            "select count(*) from person where ifnull(last_name,'') like {filter} "+ psStandardWhere
           ).on(
             'filter -> userFilter
           ).as(scalar[Long].single)
@@ -168,7 +171,7 @@ object Person {
    * @param createdBy the person ID of the user making this change.
    *@return Optional Long ID
    */
-  def insert(person: Person, companyId: Long, createdBy: Long): Option[Long] = {
+  def prInsert(person: Person, companyId: Long, createdBy: Long): Option[Long] = {
 
     implicit val loc = VL("Person.insert")
 
@@ -216,7 +219,7 @@ object Person {
    * @param updatedBy, The person ID of the user updating this record.
    * @return int the number of rows updated
    */
-  def update(id: Long, person: Person, companyId: Long, roleId: Long,  updatedBy: Long) = {
+  def prUpdate(id: Long, person: Person, companyId: Long, roleId: Long,  updatedBy: Long) = {
 
     implicit val loc = VL("Person.update")
 
@@ -257,7 +260,7 @@ object Person {
    * @param id Id to delete.
    * @return int, number of rows affected - should be 1
    */
-  def delete(id: Long, updatedBy: Long) = {
+  def prDelete(id: Long, updatedBy: Long) = {
 
     implicit val loc = VL("Person.delete")
 
@@ -277,7 +280,7 @@ object Person {
    * @param updatedBy person ID of the user performing this operation
    * @return int, number of rows affected - should be 1
    */
-  def hardDelete(id: Long, updatedBy: Long) = {
+  def prHardDelete(id: Long, updatedBy: Long) = {
 
     implicit val loc = VL("Person.hardDelete")
 

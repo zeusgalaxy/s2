@@ -1,4 +1,4 @@
-@(id: Long, form: Form[Person])(implicit rq: security.CtxRqst[_], flash: Flash)
+@(dao: MiscController, id: Long, form: Form[Person])(implicit rq: security.CtxRqst[_], flash: Flash)
 
 @main( if(id == -1L) {"useradd.title"} else {"useredit.title"}, 'userEdit) {
 
@@ -32,7 +32,7 @@
                             <div class="controls">
                                 <select name="companyId" value="@form("companyId").value" class="span4">
                                     <option value="">@Messages("workouts.location.field.company.options")</option>
-                                    @Company.reportCompanyOptions.map { opt =>
+                                    @dao.coReportCompanyOptions.map { opt =>
                                     <option value="@opt._1" @if(opt._1 == form("companyId").value.getOrElse(0).toString){selected="yes"}>@opt._2</option>
                                     }
                                 </select>
@@ -99,8 +99,8 @@
 
                     @* TODO: Remove these test statements...
                     userRole = @rq.context.user.get.roleId
-                    GroupList = @Role.groupList(1).toString
-                    userGroupList = @Role.groupList(rq.context.user.get.roleId).toString
+                    GroupList = @dao.rlGroupList(1).toString
+                    userGroupList = @dao.rlGroupList(rq.context.user.get.roleId).toString
                     form Role = @form("roleId").value.getOrElse(0)
                     *@
 
@@ -112,7 +112,7 @@
                             <label class="control-label" for="roleId">@Messages("useredit.role")</label>
                             <div class="controls">
                                 <select name="roleId" value="@form("roleId").value" class="span3">
-                                @Role.groupList(rq.context.user.get.roleId).map { role =>
+                                @dao.rlGroupList(rq.context.user.get.roleId).map { role =>
                                 <option value="@role.id.toString" @if(role.id.toString == form("roleId").value.getOrElse(0).toString){selected="yes"}>@role.name</option>
                                 }
                                 </select>

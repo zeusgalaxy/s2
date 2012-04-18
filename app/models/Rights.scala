@@ -26,9 +26,9 @@ case class Rights(c: Int, r: Int, u: Int, d: Int, f: Int) extends Can {
   override def isFiltered = f > 0
 }
 
-object Rights {
+trait RightsDao {
 
-  val simple = {
+  val rtSimple = {
     get[Int] ("rights.c") ~
       get[Int] ("rights.r") ~
       get[Int] ("rights.u") ~
@@ -38,7 +38,7 @@ object Rights {
     }
   }
 
-  def apply(u: Option[Person], t: Target): Rights = {
+  def rtGet(u: Option[Person], t: Target): Rights = {
     u match {
       case Some(user) => {
         implicit val loc = VL("Rights.apply")
@@ -52,7 +52,7 @@ object Rights {
                 " where person.id = {personId} and target.name = {targetName}").
                 on('personId -> user.id,
                 'targetName -> t.t).
-                as(Rights.simple.singleOpt)
+                as(rtSimple.singleOpt)
           }
         }.info.fold(e => noRights, s => s.getOrElse(noRights))
       }

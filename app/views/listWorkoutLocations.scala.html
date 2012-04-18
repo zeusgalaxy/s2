@@ -1,4 +1,4 @@
-@(currentPage: Page[WorkoutLocation], currentOrderBy: Int, currentFilter: String, startDate: String, endDate: String)(implicit rq: security.CtxRqst[_], flash: play.api.mvc.Flash)
+@(coDao: models.CompanyDao, currentPage: Page[WorkoutLocation], currentOrderBy: Int, currentFilter: String, startDate: String, endDate: String)(implicit rq: security.CtxRqst[_], flash: play.api.mvc.Flash)
 
 @import helper._
 
@@ -57,7 +57,7 @@ if(orderBy == scala.math.abs(currentOrderBy)) -currentOrderBy else orderBy
                     <div class="controls">
                         <select name="f" value="@currentFilter" class="span3">
                             <option value="">@Messages("workouts.location.field.company.options")</option>
-                            @Company.reportCompanyOptions.map { opt =>
+                            @coDao.coReportCompanyOptions.map { opt =>
                             <option value="@opt._1" @if(opt._1.toString == currentFilter){selected="yes"}>@opt._2</option>
                             }
                         </select>

@@ -12,7 +12,7 @@ import models._
 /**
  * Controller for managing the user login and logout processes
  */
-object AuthController extends Controller {
+object AuthController extends Controller with PersonDao {
 
   /**Form for entering a user's email and password for login purposes.
    *
@@ -25,7 +25,7 @@ object AuthController extends Controller {
       "password" -> text
     ) verifying("Invalid email or password", result => result match {
       case (email, password) =>
-        Person.authenticate(email, password).isDefined
+        prAuthenticate(email, password).isDefined
     })
   )
 
@@ -62,7 +62,7 @@ object AuthController extends Controller {
           BadRequest(html.login(formWithErrors, destPage))
         },
         user => {
-          Person.findByLogin(user._1) match {
+          prFindByLogin(user._1, true) match {
             // we use their e-mail address as their login id
             case Some(u) => {
               request.context.user = Some(u)

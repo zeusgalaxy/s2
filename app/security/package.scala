@@ -10,15 +10,15 @@ import play.api.mvc.BodyParsers._
 import scalaz.{Logger => _, _}
 
 /**The security package object provides the common facilities for creating and executing
- *  rights-managed requests. This is done by wrapping a normal Request in a specialized
- *  subclass -- CtxRqst -- which has knowledge of the user who is logged in (if any)
- *  as well as the CRUD rights associated with that user for the target currently being
- *  operated on.
+ * rights-managed requests. This is done by wrapping a normal Request in a specialized
+ * subclass -- CtxRqst -- which has knowledge of the user who is logged in (if any)
+ * as well as the CRUD rights associated with that user for the target currently being
+ * operated on.
  *
- *  Targets are encapsulated in the [[security.Target]] class, so we can use them as implicits
- *  if desired, and we can alter their representation in the future, if needed. For now, they
- *  are simply strings, which represent areas of functionality that need to be controlled
- *  from a security perspective.
+ * Targets are encapsulated in the [[security.Target]] class, so we can use them as implicits
+ * if desired, and we can alter their representation in the future, if needed. For now, they
+ * are simply strings, which represent areas of functionality that need to be controlled
+ * from a security perspective.
  *
  */
 package object security {
@@ -62,27 +62,27 @@ package object security {
    *
    */
   // (Ignore the IntelliJ syntax error on request, below.)
-  case class CtxRqst[A](context: Context, request: Request[A]) extends WrappedRequest(request) {
+  case class CtxRqst[A](context: Context, request: Request[A]) extends WrappedRequest(request) with RightsDao {
 
     def canCreate = context.rights.canCreate
 
-    def canCreate(t: Target) = Rights(context.user, t).canCreate
+    def canCreate(t: Target) = rtGet(context.user, t).canCreate
 
     def canRead = context.rights.canRead
 
-    def canRead(t: Target) = Rights(context.user, t).canRead
+    def canRead(t: Target) = rtGet(context.user, t).canRead
 
     def canUpdate = context.rights.canUpdate
 
-    def canUpdate(t: Target) = Rights(context.user, t).canUpdate
+    def canUpdate(t: Target) = rtGet(context.user, t).canUpdate
 
     def canDelete = context.rights.canDelete
 
-    def canDelete(t: Target) = Rights(context.user, t).canDelete
+    def canDelete(t: Target) = rtGet(context.user, t).canDelete
 
     def isFiltered = context.rights.isFiltered
 
-    def isFiltered(t: Target) = Rights(context.user, t).isFiltered
+    def isFiltered(t: Target) = rtGet(context.user, t).isFiltered
 
   }
 
@@ -92,12 +92,11 @@ package object security {
    * extracted from the session cookie, if any.
    *
    */
-  object CtxRqst {
+  object CtxRqst extends models.PersonDao {
     def apply[A](target: Target, request: Request[A]): CtxRqst[A] = {
       vld {
-        request.session.get("id").flatMap(pid => models.Person.findById(pid.toInt)).map {
-          user =>
-            CtxRqst(Context(user, target), request)
+        request.session.get("id").flatMap(pid => prFindById(pid.toInt)).map {
+          user => CtxRqst(Context(user, target), request)
         }.getOrElse(CtxRqst(Context(None, noRights), request))
       }.fold(e => CtxRqst(Context(None, noRights), request), s => s)
     }
@@ -167,7 +166,7 @@ package object security {
   /**Generalized helper function that will create a [[play.api.mvc.Action]] which will
    * inspect the request context (using the supplied partially-applied inspection function)
    * to see whether this user has the rights to access the given target.
-   * If so, the action performs the given function; if not, it returns an Unauthorized result.  
+   * If so, the action performs the given function; if not, it returns an Unauthorized result.
    *
    * @param ok The partially-applied rights inspection method to be invoked
    * @param p The body parser to be used in processing the request
@@ -195,11 +194,11 @@ package object security {
    *
    * Example usage:
    *
-   *  def restrictedHello = IfCanCreate(Target("hello")) { implicit request =>
-   *     Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
-   *  }
+   * def restrictedHello = IfCanCreate(Target("hello")) { implicit request =>
+   * Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
+   * }
    *
-   *  Refer to [[security.IfCan]] for explanation of parameters.
+   * Refer to [[security.IfCan]] for explanation of parameters.
    */
   def IfCanCreate[A](p: BodyParser[A])(target: Target)(f: CtxRqst[A] => PlainResult): Action[A] =
     IfCan(create[A] _, p, target, f)
@@ -209,11 +208,11 @@ package object security {
    *
    * Example usage:
    *
-   *  def restrictedHello = IfCanCreate(parse.xml)(Target("hello")) { implicit request =>
-   *     Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
-   *  }
+   * def restrictedHello = IfCanCreate(parse.xml)(Target("hello")) { implicit request =>
+   * Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
+   * }
    *
-   *  Refer to [[security.IfCan]] for explanation of parameters.
+   * Refer to [[security.IfCan]] for explanation of parameters.
    */
   def IfCanCreate(target: Target)(f: CtxRqst[AnyContent] => PlainResult): Action[AnyContent] =
     IfCan(create[AnyContent] _, parse.anyContent, target, f)
@@ -223,11 +222,11 @@ package object security {
    *
    * Example usage:
    *
-   *  def restrictedHello = IfCanRead(Target("hello")) { implicit request =>
-   *     Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
-   *  }
+   * def restrictedHello = IfCanRead(Target("hello")) { implicit request =>
+   * Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
+   * }
    *
-   *  Refer to [[security.IfCan]] for explanation of parameters.
+   * Refer to [[security.IfCan]] for explanation of parameters.
    */
   def IfCanRead[A](p: BodyParser[A])(target: Target)(f: CtxRqst[A] => PlainResult): Action[A] =
     IfCan(read[A] _, p, target, f)
@@ -237,11 +236,11 @@ package object security {
    *
    * Example usage:
    *
-   *  def restrictedHello = IfCanRead(parse.xml)(Target("hello")) { implicit request =>
-   *     Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
-   *  }
+   * def restrictedHello = IfCanRead(parse.xml)(Target("hello")) { implicit request =>
+   * Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
+   * }
    *
-   *  Refer to [[security.IfCan]] for explanation of parameters.
+   * Refer to [[security.IfCan]] for explanation of parameters.
    */
   def IfCanRead(target: Target)(f: CtxRqst[AnyContent] => PlainResult): Action[AnyContent] =
     IfCan(read[AnyContent] _, parse.anyContent, target, f)
@@ -251,11 +250,11 @@ package object security {
    *
    * Example usage:
    *
-   *  def restrictedHello = IfCanUpdate(Target("hello")) { implicit request =>
-   *     Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
-   *  }
+   * def restrictedHello = IfCanUpdate(Target("hello")) { implicit request =>
+   * Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
+   * }
    *
-   *  Refer to [[security.IfCan]] for explanation of parameters.
+   * Refer to [[security.IfCan]] for explanation of parameters.
    */
   def IfCanUpdate[A](p: BodyParser[A])(target: Target)(f: CtxRqst[A] => PlainResult): Action[A] =
     IfCan(update[A] _, p, target, f)
@@ -265,11 +264,11 @@ package object security {
    *
    * Example usage:
    *
-   *  def restrictedHello = IfCanUpdate(parse.xml)(Target("hello")) { implicit request =>
-   *     Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
-   *  }
+   * def restrictedHello = IfCanUpdate(parse.xml)(Target("hello")) { implicit request =>
+   * Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
+   * }
    *
-   *  Refer to [[security.IfCan]] for explanation of parameters.
+   * Refer to [[security.IfCan]] for explanation of parameters.
    */
   def IfCanUpdate(target: Target)(f: CtxRqst[AnyContent] => PlainResult): Action[AnyContent] =
     IfCan(update[AnyContent] _, parse.anyContent, target, f)
@@ -279,11 +278,11 @@ package object security {
    *
    * Example usage:
    *
-   *  def restrictedHello = IfCanDelete(Target("hello")) { implicit request =>
-   *     Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
-   *  }
+   * def restrictedHello = IfCanDelete(Target("hello")) { implicit request =>
+   * Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
+   * }
    *
-   *  Refer to [[security.IfCan]] for explanation of parameters.
+   * Refer to [[security.IfCan]] for explanation of parameters.
    */
   def IfCanDelete[A](p: BodyParser[A])(target: Target)(f: CtxRqst[A] => PlainResult): Action[A] =
     IfCan(delete[A] _, p, target, f)
@@ -293,11 +292,11 @@ package object security {
    *
    * Example usage:
    *
-   *  def restrictedHello = IfCanDelete(parse.xml)(Target("hello")) { implicit request =>
-   *     Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
-   *  }
+   * def restrictedHello = IfCanDelete(parse.xml)(Target("hello")) { implicit request =>
+   * Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
+   * }
    *
-   *  Refer to [[security.IfCan]] for explanation of parameters.
+   * Refer to [[security.IfCan]] for explanation of parameters.
    */
   def IfCanDelete(target: Target)(f: CtxRqst[AnyContent] => PlainResult): Action[AnyContent] =
     IfCan(delete[AnyContent] _, parse.anyContent, target, f)
@@ -311,11 +310,11 @@ package object security {
    *
    * Example usage:
    *
-   *  def restrictedHello = Unrestricted(parse.xml)(Target("hello")) { implicit request =>
-   *     Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
-   *  }
+   * def restrictedHello = Unrestricted(parse.xml)(Target("hello")) { implicit request =>
+   * Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
+   * }
    *
-   *  Refer to [[security.IfCan]] for explanation of parameters.
+   * Refer to [[security.IfCan]] for explanation of parameters.
    */
   def Unrestricted[A](p: BodyParser[A])(f: CtxRqst[A] => PlainResult): Action[A] = {
     Action(p) {
@@ -333,11 +332,11 @@ package object security {
    *
    * Example usage:
    *
-   *  def restrictedHello = Unrestricted(Target("hello")) { implicit request =>
-   *     Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
-   *  }
+   * def restrictedHello = Unrestricted(Target("hello")) { implicit request =>
+   * Ok(html.kenner("Hello " + request.context.user.get.firstName.get))
+   * }
    *
-   *  Refer to [[security.IfCan]] for explanation of parameters.
+   * Refer to [[security.IfCan]] for explanation of parameters.
    */
   def Unrestricted(f: CtxRqst[AnyContent] => PlainResult): Action[AnyContent] =
     Unrestricted(parse.anyContent)(f)

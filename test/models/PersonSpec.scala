@@ -24,6 +24,8 @@ object PersonSpec extends Specification {
       running(FakeApplication()) {
 
         val devMode = false
+        class PerDao extends PersonDao
+        val pDao = new PerDao
 
         val fakePerson = Person(id = 0, companyId=1, roleId=1, firstName = "Joe", lastName = "Sample", portalLogin = "loginstring",
           portalPassword = Some("testPassword"), email = "joe@sample.com", phone = "(555) 555-1212")
@@ -45,12 +47,12 @@ object PersonSpec extends Specification {
          * Set up for the tests
          * existing test person(s) then Add a test user
          */
-        var pGet = Person.findByLogin(fakePerson.portalLogin)
-        if (pGet != None) Person.hardDelete(pGet.get.id, fpID)
-        var pGet1 = Person.findByLogin(fakePerson2.portalLogin)
-        if (pGet1 != None) Person.hardDelete(pGet1.get.id, fpID)
+        var pGet = pDao.prFindByLogin(fakePerson.portalLogin)
+        if (pGet != None) pDao.prHardDelete(pGet.get.id, fpID)
+        var pGet1 = pDao.prFindByLogin(fakePerson2.portalLogin)
+        if (pGet1 != None) pDao.prHardDelete(pGet1.get.id, fpID)
 
-        val pAdd = Person.insert(fakePerson, fakePerson.companyId, 8234)
+        val pAdd = pDao.prInsert(fakePerson, fakePerson.companyId, 8234)
         if (devMode) println("pAdd = " + pAdd.toString)
         // Cannot add or update a child row: a foreign key constraint fails (`s2`.`person`, CONSTRAINT `company_person_fk` FOREIGN KEY (`company_id`) REFERENCES `company` (`id`))
         pAdd.get must be_>(-1L)
@@ -59,11 +61,11 @@ object PersonSpec extends Specification {
         /**
          * get the fake user's ID from their email and check via findById
          */
-        val pCheck = Person.findByLogin(fakePerson.portalLogin)
+        val pCheck = pDao.prFindByLogin(fakePerson.portalLogin)
         if (devMode) println("pCheck = " + pCheck.toString)
         pCheck.get.firstName must equalTo(fakePerson.firstName)
 
-        val pCheck1 = Person.findById(pCheck.get.id)
+        val pCheck1 = pDao.prFindById(pCheck.get.id)
         if (devMode) println("pCheck1 = " + pCheck1.toString)
         pCheck1.get.firstName must equalTo(pCheck.get.firstName)
 
@@ -73,19 +75,19 @@ object PersonSpec extends Specification {
         /**
          * Reject a user with bad uname and good pw.
          */
-        Person.authenticate("failme@netpulse.com", fakePerson.portalPassword.get)  must equalTo(None)
+        pDao.prAuthenticate("failme@netpulse.com", fakePerson.portalPassword.get)  must equalTo(None)
 
 
         /**
          * Reject a user with good uname and bad pw.
          */
-        Person.authenticate("frudge@netpulse.com", "S@ndB0x!")  must equalTo(None)
+        pDao.prAuthenticate("frudge@netpulse.com", "S@ndB0x!")  must equalTo(None)
 
 
         /**
          * Authenticate with known good uname and pw
          */
-        val pAuth = Person.authenticate(fakePerson.portalLogin, fakePerson.portalPassword.map(s => s).getOrElse(""))
+        val pAuth = pDao.prAuthenticate(fakePerson.portalLogin, fakePerson.portalPassword.map(s => s).getOrElse(""))
         if (devMode) println("Person = " + pAuth.toString)
         compareP(pAuth.get, fakePerson) must equalTo(true)
 
@@ -93,15 +95,15 @@ object PersonSpec extends Specification {
         /**
          * Update the fake person
          */
-        val p1up = Person.findByLogin(fakePerson.portalLogin)
+        val p1up = pDao.prFindByLogin(fakePerson.portalLogin)
         if (devMode) println("p1up = " + p1up.toString)
         p1up.get.firstName mustEqual fakePerson.firstName
 
-        val p2up = Person.update(p1up.get.id, fakePerson2, fakePerson2.companyId, fakePerson2.roleId, fpID )
+        val p2up = pDao.prUpdate(p1up.get.id, fakePerson2, fakePerson2.companyId, fakePerson2.roleId, fpID )
         if (devMode) println("p2up = " + p2up.toString)
         p2up mustEqual (1L)
 
-        val p3up = Person.findById(p1up.get.id)
+        val p3up = pDao.prFindById(p1up.get.id)
         if (devMode) println("p3up = " + p3up.toString)
         p3up.get.companyId mustEqual(fakePerson2.companyId)
         p3up.get.roleId mustEqual(fakePerson2.roleId)
@@ -112,12 +114,12 @@ object PersonSpec extends Specification {
         /**
          * Delete the updated fake person
          */
-        val p1del = Person.findByLogin(fakePerson2.portalLogin)
+        val p1del = pDao.prFindByLogin(fakePerson2.portalLogin)
         if (devMode) println("p1del = " + p1del.toString)
-        val delcnt = Person.hardDelete(p1del.get.id, fpID)
+        val delcnt = pDao.prHardDelete(p1del.get.id, fpID)
         delcnt mustEqual(1L)
 
-        val p2del = Person.findByLogin(fakePerson.portalLogin)
+        val p2del = pDao.prFindByLogin(fakePerson.portalLogin)
         p2del mustEqual None
 
 

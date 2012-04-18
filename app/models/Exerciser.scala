@@ -39,21 +39,19 @@ case class Exerciser(dbId: Long, login: String, email: String, pic: Int,
 /** Anorm-based model representing an exerciser.
  *
  */
-object Exerciser {
-
-  implicit val loc = VL("Exerciser")
+trait ExerciserDao {
 
   /** Basic parsing of an exerciser from the database.
    *
    */
 
-  val selectFields = " exerciser.id, exerciser.login, exerciser.email, exerciser.pic, " +
+  lazy val exSelectFields = " exerciser.id, exerciser.login, exerciser.email, exerciser.pic, " +
     " exerciser.membership_id, exerciser.gender," +
     " date(exerciser.date_of_birth) as dob, exerciser.email_prefs, exerciser.weight, exerciser.location_id," +
     " exerciser.vt_user_id, exerciser.vt_token, exerciser.vt_token_secret, exerciser.vt_status, " +
     " exerciser.gigya_uid, exerciser.show_profile_pic "
 
-  val simple = {
+  lazy val exSimple = {
     get[Long]("exerciser.id") ~
       get[String]("exerciser.login") ~
       get[String]("exerciser.email") ~
@@ -84,15 +82,15 @@ object Exerciser {
    * @param dbId Exerciser's numeric id (as assigned by the db).
    * @return Some(Exerciser), if found; else None.
    */
-  def findByDbId(dbId: Long): Option[Exerciser] = {
+  def exFindByDbId(dbId: Long): Option[Exerciser] = {
 
     implicit val loc = VL("Exerciser.findById")
 
     vld {
       DB.withConnection {
         implicit connection =>
-          SQL("select "+selectFields+" , location.name from exerciser left join location on (exerciser.location_id = location.id)" +
-            " where id = {id}").on('id -> dbId).as(Exerciser.simple.singleOpt)
+          SQL("select "+exSelectFields+" , location.name from exerciser left join location on (exerciser.location_id = location.id)" +
+            " where id = {id}").on('id -> dbId).as(exSimple.singleOpt)
       }
     }.info.fold(e => None, s => s)
   }
@@ -102,15 +100,15 @@ object Exerciser {
    * @param login Exerciser's login identifier
    * @return Some(Exerciser), if found; else None.
    */
-  def findByLogin(login: String): Option[Exerciser] = {
+  def exFindByLogin(login: String): Option[Exerciser] = {
 
     implicit val loc = VL("Exerciser.findByLogin")
 
     vld {
       DB.withConnection {
         implicit connection =>
-          SQL("select"+selectFields+" , location.name from exerciser left join location on (exerciser.location_id = location.id)" +
-            " where login = {login}").on('login -> login).as(Exerciser.simple.singleOpt)
+          SQL("select"+exSelectFields+" , location.name from exerciser left join location on (exerciser.location_id = location.id)" +
+            " where login = {login}").on('login -> login).as(exSimple.singleOpt)
       }
     }.info.fold(e => None, s => s)
   }
@@ -121,7 +119,7 @@ object Exerciser {
    * @param login Exerciser's login identifier
    * @return The exerciser's id as Some(Long), if found; else None.
    */
-  def getId(login: String): Option[Int] = {
+  def exGetId(login: String): Option[Int] = {
 
     implicit val loc = VL("Exerciser.getId")
 
@@ -142,12 +140,12 @@ object Exerciser {
    * @param locationId Club where the exerciser is currently at
    * @return List[Long] of channel numbers, if any found; else Nil
    */
-  def getSavedChannels(login: String, locationId: Long): List[Long] = {
+  def exGetSavedChannels(login: String, locationId: Long): List[Long] = {
 
     implicit val loc = VL("Exerciser.getSavedChannels")
 
     vld {
-      val id = getId(login).getOrFail("Exerciser login " + login + " not found")
+      val id = exGetId(login).getOrFail("Exerciser login " + login + " not found")
 
       DB.withConnection("s2") {
         implicit connection =>
@@ -169,13 +167,13 @@ object Exerciser {
    * @param channels List[Long] of channel numbers to save; may be Nil
    * @return true if successful, else false
    */
-  def setSavedChannels(login: String, locationId: Long, channels: List[Long]): Boolean = {
+  def exSetSavedChannels(login: String, locationId: Long, channels: List[Long]): Boolean = {
 
     implicit val loc = VL("Exerciser.setSavedChannels")
 
     vld {
 
-      val id = getId(login).getOrElse(throw new Exception("Exerciser login " + login + " not found"))
+      val id = exGetId(login).getOrElse(throw new Exception("Exerciser login " + login + " not found"))
       Logger.debug("Id that will be passed in for saving channels (string form): " + id.toString)
       /**
        * First, clear out any channels that have previously been saved for this exerciser/location.
@@ -228,7 +226,7 @@ object Exerciser {
    * @param vtTokenSecret The token secret associated with the token, above.
    * @return True if successful, else False.
    */
-  def loginVt(npLogin: String, vtUserId: String, vtToken: String, vtTokenSecret: String): Boolean = {
+  def exLoginVt(npLogin: String, vtUserId: String, vtToken: String, vtTokenSecret: String): Boolean = {
 
     implicit val loc = VL("Exerciser.loginVt")
 
@@ -263,7 +261,7 @@ object Exerciser {
    * @param npLogin The exerciser's login identifier.
    * @return True if successful, else False.
    */
-  def logoutVt(npLogin: String): Boolean = {
+  def exLogoutVt(npLogin: String): Boolean = {
 
     implicit val loc = VL("Exerciser.logoutVt")
 
@@ -291,7 +289,7 @@ object Exerciser {
    * @param gigyaUid The user identifier that was provided by gigya
    * @return True if successful, else False.
    */
-  def setGigyaUid(npLogin: String, gigyaUid: String): Boolean = {
+  def exSetGigyaUid(npLogin: String, gigyaUid: String): Boolean = {
 
     implicit val loc = VL("Exerciser.setGigyaUid")
 
@@ -318,7 +316,7 @@ object Exerciser {
    * @param show Boolean indicating whether or not to show the profile picture
    * @return True if successful, else False.
    */
-  def setShowProfilePic(npLogin: String, show: Boolean): Boolean = {
+  def exSetShowProfilePic(npLogin: String, show: Boolean): Boolean = {
 
     implicit val loc = VL("Exerciser.setShowProfilePic")
 

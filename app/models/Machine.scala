@@ -15,12 +15,13 @@ case class Equipment(id: Long, mfr: Int, model: Int, eType: Option[String],
 /**
  * Anorm-based model representing machines.
  */
-object Machine {
+trait MachineDao {
+  this: MachineDao with EquipmentDao =>
 
   /**
    * Basic parsing of machine records from the database.
    */
-  val basic = {
+  lazy val mchBasic = {
     get[Long]("machine.id") ~
       get[Long]("machine.location_id") ~
       get[String]("machine.model") map {
@@ -32,7 +33,7 @@ object Machine {
    * Parsing of basic machine values along with more extensive equipment values associated
    * with that machine.
    */
-  val withEquip = Machine.basic ~ (Equipment.full ?) map {
+  lazy val mchWithEquip = mchBasic ~ (eqFull ?) map {
     case machine ~ equipment => (machine, equipment)
   }
 
@@ -41,14 +42,14 @@ object Machine {
    * @param id Machine identifier.
    * @return Some(MachineBasic) if successful; otherwise None.
    */
-  def getBasic(id: Long): Option[MachineBasic] = {
+  def mchGetBasic(id: Long): Option[MachineBasic] = {
 
     implicit val loc = VL("Machine.getBasic")
 
     vld {
       DB.withConnection {
         implicit connection =>
-          SQL("select * from machine where id = {id}").on('id -> id).as(Machine.basic.singleOpt)
+          SQL("select * from machine where id = {id}").on('id -> id).as(mchBasic.singleOpt)
       }
     }.info.fold(e => None, s => s)
   }
@@ -59,7 +60,7 @@ object Machine {
    * @return Some tuple of MachineBasic and Some Equipment, if available; else None where not available
    * of unsuccessful.
    */
-  def getWithEquip(id: Long): Option[(MachineBasic, Option[Equipment])] = {
+  def mchGetWithEquip(id: Long): Option[(MachineBasic, Option[Equipment])] = {
 
     implicit val loc = VL("Machine.getWithEquip")
 
@@ -67,7 +68,7 @@ object Machine {
       DB.withConnection {
         implicit connection =>
           SQL("select * from machine m join equipment e on m.equipment_id = e.id where m.id = {id}").
-            on('id -> id).as(Machine.withEquip.singleOpt)
+            on('id -> id).as(mchWithEquip.singleOpt)
       }
     }.info.fold(e => None, s => s)
   }
@@ -76,9 +77,9 @@ object Machine {
 /**
  * Anorm-based model representing equipment.
  */
-object Equipment {
+trait EquipmentDao {
 
-  val full = {
+  lazy val eqFull = {
     long("equipment.id") ~
       int("equipment.mfr") ~
       int("equipment.model") ~

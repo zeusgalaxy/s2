@@ -14,7 +14,7 @@ object TestData {
 
   val testSqlStmts =
     """
-    
+
 delete from rights where role_id = (select id from role where name = 'netpulse-test-a');
 delete from rights where role_id = (select id from role where name = 'netpulse-test-b');
 delete from exerciser_profile where client_login = 's2-a';
@@ -39,13 +39,13 @@ insert into target set id = null, name = 'test-a', created_at = now(), updated_a
 insert into target set id = null, name = 'test-b', created_at = now(), updated_at = 0, created_by = 0, updated_by = null;
 
 
-insert into person set id = null, company_id = 2, role_id = (select id from role where name = 'netpulse-test-a'),
+insert into person set id = null, company_id = null, role_id = (select id from role where name = 'netpulse-test-a'),
 first_name = 's2-a', last_name = 'netpulse', portal_login = 's2-a@netpulse.com',
 portal_password = '19e359d99f3c4e3bdf8592078de921bc', email = 's2-a@netpulse.com',
 phone = '5103369779', last_login_dt = 0, active_status = 1, status_dt = 0, created_at = now(),
 updated_at = 0, created_by = 0, updated_by = null, address_id = null;
 
-insert into person set id = null, company_id = 2, role_id = (select id from role where name = 'netpulse-test-b'),
+insert into person set id = null, company_id = null, role_id = (select id from role where name = 'netpulse-test-b'),
 first_name = 's2-b', last_name = 'netpulse', portal_login = 's2-b@netpulse.com',
 portal_password = '19e359d99f3c4e3bdf8592078de921bc', email = 's2-b@netpulse.com',
 phone = '5103369780', last_login_dt = 0, active_status = 1, status_dt = 0, created_at = now(),

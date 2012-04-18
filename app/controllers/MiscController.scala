@@ -12,7 +12,15 @@ import models._
 import security._
 import org.joda.time.DateTime
 
-object MiscController extends Controller {
+object MiscController extends MiscController
+                        with CompanyDao
+                        with PersonDao
+                        with RoleDao
+
+class MiscController extends Controller
+                        with CompanyDao
+                        with PersonDao
+                        with RoleDao {
 
   def helloForA = IfCanRead(tgTestA) {
     implicit request =>
@@ -46,7 +54,7 @@ object MiscController extends Controller {
   val personForm = Form(
     mapping(
       "id"          -> ignored(-1L),
-      "companyId"   -> longNumber,
+      "companyId"   -> optional(longNumber),
       "roleId"      -> longNumber,
       "firstName"   -> text,
       "lastName"    -> text,
@@ -62,8 +70,8 @@ object MiscController extends Controller {
    */
   def userEdit(id: Long) = IfCanUpdate(tgUser) {
     implicit request =>
-      Person.findById(id).map(user => {
-        Ok(html.userEdit(id, personForm.fill(user)) )
+      prFindById(id).map(user => {
+        Ok(html.userEdit(this, id, personForm.fill(user)) )
       }).getOrElse(Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred.")))
   }
 
@@ -73,9 +81,9 @@ object MiscController extends Controller {
   def userEditSubmit(id: Long ) = IfCanUpdate(tgUser) {
     implicit request => {
       personForm.bindFromRequest.fold(
-        formErrors => BadRequest(html.userEdit(id, formErrors)),
+        formErrors => BadRequest(html.userEdit(this, id, formErrors)),
         person =>
-          Person.update(
+          prUpdate(
             id,
             person,
             // Control the companyId and roleId values here based on user rights
@@ -92,13 +100,13 @@ object MiscController extends Controller {
       )
     }
   }
-  
+
   /** Controller for Adding a user.
    */
   def userAdd() = IfCanUpdate(tgUser) {
     implicit request => {
-      Ok(html.userEdit(-1, personForm))
-    } 
+      Ok(html.userEdit(this, -1, personForm))
+    }
   }
 
   /** Handle form submission from an add.
@@ -106,10 +114,10 @@ object MiscController extends Controller {
   def userAddSubmit() = IfCanUpdate(tgUser) {
     implicit request => {
       personForm.bindFromRequest.fold(
-        formErrors => BadRequest(html.userEdit(-1, formErrors)),
+        formErrors => BadRequest(html.userEdit(this, -1, formErrors)),
         person => {
           Logger.debug("UserAddSubmit to be add: "+person)
-          Person.insert(
+          prInsert(
               person,
               // If isFiltered put the admin user's company_id into the case class to be added
               if (request.isFiltered) request.context.user.get.companyId else person.companyId,
@@ -124,7 +132,7 @@ object MiscController extends Controller {
       )
     }
   }
-  
+
   /** Display a page by page listing of the the admin users
    * @param page - which page of paginated results to display
    * @param orderBy - column to sort by
@@ -132,9 +140,9 @@ object MiscController extends Controller {
    */
   def userList(page: Int, orderBy: Int, filter: String) = IfCanRead(tgUser) {
     implicit request =>
-      Ok(html.userList(
+      Ok(html.userList(this,
         // If the user is filtered pass Person.list their company info to limit their access here.
-        Person.list(page = page, orderBy = orderBy, userFilter = ("%" + filter + "%"),  companyFilter = if (!request.isFiltered) "" else request.context.user.get.companyId.toString  ),
+        prList(page = page, orderBy = orderBy, userFilter = ("%" + filter + "%"),  companyFilter = if (!request.isFiltered) "" else request.context.user.get.companyId.toString  ),
         orderBy, filter
       ))
   }

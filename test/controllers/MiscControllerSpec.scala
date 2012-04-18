@@ -8,6 +8,7 @@ import play.api.test._
 import play.api.test.Helpers._
 import play.api.Play._
 import play.api.mvc.Session
+import controllers.MiscController
 
 object MiscControllerSpec extends Specification {
 
@@ -18,8 +19,10 @@ object MiscControllerSpec extends Specification {
       val setupOk = TestData.setup(TestData.testSqlStmts)
       setupOk must equalTo(true)
 
-      val s2a = Person.findByLogin("s2-a@netpulse.com")
-      val s2b = Person.findByLogin("s2-b@netpulse.com")
+      val s2a = controllers.MiscController.prFindByLogin("s2-a@netpulse.com")
+      assert(s2a.isDefined)
+      val s2b = controllers.MiscController.prFindByLogin("s2-b@netpulse.com")
+      assert(s2b.isDefined)
       val s2aEncoded = Session.encode(Map("id" -> s2a.get.id.toString))
       val s2bEncoded = Session.encode(Map("id" -> s2b.get.id.toString))
       //

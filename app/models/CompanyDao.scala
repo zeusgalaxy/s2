@@ -15,13 +15,13 @@ case class Company(id: Long, name: String)
  * different requirements.
  *
  */
-object Company {
+trait CompanyDao {
 
   /**
    * Basic parsing of companies table.
    *
    */
-  val reportBasic = {
+  lazy val coReportBasic = {
     get[Long]("company.id") ~
       get[String]("company.name") map {
       case id~name => Company(id, name)
@@ -33,15 +33,15 @@ object Company {
    *
    * @return List of tuples of company ids and company names.
    */
-  def reportCompanyOptions: Seq[(String,String)] = {
+  def coReportCompanyOptions: Seq[(String,String)] = {
 
     implicit val loc = VL("Company.reportCompanyOptions")
 
-    vld { 
+    vld {
       DB.withConnection("s2") {
         implicit connection =>
           SQL("select id, name from company order by name").
-          as(Company.reportBasic *).map(c => c.id.toString -> c.name)
+          as(coReportBasic *).map(c => c.id.toString -> c.name)
       }
     }.error.fold(e => Seq(), s => s )
   }
