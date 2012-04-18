@@ -48,13 +48,13 @@ object VtUser {
  * @param vtNickname The nickname (alternate login id) for the exerciser at VT. Defaults to npLogin.
  * @param vtPassword The password for the exerciser at VT. Defaults to npLogin.
  */
-case class RegParams(npLogin: String, email: String, dob: String, machineId: String, gender: String,
+case class VtRegistrationParams(npLogin: String, email: String, dob: String, machineId: String, gender: String,
                      weight: String, vtNickname: String, vtPassword: String)
 
 /**
  * Helper object to instantiate RegParams, either from incoming parameters or from the exerciser's db record.
  */
-object RegParams {
+object VtRegistrationParams {
 
   val jodaMMDDYYYY = org.joda.time.format.DateTimeFormat.forPattern("MMddyyyy")
 
@@ -66,7 +66,7 @@ object RegParams {
    * @param rq Incoming request values, either in the POST body or the GET query string
    * @return RegParams populated appropriately.
    */
-  def apply(rq: Request[AnyContent]): RegParams = {
+  def apply(rq: Request[AnyContent]): VtRegistrationParams = {
 
     implicit val source = rq.body.asFormUrlEncoded match {
       case Some(form) => form
@@ -86,7 +86,7 @@ object RegParams {
     val vtNickname = npLogin
     val vtp = getS("vt_password")
     val vtPassword = if (vtp == "") npLogin else vtp
-    RegParams(npLogin, email, dob, machineId, gender, weight, vtNickname, vtPassword)
+    VtRegistrationParams(npLogin, email, dob, machineId, gender, weight, vtNickname, vtPassword)
   }
 
   /** Populates a RegParams from values in an existing exerciser's database record.
@@ -96,10 +96,10 @@ object RegParams {
    * @param machineId Machine from which the registration is occurring
    * @return RegParams populated appropriately.
    */
-  def apply(ex: Exerciser, machineId: Long): RegParams = {
+  def apply(ex: Exerciser, machineId: Long): VtRegistrationParams = {
 
     val gender = ex.gender ? "M" | "F"
-    RegParams(ex.login, ex.email, ex.dob.toString(jodaMMDDYYYY), machineId.toString,
+    VtRegistrationParams(ex.login, ex.email, ex.dob.toString(jodaMMDDYYYY), machineId.toString,
                   gender, ex.weight.toString, ex.login, ex.login)
   }
 }
@@ -114,7 +114,7 @@ object VirtualTrainer {
    * @param dob Date of birth, in MMDDYYYY format
    * @return Age in years
    */
-  def age(dob: String): Int = {
+  def vtAge(dob: String): Int = {
     val born = new DateTime(dob.slice(4, 8).toInt, dob.slice(0, 2).toInt, dob.slice(2, 4).toInt, 0, 0, 0)
     new Interval(born, DateTime.now).toPeriod.getYears
   }
@@ -127,7 +127,7 @@ object VirtualTrainer {
    * @param consSecret The Netpulse consumer secret, provided to us by Virtual Trainer
    * @return An HTTP OAuth header for use in "unsecured" calls to Virtual Trainer
    */
-  def headerNoToken(consKey: String = vtConsumerKey, consSecret: String = vtConsumerSecret): String =
+  def vtHeaderNoToken(consKey: String = vtConsumerKey, consSecret: String = vtConsumerSecret): String =
     "OAuth oauth_consumer_key=\"" +
       consKey + "\", oauth_nonce=\"" + nonce + "\", oauth_timestamp=\"" + utcNowInSecs +
       "\", oauth_signature=\"" + b64Enc.encode(consSecret.getBytes("UTF-8")) + "\""
@@ -142,7 +142,7 @@ object VirtualTrainer {
    * @param consSecret The Netpulse consumer secret, provided to us by Virtual Trainer
    * @return An HTTP OAuth header for use in "secured" calls to Virtual Trainer
    */
-  def headerWithToken(token: String, tokenSecret: String, consKey: String = vtConsumerKey,
+  def vtHeaderWithToken(token: String, tokenSecret: String, consKey: String = vtConsumerKey,
                                                 consSecret: String = vtConsumerSecret): String =
     "OAuth oauth_consumer_key=\"" +
       consKey + "\", oauth_nonce=\"" + nonce + "\", oauth_timestamp=\"" + utcNowInSecs +
@@ -154,7 +154,7 @@ object VirtualTrainer {
    * @param rp Registration param values, enapsulated into a single abstraction
    * @return ValidationNEL with error messages if problems, else stringified JSON with the registration params needed by VT
    */
-  private def registerBody(rp: RegParams): ValidationNEL[String, String] = {
+  private def vtRegisterBody(rp: VtRegistrationParams): ValidationNEL[String, String] = {
 
     implicit val loc = VL("VT.registerBody")
 
@@ -164,7 +164,7 @@ object VirtualTrainer {
 
       val locationId = Machine.getBasic(rp.machineId.toLong).get.locationId
       val json = JsObject(List(
-      "age" -> JsNumber(age(rp.dob)),
+      "age" -> JsNumber(vtAge(rp.dob)),
       "nickName" -> JsString(rp.vtNickname),
       "password" -> JsString(b64Enc.encode(rp.vtPassword.getBytes("UTF-8"))),
       "gender" -> JsString(rp.gender.toLowerCase),
@@ -185,7 +185,7 @@ object VirtualTrainer {
    * @param vtUid Virtual Trainer user id representing this exerciser
    * @return Stringified JSON with the link body needed by VT
    */
-  private def linkBody(npLogin: String, vtUid: String) = {
+  private def vtLinkBody(npLogin: String, vtUid: String) = {
     stringify(JsObject(List(
       "externalUserId" -> JsString(npLogin),
        "vtUserId" -> JsString(vtUid),
@@ -199,7 +199,7 @@ object VirtualTrainer {
    * @param password Exerciser's password with VirtualTrainer
    * @return Stringified JSON with the login body needed by VT
    */
-  private def loginBody(emailOrLogin: String, password: String) = {
+  private def vtLoginBody(emailOrLogin: String, password: String) = {
     stringify(JsObject(List(
       "username" -> JsString(b64Enc.encode(emailOrLogin.getBytes("UTF-8"))),
        "password" -> JsString(b64Enc.encode(password.getBytes("UTF-8")))
@@ -222,14 +222,14 @@ object VirtualTrainer {
    * @param rBody Registration body (JSON) needed by VT
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
-  private def doVtRegister(rBody: String) = (vtRequest(vtPathRegister, headerNoToken()).post(rBody)).await(vtTimeout).get
+  private def vtDoRegister(rBody: String) = (vtRequest(vtPathRegister, vtHeaderNoToken()).post(rBody)).await(vtTimeout).get
 
   /** Builds and executes the login call to Virtual Trainer
    *
    * @param lBody Login body (JSON) needed by VT
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
-  private def doVtLogin(lBody: String) = (vtRequest(vtPathLogin, headerNoToken()).post(lBody)).await(vtTimeout).get
+  private def vtDoLogin(lBody: String) = (vtRequest(vtPathLogin, vtHeaderNoToken()).post(lBody)).await(vtTimeout).get
 
   /** Builds and executes the logout call to Virtual Trainer
    *
@@ -237,8 +237,8 @@ object VirtualTrainer {
    * @param tokenSecret Exerciser's Virtual Trainer session token secret
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
-  private def doVtLogout(token: String, tokenSecret: String) =
-    (vtRequest(vtPathLogout, headerWithToken(token, tokenSecret)).post("")).await(vtTimeout).get
+  private def vtDoLogout(token: String, tokenSecret: String) =
+    (vtRequest(vtPathLogout, vtHeaderWithToken(token, tokenSecret)).post("")).await(vtTimeout).get
 
   /** Builds and executes the link_external_user call to Virtual Trainer
    *
@@ -246,8 +246,8 @@ object VirtualTrainer {
    * @param vtUid Exerciser's Virtual Trainer user id
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
-  private def doVtLink(npLogin: String, vtUid: String) =
-    (vtRequest(vtPathLink, headerNoToken()).post(linkBody(npLogin, vtUid))).await(vtTimeout).get
+  private def vtDoLink(npLogin: String, vtUid: String) =
+    (vtRequest(vtPathLink, vtHeaderNoToken()).post(vtLinkBody(npLogin, vtUid))).await(vtTimeout).get
 
   /** Builds and executes the get_predefined_presets call to Virtual Trainer
    *
@@ -255,8 +255,8 @@ object VirtualTrainer {
    * @param tokenSecret Exerciser's Virtual Trainer session token secret
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
-  private def doVtPredefineds(token: String, tokenSecret: String) =
-    (vtRequest(vtPathPredefinedPresets, headerWithToken(token, tokenSecret)).get()).await(vtTimeout).get
+  private def vtDoPredefineds(token: String, tokenSecret: String) =
+    (vtRequest(vtPathPredefinedPresets, vtHeaderWithToken(token, tokenSecret)).get()).await(vtTimeout).get
 
   /** Builds and executes the get_workouts call to Virtual Trainer
    *
@@ -264,8 +264,8 @@ object VirtualTrainer {
    * @param tokenSecret Exerciser's Virtual Trainer session token secret
    * @return play.api.libs.ws.WS.Response resulting from the call
    */
-  private def doVtWorkouts(token: String, tokenSecret: String) =
-    (vtRequest(vtPathWorkouts, headerWithToken(token, tokenSecret)).get()).await(vtTimeout).get
+  private def vtDoWorkouts(token: String, tokenSecret: String) =
+    (vtRequest(vtPathWorkouts, vtHeaderWithToken(token, tokenSecret)).get()).await(vtTimeout).get
 
   /** Manages the process of registering an exerciser with Virtual Trainer, given a set of
    * registration values that have been packaged into a RegParams object. Will return either
@@ -276,14 +276,14 @@ object VirtualTrainer {
    * @param rp RegParams object populated with the registration values needed by Virtual Trainer
    * @return Either an error code if problems (Left), or a VtUser if successful (Right)
    */
-  def register(rp: RegParams): Either[Int, VtUser] = {
+  def vtRegister(rp: VtRegistrationParams): Either[Int, VtUser] = {
 
     implicit val loc = VL("VT.register")
 
     val rVal: Option[(String, Int)] = for {
 
-      rBody <- registerBody(rp).error.toOption
-      valResult <- vld((vtRequest(vtPathValidate, headerNoToken()).post(rBody)).await(vtTimeout).get).error.toOption
+      rBody <- vtRegisterBody(rp).error.toOption
+      valResult <- vld((vtRequest(vtPathValidate, vtHeaderNoToken()).post(rBody)).await(vtTimeout).get).error.toOption
       valStatus = valResult.status
 
     } yield {
@@ -297,7 +297,7 @@ object VirtualTrainer {
       case Some((rBody, _)) =>
         val result: Validation[NonEmptyList[String], VtUser] =
           for {
-            regResult <- vld(doVtRegister(rBody))
+            regResult <- vld(vtDoRegister(rBody))
             status <- tst(regResult)(_.status == 200).
               add("vt register result status", regResult.status.toString).
               add("body sent", rBody).
@@ -307,7 +307,7 @@ object VirtualTrainer {
             vtUid <- vld((regXml \\ "userId" head).text).add("regXml", regXml.toString())
             vtNickname <- vld((regXml \\ "nickName" head).text).add("regXml", regXml.toString())
             vtUser <- vld(VtUser(regXml)).add("regXml", regXml.toString())
-            linkResult <- link(rp.npLogin, vtUid)
+            linkResult <- vtLink(rp.npLogin, vtUid)
 
           } yield vtUser
 
@@ -321,12 +321,12 @@ object VirtualTrainer {
    * @param vtUid Virtual Trainer user id for this exerciser
    * @return ValidationNEL with error message(s) if problems, otherwise Boolean true indicating success
    */
-  def link(npLogin: String, vtUid: String): ValidationNEL[String, Boolean] = {
+  def vtLink(npLogin: String, vtUid: String): ValidationNEL[String, Boolean] = {
 
     implicit val loc = VL("VT.link")
 
     (for {
-      linkResult <- vld(doVtLink(npLogin, vtUid))
+      linkResult <- vld(vtDoLink(npLogin, vtUid))
       status <- tst(linkResult)(_.status == 200).
         add("vt link external account result status", linkResult.status.toString).
         add("body", linkResult.body).error
@@ -341,15 +341,15 @@ object VirtualTrainer {
    * @param vtPassword Exerciser's password with Virtual Trainer
    * @return ValidationNEL with error string(s) if problems, else a tuple of vt id, token and token secret
    */
-  def login(emailOrNickname: String, vtPassword: String): ValidationNEL[String, (String, String, String)] = {
+  def vtLogin(emailOrNickname: String, vtPassword: String): ValidationNEL[String, (String, String, String)] = {
 
     implicit val loc = VL("VT.login")
     val tEx = """(.*oauth_token=\")([^\"]*).*""".r
     val tsEx = """(.*oauth_token_secret=\")([^\"]*).*""".r
 
     (for {
-      lBody <- vld(loginBody(emailOrNickname, vtPassword))
-      loginResult <- vld(doVtLogin(lBody))
+      lBody <- vld(vtLoginBody(emailOrNickname, vtPassword))
+      loginResult <- vld(vtDoLogin(lBody))
       status <- tst(loginResult)(_.status == 200).
         add("vt login result status", loginResult.status.toString).
         add("body", loginResult.body).error
@@ -377,12 +377,12 @@ object VirtualTrainer {
    * @param tokenSecret The exerciser's current Virtual Trainer session token secret
    * @return ValidationNEL with error string(s) if a problem occurred, otherwise Boolean true
    */
-  def logout(token: String, tokenSecret: String): ValidationNEL[String, Boolean] = {
+  def vtLogout(token: String, tokenSecret: String): ValidationNEL[String, Boolean] = {
 
     implicit val loc = VL("VT.logout")
 
     (for {
-      logoutResult <- vld(doVtLogout(token, tokenSecret))
+      logoutResult <- vld(vtDoLogout(token, tokenSecret))
       status <- tst(logoutResult)(_.status == 200).
         add("vt logout result status", logoutResult.status.toString).error
 
@@ -396,12 +396,12 @@ object VirtualTrainer {
    * @param tokenSecret The exerciser's current Virtual Trainer session token secret
    * @return An xml string with the applicable predefined presets
    */
-  def predefinedPresets(token: String, tokenSecret: String, model: String): ValidationNEL[String, NodeSeq] = {
+  def vtPredefinedPresets(token: String, tokenSecret: String, model: String): ValidationNEL[String, NodeSeq] = {
 
     implicit val loc = VL("VT.predefinedPresets")
 
     (for {
-      ppResult <- vld(doVtPredefineds(token, tokenSecret))
+      ppResult <- vld(vtDoPredefineds(token, tokenSecret))
       status <- tst(ppResult)(_.status == 200).add("vt result status", ppResult.status.toString)
       segs <- vld(ppResult.xml \\ "workoutSegments").add("pp result xml", ppResult.xml.toString())
 
@@ -419,12 +419,12 @@ object VirtualTrainer {
    * @param tokenSecret The exerciser's current Virtual Trainer session token secret
    * @return An xml string with the applicable predefined presets
    */
-  def workouts(token: String, tokenSecret: String, model: String): ValidationNEL[String, NodeSeq] = {
+  def vtWorkouts(token: String, tokenSecret: String, model: String): ValidationNEL[String, NodeSeq] = {
 
     implicit val loc = VL("VT.workouts")
 
     (for {
-      ppResult <- vld(doVtWorkouts(token, tokenSecret))
+      ppResult <- vld(vtDoWorkouts(token, tokenSecret))
       status <- tst(ppResult)(_.status == 200).add("vt result status", ppResult.status.toString)
       segs <- vld(ppResult.xml \\ "workoutSegments")
     } yield segs.withFilter(s => (s \\ "deviceType").exists {
@@ -446,8 +446,8 @@ object VirtualTrainer {
    * @param workouts XML of workouts to be inserted under the parent element of the target XML
    * @return XML which combines the original input with the given presets and workouts
    */
-  def insertIntoXml(x: Node, parent: String, presets: NodeSeq, workouts: NodeSeq = NodeSeq.Empty) =
-          XmlMutator(x).add(parent, asApiResult(presets, workouts))
+  def vtInsertIntoXml(x: Node, parent: String, presets: NodeSeq, workouts: NodeSeq = NodeSeq.Empty) =
+          XmlMutator(x).add(parent, vtAsApiResult(presets, workouts))
 
   /** Packages the provided predefined_presets and workouts into an XML chunk with <api> as the
    * parent element.
@@ -456,7 +456,7 @@ object VirtualTrainer {
    * @param workouts XML of workouts retrieved from Virtual Trainer
    * @return XML which packages the given presets and workouts inside standardized elements
    */
-  def asApiResult(presets: NodeSeq, workouts: NodeSeq = NodeSeq.Empty) = {
+  def vtAsApiResult(presets: NodeSeq, workouts: NodeSeq = NodeSeq.Empty) = {
 
     <api error={apiNoError.toString}>
       <virtualTrainer>

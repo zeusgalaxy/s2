@@ -22,36 +22,36 @@ GET     /userAdd                            controllers.MiscController.userAdd()
 POST    /userAddSubmit                      controllers.MiscController.userAddSubmit()
 GET     /userList                           controllers.MiscController.userList(p:Int ?= 0, s:Int ?= 1, f ?= "" )
 
-GET     /beginLogin                         controllers.ApiController.beginLogin
-GET     /s2/beginLogin                      controllers.ApiController.beginLogin
-GET     /beginConnection                    controllers.ApiController.beginConnection
-GET     /s2/beginConnection                 controllers.ApiController.beginConnection
-GET     /endGigya                           controllers.ApiController.endGigya
-GET     /s2/endGigya                        controllers.ApiController.endGigya
-GET     /gigyaProxy/:method                 controllers.ApiController.gigyaProxy(method: String)
-GET     /s2/gigyaProxy/:method              controllers.ApiController.gigyaProxy(method: String)
+GET     /beginLogin                         controllers.ApiController.apiBeginLogin
+GET     /s2/beginLogin                      controllers.ApiController.apiBeginLogin
+GET     /beginConnection                    controllers.ApiController.apiBeginConnection
+GET     /s2/beginConnection                 controllers.ApiController.apiBeginConnection
+GET     /endGigya                           controllers.ApiController.apiEndGigya
+GET     /s2/endGigya                        controllers.ApiController.apiEndGigya
+GET     /gigyaProxy/:method                 controllers.ApiController.apiGigyaProxy(method: String)
+GET     /s2/gigyaProxy/:method              controllers.ApiController.apiGigyaProxy(method: String)
 
 
-GET     /vtLinkUser                         controllers.ApiController.vtLinkUser(id: String, vt_password: String, machine_id: Long)
-GET     /s2/vtLinkUser                      controllers.ApiController.vtLinkUser(id: String, vt_password: String, machine_id: Long)
-GET     /vtLogin                            controllers.ApiController.vtLogin(id: String, vt_password: String, machine_id: Long)
-GET     /s2/vtLogin                         controllers.ApiController.vtLogin(id: String, vt_password: String, machine_id: Long)
-GET     /vtLogout                           controllers.ApiController.vtLogout(id: String)
-GET     /s2/vtLogout                        controllers.ApiController.vtLogout(id: String)
-GET     /vtStatus                           controllers.ApiController.exerciserStatus(id: String)
-GET     /s2/vtStatus                        controllers.ApiController.exerciserStatus(id: String)
-GET     /exerciserStatus                    controllers.ApiController.exerciserStatus(id: String)
-GET     /s2/exerciserStatus                 controllers.ApiController.exerciserStatus(id: String)
-GET     /vtRegister                         controllers.ApiController.vtRegister(id: String, machine_id: Long)
-GET     /s2/vtRegister                      controllers.ApiController.vtRegister(id: String, machine_id: Long)
-GET     /getChannels                        controllers.ApiController.getChannels(id: String, location_id: Long)
-GET     /s2/getChannels                     controllers.ApiController.getChannels(id: String, location_id: Long)
-POST    /setChannels                        controllers.ApiController.setChannels
-POST    /s2/setChannels                     controllers.ApiController.setChannels
-GET     /setShowProfilePic                  controllers.ApiController.setShowProfilePic(id: String, show: Boolean)
+GET     /vtLinkUser                         controllers.ApiController.apiVtLinkUser(id: String, vt_password: String, machine_id: Long)
+GET     /s2/vtLinkUser                      controllers.ApiController.apiVtLinkUser(id: String, vt_password: String, machine_id: Long)
+GET     /vtLogin                            controllers.ApiController.apiVtLogin(id: String, vt_password: String, machine_id: Long)
+GET     /s2/vtLogin                         controllers.ApiController.apiVtLogin(id: String, vt_password: String, machine_id: Long)
+GET     /vtLogout                           controllers.ApiController.apiVtLogout(id: String)
+GET     /s2/vtLogout                        controllers.ApiController.apiVtLogout(id: String)
+GET     /vtStatus                           controllers.ApiController.apiExerciserStatus(id: String)
+GET     /s2/vtStatus                        controllers.ApiController.apiExerciserStatus(id: String)
+GET     /exerciserStatus                    controllers.ApiController.apiExerciserStatus(id: String)
+GET     /s2/exerciserStatus                 controllers.ApiController.apiExerciserStatus(id: String)
+GET     /vtRegister                         controllers.ApiController.apiVtRegister(id: String, machine_id: Long)
+GET     /s2/vtRegister                      controllers.ApiController.apiVtRegister(id: String, machine_id: Long)
+GET     /getChannels                        controllers.ApiController.apiGetChannels(id: String, location_id: Long)
+GET     /s2/getChannels                     controllers.ApiController.apiGetChannels(id: String, location_id: Long)
+POST    /setChannels                        controllers.ApiController.apiSetChannels
+POST    /s2/setChannels                     controllers.ApiController.apiSetChannels
+GET     /setShowProfilePic                  controllers.ApiController.apiSetShowProfilePic(id: String, show: Boolean)
 
-GET     /n5iregister.jsp                    controllers.DinoController.register
-GET     /n5ilogin.jsp                       controllers.DinoController.login(id: String, machine_id: Long)
+GET     /n5iregister.jsp                    controllers.DinoController.n5iRegister
+GET     /n5ilogin.jsp                       controllers.DinoController.n5iLogin(id: String, machine_id: Long)
 
 # Reports
 GET     /s2/reports/WorkoutLocations        controllers.ReportController.showWorkoutLocations(p:Int ?= 0, s:Int ?= 1, f ?= "", sd ?= "", ed ?= "" )

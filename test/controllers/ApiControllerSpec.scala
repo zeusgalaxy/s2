@@ -19,7 +19,7 @@ object ApiControllerSpec extends Specification {
       running(FakeApplication()) {
 
         var pth = "http://localhost:9000/n5iregister.jsp?machine_id=1070&id=" + id + "&membership_id=1&email=" + email + "&pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15"
-        var result = controllers.DinoController.register()(FakeRequest("GET", pth))
+        var result = controllers.DinoController.n5iRegister()(FakeRequest("GET", pth))
 
         status(result) must equalTo(OK)
         contentAsString(result) must contain("adunit")
@@ -27,7 +27,7 @@ object ApiControllerSpec extends Specification {
         contentAsString(result) must contain("workoutSegments")
 
         pth = "http://localhost:9000/n5ilogin.jsp?machine_id=1070&id=" + id + "&pic=22&oem_tos=15"
-        result = controllers.DinoController.login(id, 1070L)(FakeRequest("GET", pth))
+        result = controllers.DinoController.n5iLogin(id, 1070L)(FakeRequest("GET", pth))
 
         status(result) must equalTo(OK)
         contentAsString(result) must contain("adunit")
@@ -45,25 +45,25 @@ object ApiControllerSpec extends Specification {
          */
 
         pth = "http://localhost:9000/vtLogin?machine_id=1070&id=" + id + "&vt_password=" + pwd
-        result = controllers.ApiController.vtLogin(id, pwd, 1070L)(FakeRequest("GET", pth))
+        result = controllers.ApiController.apiVtLogin(id, pwd, 1070L)(FakeRequest("GET", pth))
 
         status(result) must equalTo(OK)
         contentAsString(result) must contain("virtualTrainer")
         contentAsString(result) must contain("workoutSegments")
 
         pth = "http://localhost:9000/vtLogout?id=" + id
-        result = controllers.ApiController.vtLogout(id)(FakeRequest("GET", pth))
+        result = controllers.ApiController.apiVtLogout(id)(FakeRequest("GET", pth))
 
         status(result) must equalTo(OK)
 
         pth = "http://localhost:9000/vtRegister?machine_id=1070&id=" + id
-        result = controllers.ApiController.vtRegister(id, 1070L)(FakeRequest("GET", pth))
+        result = controllers.ApiController.apiVtRegister(id, 1070L)(FakeRequest("GET", pth))
 
         status(result) must equalTo(OK)
         contentAsString(result) must contain("api error=\"2\"") // They're already registered with vt!
 
         pth = "http://localhost:9000/exerciserStatus?id=" + id
-        result = controllers.ApiController.exerciserStatus(id)(FakeRequest("GET", pth))
+        result = controllers.ApiController.apiExerciserStatus(id)(FakeRequest("GET", pth))
 
         status(result) must equalTo(OK)
         contentAsString(result) must contain("homeClub")
@@ -76,20 +76,20 @@ object ApiControllerSpec extends Specification {
         </channels>
 
         val fr = FakeRequest("POST", pth, FakeHeaders(Map("Content-Type" -> List("text/xml"))), cnt)
-        result = controllers.ApiController.setChannels()(fr)
+        result = controllers.ApiController.apiSetChannels()(fr)
 
         status(result) must equalTo(OK)
         contentAsString(result) must contain("api error=\"0\"")
 
         pth = "http://localhost:9000/getChannels?id=s2&location_id=99"
-        result = controllers.ApiController.getChannels("s2", 99L)(FakeRequest("GET", pth))
+        result = controllers.ApiController.apiGetChannels("s2", 99L)(FakeRequest("GET", pth))
 
         status(result) must equalTo(OK)
         contentAsString(result) must contain("api error=\"0\"")
         contentAsString(result) must contain(channel.toString)
 
         pth = "http://localhost:9000/vtLinkUser?machine_id=1070&id=" + id + "&vt_password=" + pwd
-        result = controllers.ApiController.vtLinkUser(id, pwd, 1070L)(FakeRequest("GET", pth))
+        result = controllers.ApiController.apiVtLinkUser(id, pwd, 1070L)(FakeRequest("GET", pth))
 
         /**
          * TODO -- Testing the account linking feature requires more setup than this. We would need to
@@ -105,7 +105,7 @@ object ApiControllerSpec extends Specification {
         contentAsString(result) must contain("workoutSegments")
 
         pth = "http://localhost:9000/gigyaProxy/notifyLogin?siteUID=" + id + "&newUser=true"
-        result = controllers.ApiController.gigyaProxy("notifyLogin")(FakeRequest("GET", pth))
+        result = controllers.ApiController.apiGigyaProxy("notifyLogin")(FakeRequest("GET", pth))
 
         contentAsString(result) must contain("UIDSignature")
       }

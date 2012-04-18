@@ -33,7 +33,7 @@ object ApiController extends Controller {
    * @return HTTP status 200, with an xml body that contains Virtual Trainer predefined_presets and/or
    *         workouts appropriate for the machine that the exerciser is currently on.
    */
-  def vtLinkUser(npLogin: String, vtPassword: String, machineId: Long) = Unrestricted {
+  def apiVtLinkUser(npLogin: String, vtPassword: String, machineId: Long) = Unrestricted {
     implicit request =>
 
       implicit val loc = VL("Api.vtLinkUser")
@@ -44,18 +44,18 @@ object ApiController extends Controller {
           model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
             toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
           ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found")
-          vtAuth <- VirtualTrainer.login(ex.email, vtPassword) // tuple(token, tokenSecret)
+          vtAuth <- VirtualTrainer.vtLogin(ex.email, vtPassword) // tuple(token, tokenSecret)
           (vtUid, vtToken, vtTokenSecret) = vtAuth
 
           // Only notify them if never linked before
-          linkStatus <- if (ex.vtUserId.isEmpty) VirtualTrainer.link(npLogin, vtUid) else true.successNel[String]
+          linkStatus <- if (ex.vtUserId.isEmpty) VirtualTrainer.vtLink(npLogin, vtUid) else true.successNel[String]
 
           updResult <- vld(Exerciser.loginVt(npLogin, vtUid, vtToken, vtTokenSecret))
 
-          vtPredefinedPresets <- VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret, model)
-          vtWorkouts <- VirtualTrainer.workouts(vtToken, vtTokenSecret, model)
+          vtPredefinedPresets <- VirtualTrainer.vtPredefinedPresets(vtToken, vtTokenSecret, model)
+          vtWorkouts <- VirtualTrainer.vtWorkouts(vtToken, vtTokenSecret, model)
 
-        } yield VirtualTrainer.asApiResult(vtPredefinedPresets, vtWorkouts)
+        } yield VirtualTrainer.vtAsApiResult(vtPredefinedPresets, vtWorkouts)
 
       finalResult.error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
@@ -77,7 +77,7 @@ object ApiController extends Controller {
    * @return HTTP status 200, with an xml body that contains Virtual Trainer predefined_presets and/or
    *         workouts appropriate for the machine that the exerciser is currently on.
    */
-  def vtLogin(npLogin: String, vtPassword: String, machineId: Long) = Unrestricted {
+  def apiVtLogin(npLogin: String, vtPassword: String, machineId: Long) = Unrestricted {
     implicit request =>
 
       implicit val loc = VL("Api.vtLogin")
@@ -88,15 +88,15 @@ object ApiController extends Controller {
           model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
             toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
           ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found")
-          vtAuth <- VirtualTrainer.login(ex.email, vtPassword) // tuple(token, tokenSecret)
+          vtAuth <- VirtualTrainer.vtLogin(ex.email, vtPassword) // tuple(token, tokenSecret)
           (vtUid, vtToken, vtTokenSecret) = vtAuth
 
           updResult <- vld(Exerciser.loginVt(npLogin, vtUid, vtToken, vtTokenSecret))
 
-          vtPredefinedPresets <- VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret, model)
-          vtWorkouts <- VirtualTrainer.workouts(vtToken, vtTokenSecret, model)
+          vtPredefinedPresets <- VirtualTrainer.vtPredefinedPresets(vtToken, vtTokenSecret, model)
+          vtWorkouts <- VirtualTrainer.vtWorkouts(vtToken, vtTokenSecret, model)
 
-        } yield VirtualTrainer.asApiResult(vtPredefinedPresets, vtWorkouts)
+        } yield VirtualTrainer.vtAsApiResult(vtPredefinedPresets, vtWorkouts)
 
       finalResult.error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
@@ -109,7 +109,7 @@ object ApiController extends Controller {
    * @param npLogin Id used by the exerciser to log into Netpulse.
    * @return HTTP status 200, with an xml body indicating whether the call was successful or not.
    */
-  def vtLogout(npLogin: String) = Unrestricted {
+  def apiVtLogout(npLogin: String) = Unrestricted {
 
     implicit request =>
 
@@ -118,7 +118,7 @@ object ApiController extends Controller {
       val finalResult =
         for {
           ex <- Exerciser.findByLogin(npLogin).getOrFail("Exerciser " + npLogin + " not found")
-          logoutStatus <- VirtualTrainer.logout(ex.vtToken, ex.vtTokenSecret)
+          logoutStatus <- VirtualTrainer.vtLogout(ex.vtToken, ex.vtTokenSecret)
           updResult <- vld(Exerciser.logoutVt(npLogin))
 
         } yield <api error={apiNoError.toString}/>
@@ -137,7 +137,7 @@ object ApiController extends Controller {
    *         An example call to test:
    *         http://localhost:9000/vtRegister?machine_id=1070&id=2020
    */
-  def vtRegister(npLogin: String, machineId: Long) = Unrestricted {
+  def apiVtRegister(npLogin: String, machineId: Long) = Unrestricted {
     implicit request =>
 
       implicit val loc = VL("Api.vtRegister")
@@ -145,8 +145,8 @@ object ApiController extends Controller {
       // either error code or object encapsulating vt user
       val rVal: Either[Int, VtUser] = (for {
         ex: Exerciser <- vld(Exerciser.findByLogin(npLogin).get)
-        rp <- vld(RegParams(ex, machineId))
-        vtUser <- vld(VirtualTrainer.register(rp))
+        rp <- vld(VtRegistrationParams(ex, machineId))
+        vtUser <- vld(VirtualTrainer.vtRegister(rp))
       } yield {
         vtUser
       }).error.fold(e => Left(apiGeneralError), s => s)
@@ -157,15 +157,15 @@ object ApiController extends Controller {
           vld(<api error={err.toString}></api>)
         case Right(vtUser) =>
           for {
-            vtAuth <- VirtualTrainer.login(vtUser.vtNickname, vtUser.vtNickname)
+            vtAuth <- VirtualTrainer.vtLogin(vtUser.vtNickname, vtUser.vtNickname)
             (vtUid, vtToken, vtTokenSecret) = vtAuth
             updResult <- vld(Exerciser.loginVt(npLogin, vtUid, vtToken, vtTokenSecret))
             model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
               toSuccess(NonEmptyList("Unable to rtrv mach/equip/model"))
 
-            vtPredefinedPresets <- VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret, model)
+            vtPredefinedPresets <- VirtualTrainer.vtPredefinedPresets(vtToken, vtTokenSecret, model)
 
-          } yield VirtualTrainer.asApiResult(vtPredefinedPresets)
+          } yield VirtualTrainer.vtAsApiResult(vtPredefinedPresets)
       }).error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
 
@@ -178,7 +178,7 @@ object ApiController extends Controller {
    * @return HTTP status 200, with an xml body describing the status of an exerciser's
    *         current relationship with Virtual Trainer, Gigya, et. al.
    */
-  def exerciserStatus(npLogin: String) = Unrestricted {
+  def apiExerciserStatus(npLogin: String) = Unrestricted {
     implicit request =>
 
       implicit val loc = VL("Api.exerciserStatus")
@@ -197,7 +197,7 @@ object ApiController extends Controller {
    * @return HTTP status 200, with an xml body listing the channels (if any) that the exerciser
    *         has previously saved as "favorites" for that location.
    */
-  def getChannels(npLogin: String, locationId: Long) = Unrestricted {
+  def apiGetChannels(npLogin: String, locationId: Long) = Unrestricted {
     implicit request =>
 
       implicit val loc = VL("Api.getChannels")
@@ -219,7 +219,7 @@ object ApiController extends Controller {
    *         An example call to test locally, when in the test/controllers directory:
    *         curl --header "Content-Type: text/xml; charset=UTF-8" -d@setChannels.xml http://localhost:9000/setChannels
    */
-  def setChannels() = Unrestricted(parse.xml) {
+  def apiSetChannels() = Unrestricted(parse.xml) {
     implicit request =>
 
       implicit val loc = VL("Api.setChannels")
@@ -243,7 +243,7 @@ object ApiController extends Controller {
    *
    * @return HTML/Javascript provided by gigya
    */
-  def beginLogin = Unrestricted {
+  def apiBeginLogin = Unrestricted {
     implicit request =>
       Ok(html.beginLogin())
   }
@@ -252,7 +252,7 @@ object ApiController extends Controller {
    *
    * @return HTML/Javascript provided by gigya
    */
-  def beginConnection = Unrestricted {
+  def apiBeginConnection = Unrestricted {
     implicit request =>
       Ok(html.beginConnection())
   }
@@ -261,7 +261,7 @@ object ApiController extends Controller {
    *
    * @return HTML/Javascript provided by gigya
    */
-  def endGigya = Unrestricted {
+  def apiEndGigya = Unrestricted {
     implicit request =>
       Ok(html.endGigya())
   }
@@ -272,7 +272,7 @@ object ApiController extends Controller {
    * @param method The gigya API method to be invoked
    * @return Whatever the Gigya page returns.
    */
-  def gigyaProxy(method: String) = Unrestricted {
+  def apiGigyaProxy(method: String) = Unrestricted {
     implicit request =>
 
       implicit val loc = VL("ApiController.gigyaProxy")
@@ -296,7 +296,7 @@ object ApiController extends Controller {
    * @param show Boolean flag indicating whether or not to show the profile picture (must be 0 or 1)
    * @return HTTP status 200, with an xml body indicating whether the call was successful.
    */
-  def setShowProfilePic(npLogin: String, show: Boolean) = Unrestricted {
+  def apiSetShowProfilePic(npLogin: String, show: Boolean) = Unrestricted {
     implicit request =>
 
       implicit val loc = VL("Api.setShowProfilePic")

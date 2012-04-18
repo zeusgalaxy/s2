@@ -122,19 +122,19 @@ object DinoController extends Controller {
    * http://localhost:9000/n5iregister.jsp?machine_id=18&id=9194247300&membership_id=1&email=dOxHaxVE73%91900stross.com&pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15&first_name=kenner&last_name=stross&city=denver&state=CO&country=usa
    * http://localhost:9000/n5iregister.jsp?machine_id=1070&id=2115180102&membership_id=1&email=sOCClkoE102%40stross.com&pic=22&DOB=03011960&gender=M&enableMail=true&weight=180&oem_tos=15&gigya_id=123
    */
-  def register = Unrestricted {
+  def n5iRegister = Unrestricted {
     implicit request =>
 
       implicit val loc = VL("DinoWrapper.register")
 
-      val rp = RegParams(request)
+      val rp = VtRegistrationParams(request)
       val oldXml = forward(request).flatMap { r => vld(r.xml) }.error |
         <response code="2" desc="Unable to register. An error occurred when forwarding registration to Dino."></response>
 
       // either error code or object encapsulating vt user
       val rVal: Either[Int, VtUser] = (for {
         code <- tst((oldXml \\ "response" \ "@code").text)(_ == "0", "oldXml response code != 0").add("oldXml", oldXml.text)
-        vtUser <- vld(VirtualTrainer.register(rp))
+        vtUser <- vld(VirtualTrainer.vtRegister(rp))
       } yield {
         vtUser
       }).error.fold(e => Left(apiGeneralError), s => s)
@@ -145,16 +145,16 @@ object DinoController extends Controller {
           vld(XmlMutator(oldXml).add("response", <api error={err.toString}></api>))
         case Right(vtUser) =>
           for {
-            vtAuth <- VirtualTrainer.login(vtUser.vtNickname, vtUser.vtNickname)
+            vtAuth <- VirtualTrainer.vtLogin(vtUser.vtNickname, vtUser.vtNickname)
             (vtUid, vtToken, vtTokenSecret) = vtAuth
             updResult <- vld(Exerciser.loginVt(rp.npLogin, vtUid, vtToken, vtTokenSecret))
             machineId <- vld(rp.machineId.toLong)
             model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
               toSuccess(NonEmptyList("Unable to rtrv mach/equip/model"))
 
-            vtPredefinedPresets <- VirtualTrainer.predefinedPresets(vtToken, vtTokenSecret, model)
+            vtPredefinedPresets <- VirtualTrainer.vtPredefinedPresets(vtToken, vtTokenSecret, model)
 
-          } yield VirtualTrainer.insertIntoXml(oldXml, "response", vtPredefinedPresets)
+          } yield VirtualTrainer.vtInsertIntoXml(oldXml, "response", vtPredefinedPresets)
       }
 
       val gigyaUid = request.queryString.get("gigya_uid")
@@ -175,7 +175,7 @@ object DinoController extends Controller {
    * An example call to test:
    * http://localhost:9000/n5ilogin.jsp?machine_id=1070&id=2115180443&pic=22&oem_tos=15
    */
-  def login(npLogin: String, machineId: Long) = Unrestricted {
+  def n5iLogin(npLogin: String, machineId: Long) = Unrestricted {
     implicit request =>
       implicit val loc = VL("ApiWrapper.login")
 
@@ -193,10 +193,10 @@ object DinoController extends Controller {
               model <- Machine.getWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
                 toSuccess(NonEmptyList("Unable to retrieve machine/equipment/model"))
 
-              vtPredefinedPresets <- VirtualTrainer.predefinedPresets(ex.get.vtToken, ex.get.vtTokenSecret, model)
-              vtWorkouts <- VirtualTrainer.workouts(ex.get.vtToken, ex.get.vtTokenSecret, model)
+              vtPredefinedPresets <- VirtualTrainer.vtPredefinedPresets(ex.get.vtToken, ex.get.vtTokenSecret, model)
+              vtWorkouts <- VirtualTrainer.vtWorkouts(ex.get.vtToken, ex.get.vtTokenSecret, model)
 
-            } yield VirtualTrainer.insertIntoXml(oldXml, "response", vtPredefinedPresets, vtWorkouts)
+            } yield VirtualTrainer.vtInsertIntoXml(oldXml, "response", vtPredefinedPresets, vtWorkouts)
           }.error.toOption.getOrElse(XmlMutator(oldXml).add("response", <api error={apiGeneralError.toString}/>))
 
           case _ => XmlMutator(oldXml).add("response", <api error={apiNoError.toString}/>)
