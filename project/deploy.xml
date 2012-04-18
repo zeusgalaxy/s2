@@ -3,19 +3,17 @@
     <format property="NOW" pattern="yyyy_MM_dd_hh_mm_ss" />
   </tstamp>
 
-  <property name="s2.remote.basedir" value="/tmp/s2_${NOW}"/>
+  <property name="s2.remote.owner" value="jetty"/>
   <property name="s2.remote.user" value="root"/>
   <property name="s2.remote.password" value="something"/>
+  <property name="s2.remote.symlink" value="${s2.remote.basedir}/latest"/>
+  <property name="s2.remote.basedir" value="/mnt/s2/${NOW}"/>
+  <property name="s2.remote.servicename" value="s2"/>
 
   <property environment="env"/>
   <property name="config.file" value="conf/base.conf"/>
   <property name="dist.dir" value="${basedir}/dist"/>
   <property file="${config.file}"/>
-
-  <target name="now">
-    <echo>Now is ${NOW}</echo>
-    <echo>Now is ${s2.remote.basedir}</echo>
-  </target>
 
   <taskdef resource="net/sf/antcontrib/antcontrib.properties">
     <classpath>
@@ -64,20 +62,50 @@
   </macrodef>
 
   <target name="deploy_single" depends="package" >
-    <!--
-    scp dist/s2-1.0.19.zip root@qa-app-titan:s2-1.0.19.zip   
-    Back on target machine:
-      unzip s2-1.0.19.zip
-    cd s2-1.0.16
-    chmod a+x ./start
-    nohup ./start &
-
-    -->
     <copy_dist 
         dist_file="${dist.package.path}"
         to_dir="${s2.remote.basedir}"
         remote_server="${server}"
-        remote_user="${s2.remote.server}"/>
+        remote_user="${s2.remote.user}"
+      />
+
+    <basename property="dist.package.basename" file="${dist.package.path}"/>
+    <propertyregex 
+        property="s2.remote.targetdir"
+        input="${dist.package.basename}"
+        regexp="(.*)\.zip"
+        select="${s2.remote.basedir}/\1"
+        casesensitive="false" />
+
+<!-- props
+  <property name="s2.remote.symlink" value="${s2.remote.basedir}/latest"/>
+  <property name="s2.remote.basedir" value="/mnt/s2/${NOW}"/>
+  <property name="s2.remote.targetdir" value="${s2.remote.basedir}/<package>"/>
+-->
+    <sshexec host="${server}" username="${s2.remote.user}" 
+        command="mkdir ${s2.remote.basedir} && cd ${s2.remote.basedir} && unzip ${dist.package.basename}"/>
+
+    <sshexec host="${server}" username="${s2.remote.user}" 
+        command="chown -R ${s2.remote.owner} ${s2.remote.basedir}"/>
+
+    <sshexec host="${server}" username="${s2.remote.user}" 
+        command="chmod a+x ${s2.remote.targetdir}/start"/>
+
+    <sshexec host="${server}" username="${s2.remote.user}" 
+        command="echo \"deployed: `date`\" \>\> ${s2.remote.targetdir}/DEPLOY_HISTORY"/>
+
+    <sshexec host="${server}" username="${s2.remote.user}" 
+        command="echo \"archived: `date`\" \>\> ${s2.remote.symlink}/DEPLOY_HISTORY"/>
+
+    <sshexec host="${server}" username="${s2.remote.user}" command="service s2 stop"/>
+
+    <sshexec host="${server}" username="${s2.remote.user}" 
+        command="ln -sf ${s2.remote.targetdir} ${s2.remote.symlink}"/>
+
+    <sshexec host="${server}" username="${s2.remote.user}" command="service s2 start"/>
+  </target>
+
+  <property name="s2.remote.servicename" value="s2"/>
     <!-- FIXME: add the rest -->
   </target>
 
