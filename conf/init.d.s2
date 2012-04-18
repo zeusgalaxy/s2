@@ -3,31 +3,59 @@
 #
 # Copy this file into /etc/init.d and give it execute rights: chmod _x /etc/init.d
 #
-S2PATH=/root/s2
+S2PATH=/root/s2 
 S2USER=root
 
-case "$1" in
-  start)
+start() {
     if [ ! -f $S2PATH/RUNNING_PID ]; then
       echo "Starting s2"
       cd $S2PATH
-      sudo -u $S2USER nohup ./start &
+      sudo -u $S2USER nohup ./start -Dlogger.resource=logger.xml &
     else
       echo "A $S2PATH/RUNNING_PID means s2 might already be running."
     fi
-    ;;
-  stop)
+} 
+
+stop() {
     if [ -f $S2PATH/RUNNING_PID ]; then
       PID=`cat $S2PATH/RUNNING_PID`
       echo "Stopping s2 pid=$PID"
       sudo -u $S2USER kill $PID
+      # wait until really stopped
+      i=0
+      while kill -0 "${PID:-}" 2> /dev/null;  do
+          if [ $i = '60' ]; then
+             break;
+          else
+             if [ $i = '0' ]; then
+               echo -n " ... waiting "
+             else
+               echo -n "."
+             fi
+             i=$(($i+1))
+             sleep 1
+          fi
+      done
+      echo "s2 stopped."
     else
       echo "It doesn't look like s2 is running"
     fi
+}
+
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+   ;;
+  restart)
+    stop
+    start
     ;;
   # Anything else
   *)
-    echo "Usage: service s2 [start|stop] to restart, stop then start."
+    echo "Usage: service s2 [start|stop|restart]"
     ;;
 esac
 exit 0
