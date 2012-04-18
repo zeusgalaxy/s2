@@ -3,22 +3,23 @@
 #
 # Copy this file into /etc/init.d and give it execute rights: chmod _x /etc/init.d
 #
-S2PATH=/root/s2
-S2USER=root
+S2PATH=/mnt/s2
+S2USER=jetty
+PIDFILE=/var/run/s2.pid
 
 case "$1" in
   start)
-    if [ ! -f $S2PATH/RUNNING_PID ]; then
+    if [ ! -f $PIDFILE ]; then
       echo "Starting s2"
       cd $S2PATH
       sudo -u $S2USER nohup ./start &
     else
-      echo "A $S2PATH/RUNNING_PID means s2 might already be running."
+      echo "A pidfile ($PIDFILE) means s2 might already be running.  Please remove and rerun if this is not so."
     fi
     ;;
   stop)
-    if [ -f $S2PATH/RUNNING_PID ]; then
-      PID=`cat $S2PATH/RUNNING_PID`
+    if [ -f $PIDFILE ]; then
+      PID=`cat $PIDFILE`
       echo "Stopping s2 pid=$PID"
       sudo -u $S2USER kill $PID
     else
