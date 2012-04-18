@@ -4,16 +4,12 @@ package sample
 import scalaz._
 import Scalaz._
 
-object SampleGlobal {
+package object Factory {
 
-  var useMocks = false
+  implicit val defaultApp: ClassSampleApp = new ClassSampleApp
+                              with TraitController
+                              with TraitDbLayer
+                              with TraitExternalWs
+                              with TraitHandler
 
-}
-
-package object MyFactory {
-
-//  play.api.Play.current.global.
-  private lazy val mockExtWs = new MyExternalWsMock
-  private lazy val realExtWs = new MyExternalWsReal
-  implicit def myExternalWs: MyExternalWsLike = if (SampleGlobal.useMocks) mockExtWs else realExtWs
 }

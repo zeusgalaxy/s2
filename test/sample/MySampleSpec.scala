@@ -4,35 +4,45 @@ import utils._
 import org.specs2.mutable._
 
 import models._
-import sample._
 import play.api.test._
 import play.api.test.Helpers._
 import play.api.Play._
 import play.api.mvc.Session
+import sample._
 
 object MySampleSpec extends Specification {
 
-  "Get both real and mock values from MyExternalWs" in {
+  "Get both real and mock values from the application" in {
 
     running(FakeApplication()) {
-      import sample.MyFactory._
-      val wsReal: MyExternalWsLike = implicitly[MyExternalWsLike]
-      wsReal.getX must equalTo(1)
-      wsReal.getY must equalTo("real")
-    }
-    running(FakeApplication()) {
 
-      SampleGlobal.useMocks = true
-      Env.mockDb = true
-      Env.mockVT = true
-      Env.mockSomeElse = true
-      Env.mockAllBut(x,y)
-      Env.mock = myPredefMock(A)
+      import sample.Factory._
+      val app: ClassSampleApp = implicitly[ClassSampleApp]
 
-      import sample.MyFactory._
-      val wsMock: MyExternalWsLike = implicitly[MyExternalWsLike]
-      wsMock.getX must equalTo(2)
-      wsMock.getY must equalTo("mock")
+      app.wholeThing must contain("TRAIT controllerPiece")
+      app.wholeThing must contain("TRAIT dbLayerPiece")
+      app.wholeThing must contain("TRAIT externalWsPiece")
+      app.wholeThing must contain("TRAIT handlerPiece")
+
+
+
+      trait MockDbLayer extends TraitDbLayer {
+        override def dbLayerPiece = "MOCK dbLayerPiece"
+      }
+      trait MockHandler extends TraitHandler {
+        override def handlerPiece = "MOCK handlerPiece"
+      }
+
+      val mock1: ClassSampleApp = new ClassSampleApp
+        with TraitController
+        with MockDbLayer
+        with TraitExternalWs
+        with MockHandler
+
+      mock1.wholeThing must contain("TRAIT controllerPiece")
+      mock1.wholeThing must contain("MOCK dbLayerPiece")
+      mock1.wholeThing must contain("TRAIT externalWsPiece")
+      mock1.wholeThing must contain("MOCK handlerPiece")
     }
   }
 }
