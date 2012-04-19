@@ -108,9 +108,8 @@ object VtRegistrationParams {
  * Provides various functions for interfacing with the Virtual Trainer servers.
  */
 trait VirtualTrainer {
-  this: VirtualTrainer
-    with MachineDao
-    with EquipmentDao =>
+  this: VirtualTrainer  with MachineDao
+                        with EquipmentDao =>
 
   /** Calculates an age, in years, from a given birth date.
    *

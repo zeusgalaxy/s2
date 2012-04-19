@@ -13,9 +13,11 @@ import Scalaz._
 
 case class Person(id: Long, companyId: Option[Long], roleId: Long, firstName: String, lastName: String,
                   portalLogin: String, portalPassword: Option[String],
-                  email: String, phone: String)
-// lastLogin: Option[DateTime], activeStatus: Int)
+                  email: String, phone: String, activeStatus: Int) {
 
+  def isActive = activeStatus == 1
+
+}
 /**
  * Anorm-based model representing any person having a relationship to Netpulse.
  */
@@ -30,8 +32,6 @@ trait PersonDao {
   lazy val prSelectFields = " person.id, person.company_id, person.role_id, person.first_name, person.last_name, person.portal_login, person.portal_password, " +
     " person.email, person.phone, date(person.last_login_dt) as lastLogin, person.active_status "
 
-  lazy val psStandardWhere = " and active_status = 1 and company_id IS NOT NULL "
-
   lazy val prSimple = {
     get[Long]("person.id") ~
       get[Option[Long]]("person.company_id") ~
@@ -45,7 +45,7 @@ trait PersonDao {
       get[Option[java.util.Date]]("lastLogin") ~
       get[Int]("person.active_status") map {
       case id ~ companyId ~ roleId ~ firstName ~ lastName ~ portalLogin ~ portalPassword ~ email ~ phone ~ lastLogin ~ activeStatus =>
-        Person( id, companyId, roleId, firstName, lastName, portalLogin, portalPassword, email, phone)
+        Person(id, companyId, roleId, firstName, lastName, portalLogin, portalPassword, email, phone, activeStatus)
           // lastLogin.map(ll => Some(new DateTime(ll.toString))).getOrElse(None), activeStatus)
     }
   }
@@ -55,16 +55,15 @@ trait PersonDao {
    * @param id Person's numeric id (as assigned by the db).
    * @return Some(Person), if found; else None.
    */
-  def prFindById(id: Long, withCo: Boolean = false): Option[Person] = {
+  def prFindById(id: Long): Option[Person] = {
 
-    implicit val loc = VL("Person.findById")
+    implicit val loc = VL("PersonDao.prFindById")
 
     vld {
       DB.withConnection("s2") {
         implicit connection =>
-          SQL("select " + prSelectFields + " from person where id = {id} " +
-            (withCo ? " and company_id IS NOT NULL " | "")
-            ).on('id -> id).as(prSimple.singleOpt)
+          SQL("select " + prSelectFields + " from person where id = {id} ").
+            on('id -> id).as(prSimple.singleOpt)
       }
     }.info.fold(e => None, s => s)
   }
@@ -74,17 +73,16 @@ trait PersonDao {
    * @param login Person's login identifier used when accessing the portal
    * @return Some(Person), if found; else None
    */
-  def prFindByLogin(login: String, activeOnly: Boolean = false): Option[Person] = {
+  def prFindByLogin(login: String): Option[Person] = {
 
-    implicit val loc = VL("Person.findByLogin")
+    implicit val loc = VL("PersonDao.prFindByLogin")
 
     vld {
       DB.withConnection("s2") {
         implicit connection =>
           SQL("select " + prSelectFields + " from person " +
-            " where portal_login = {login} " +
-            (activeOnly ? psStandardWhere | "")
-          ).on('login -> login).as(prSimple.singleOpt)
+            " where portal_login = {login} ").
+            on('login -> login).as(prSimple.singleOpt)
       }
     }.info.fold(e => {println (e.toString()); None}, s => s)
   }
@@ -98,14 +96,14 @@ trait PersonDao {
    */
   def prAuthenticate(login: String, password: String): Option[Person] = {
 
-    implicit val loc = VL("Person.authenticate")
+    implicit val loc = VL("PersonDao.prAuthenticate")
 
     vld {
       DB.withConnection("s2") {
         implicit connection =>
           SQL(
             "select " + prSelectFields + " from person where " +
-              "portal_login = {login} and portal_password = {password} " + psStandardWhere
+              "portal_login = {login} and portal_password = {password} and active_status = 1"
           ).on(
             'login -> login,
             'password -> Blowfish.encrypt(password)
@@ -113,7 +111,7 @@ trait PersonDao {
       }
     }.error.fold(e => None, s => s match {
       case None =>
-        Logger.info("No match found in db for login " + login + " and password " + password + " in Person.authenticate")
+        Logger.info("No (active) match found in db for login " + login + " and password " + password + " in Person.authenticate")
         None
       case u => u        // TODO: Update last login here.
     })
@@ -125,12 +123,12 @@ trait PersonDao {
    * @param page Page to display
    * @param pageSize Number of users per page
    * @param orderBy firstName for sorting
-   * @param filter Filter applied on the firstName column
+   * @param userFilter Filter applied on the firstName column
    * @return a list of users to display a page with
    */
   def prList(page: Int = 0, pageSize: Int = 15, orderBy: Int = 1, userFilter: String = "%", companyFilter: String): Page[Person] = {
 
-    implicit val loc = VL("Person.list")
+    implicit val loc = VL("PersonDao.prList")
 
     val offset = pageSize * page
     Logger.debug("orderBy = "+orderBy.toString)
@@ -138,11 +136,11 @@ trait PersonDao {
       DB.withConnection("s2") {
         implicit connection =>
 
-          val companyWhere = if (companyFilter.isEmpty) "" else " and company_id = "+companyFilter+" "
+          val companyWhere = if (companyFilter.isEmpty) "" else " and company_id = " + companyFilter + " "
 
           val p = SQL(
             "select " + prSelectFields + " from person " +
-              "where ifnull(last_name,'') like {filter} " + psStandardWhere +  companyWhere +
+              "where ifnull(last_name,'') like {filter} and active_status = 1 " + companyWhere +
               " order by {orderBy} limit {pageSize} offset {offset} "
           ).on(
             'pageSize -> pageSize,
@@ -152,7 +150,7 @@ trait PersonDao {
           ).as(prSimple *)
 
           val totalRows = SQL(
-            "select count(*) from person where ifnull(last_name,'') like {filter} "+ psStandardWhere
+            "select count(*) from person where ifnull(last_name,'') like {filter} and active_status = 1 "
           ).on(
             'filter -> userFilter
           ).as(scalar[Long].single)
@@ -174,7 +172,7 @@ trait PersonDao {
    */
   def prInsert(person: Person, companyId: Long, createdBy: Long): Option[Long] = {
 
-    implicit val loc = VL("Person.prInsert")
+    implicit val loc = VL("PersonDao.prInsert")
 
     val result = vld {
       DB.withConnection("s2") {
@@ -222,7 +220,7 @@ trait PersonDao {
    */
   def prUpdate(id: Long, person: Person, companyId: Long, roleId: Long,  updatedBy: Long) = {
 
-    implicit val loc = VL("Person.prUpdate")
+    implicit val loc = VL("PersonDao.prUpdate")
 
     val result = vld {
 
@@ -263,7 +261,7 @@ trait PersonDao {
    */
   def prDelete(id: Long, updatedBy: Long) = {
 
-    implicit val loc = VL("Person.delete")
+    implicit val loc = VL("PersonDao.prDelete")
 
     vld {
       DB.withConnection("s2") {
@@ -283,7 +281,7 @@ trait PersonDao {
    */
   def prHardDelete(id: Long, updatedBy: Long) = {
 
-    implicit val loc = VL("Person.hardDelete")
+    implicit val loc = VL("PersonDao.prHardDelete")
 
     vld {
       DB.withConnection("s2") {

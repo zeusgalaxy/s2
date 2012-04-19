@@ -62,15 +62,15 @@ object AuthController extends Controller with PersonDao {
           BadRequest(html.login(formWithErrors, destPage))
         },
         user => {
-          prFindByLogin(user._1, true) match {
+          prFindByLogin(user._1) match {
             // we use their e-mail address as their login id
-            case Some(u) => {
+            case Some(u) if (u.isActive) => {
               request.context.user = Some(u)
               Logger.debug("We have user: " + u.firstName + " in AuthController.attemptLogin")
               Redirect(destPage)
             }
             case _ =>
-              Logger.debug("We failed to get a person object for " + user._1)
+              Logger.debug("We failed to get an active person for " + user._1)
               Redirect(routes.AuthController.promptLogin(destPage)).withNewSession.flashing(
                 "error" -> "Problem logging in.")
           }

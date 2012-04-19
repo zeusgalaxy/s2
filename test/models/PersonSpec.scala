@@ -28,11 +28,11 @@ object PersonSpec extends Specification {
         val pDao = new PerDao
 
         val fakePerson = Person(id = 0, companyId=Some(1L), roleId=1, firstName = "Joe", lastName = "Sample", portalLogin = "loginstring",
-          portalPassword = Some("testPassword"), email = "joe@sample.com", phone = "(555) 555-1212")
+          portalPassword = Some("testPassword"), email = "joe@sample.com", phone = "(555) 555-1212", activeStatus = 1)
           // lastLogin = Some((new DateTime)), activeStatus = 1
 
         val fakePerson2 = Person(id = 0, companyId=Some(1L), roleId=1, firstName = "JimBo", lastName = "Peebles", portalLogin = "JimBologin",
-          portalPassword = Some("JimboPassword"), email = "jimbo@sample.com", phone = "(555) 555-1212")
+          portalPassword = Some("JimboPassword"), email = "jimbo@sample.com", phone = "(555) 555-1212", activeStatus = 1)
 
         var fpID = -1L
 

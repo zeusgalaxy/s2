@@ -17,6 +17,7 @@ object ApiController extends ApiController
                         with ExerciserDao
                         with MachineDao
                         with EquipmentDao
+                        with Gigya
 /**
  * Controller for general server API functions.
  */
@@ -24,7 +25,8 @@ class ApiController extends Controller {
   this: Controller  with VirtualTrainer
                     with ExerciserDao
                     with MachineDao
-                    with EquipmentDao =>
+                    with EquipmentDao
+                    with Gigya =>
 
   /**Links a Netpulse user with their Virtual Trainer account in those situations where the
    * exerciser had created the Virtual Trainer account prior to creating their Netpulse account. The
@@ -286,7 +288,7 @@ class ApiController extends Controller {
 
       implicit val loc = VL("ApiController.gigyaProxy")
 
-      val gigyaResp = Gigya.call(method, request.queryString)
+      val gigyaResp = ggCall(method, request.queryString)
       val ourResp = tst(gigyaResp)(_.getErrorCode == 0).
         add("gigya response log", gigyaResp.getLog).error.
         fold(e => Ok(gigyaResp.getResponseText), s => Ok(gigyaResp.getResponseText))

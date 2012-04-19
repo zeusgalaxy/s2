@@ -61,7 +61,8 @@ class MiscController extends Controller
       "portalLogin" -> nonEmptyText,
       "password"    -> optional(text),
       "email"       -> email,
-      "phone"       -> text
+      "phone"       -> text,
+      "activeStatus" -> ignored(1)
     )(Person.apply)(Person.unapply)
   )
 
@@ -70,7 +71,7 @@ class MiscController extends Controller
    */
   def userEdit(id: Long) = IfCanUpdate(tgUser) {
     implicit request =>
-      prFindById(id, true).map(user => {
+      prFindById(id).map(user => {
         Ok(html.userEdit(this, id, personForm.fill(user)) )
       }).getOrElse(Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred.")))
   }

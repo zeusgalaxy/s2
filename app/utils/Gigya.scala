@@ -10,14 +10,14 @@ import play.api.Play.current
 /**
  * Provides various functions for interfacing with Gigya.
  */
-object Gigya {
+trait Gigya {
 
   /**Calls any given method of the gigya api, extracting and passing any params found in the given query string.
    *
    * @param method The gigya API method to be invoked
    * @return Whatever the Gigya java sdk returns (a GSResponse)
    */
-  def call(method: String, queryStr: Map[String, Seq[String]]) = {
+  def ggCall(method: String, queryStr: Map[String, Seq[String]]) = {
 
     /**
      * We use https (the "true" param) because the way that signatures are built if not using
@@ -28,7 +28,7 @@ object Gigya {
      * the incoming request.
      */
 
-    val grq = new GSRequest(Gigya.gApiKey, Gigya.gApiSecret, "socialize." + method, true)
+    val grq = new GSRequest(gApiKey, gApiSecret, "socialize." + method, true)
     for ((k, v) <- queryStr) grq.setParam(k, v(0))
     grq.send()
   }
