@@ -1,4 +1,4 @@
-package test
+package test.models
 
 import org.specs2.mutable._
 
@@ -27,11 +27,11 @@ object PersonSpec extends Specification {
         class PerDao extends PersonDao
         val pDao = new PerDao
 
-        val fakePerson = Person(id = 0, companyId=1, roleId=1, firstName = "Joe", lastName = "Sample", portalLogin = "loginstring",
+        val fakePerson = Person(id = 0, companyId=Some(1L), roleId=1, firstName = "Joe", lastName = "Sample", portalLogin = "loginstring",
           portalPassword = Some("testPassword"), email = "joe@sample.com", phone = "(555) 555-1212")
           // lastLogin = Some((new DateTime)), activeStatus = 1
 
-        val fakePerson2 = Person(id = 0, companyId=1, roleId=1, firstName = "JimBo", lastName = "Peebles", portalLogin = "JimBologin",
+        val fakePerson2 = Person(id = 0, companyId=Some(1L), roleId=1, firstName = "JimBo", lastName = "Peebles", portalLogin = "JimBologin",
           portalPassword = Some("JimboPassword"), email = "jimbo@sample.com", phone = "(555) 555-1212")
 
         var fpID = -1L
@@ -52,7 +52,7 @@ object PersonSpec extends Specification {
         var pGet1 = pDao.prFindByLogin(fakePerson2.portalLogin)
         if (pGet1 != None) pDao.prHardDelete(pGet1.get.id, fpID)
 
-        val pAdd = pDao.prInsert(fakePerson, fakePerson.companyId, 8234)
+        val pAdd = pDao.prInsert(fakePerson, fakePerson.companyId.get, 8234)
         if (devMode) println("pAdd = " + pAdd.toString)
         // Cannot add or update a child row: a foreign key constraint fails (`s2`.`person`, CONSTRAINT `company_person_fk` FOREIGN KEY (`company_id`) REFERENCES `company` (`id`))
         pAdd.get must be_>(-1L)
@@ -99,7 +99,7 @@ object PersonSpec extends Specification {
         if (devMode) println("p1up = " + p1up.toString)
         p1up.get.firstName mustEqual fakePerson.firstName
 
-        val p2up = pDao.prUpdate(p1up.get.id, fakePerson2, fakePerson2.companyId, fakePerson2.roleId, fpID )
+        val p2up = pDao.prUpdate(p1up.get.id, fakePerson2, fakePerson2.companyId.get, fakePerson2.roleId, fpID )
         if (devMode) println("p2up = " + p2up.toString)
         p2up mustEqual (1L)
 

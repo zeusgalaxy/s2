@@ -1,4 +1,4 @@
-package test
+package test.reports
 
 import org.specs2.mutable._
 
@@ -22,7 +22,7 @@ object WorkoutLocationSpec extends Specification {
 
   "Verify no data is returned without a company, then verify past netpulse data " in {
     running(FakeApplication())  {
-      
+
       val page = WorkoutLocation.list()
       if (devMode) println ("Empty page = " + page.toString())
       // Verify no data is returned without a company,

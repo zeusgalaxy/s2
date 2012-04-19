@@ -1,4 +1,4 @@
-package test
+package test.utils
 
 import org.specs2.mutable._
 

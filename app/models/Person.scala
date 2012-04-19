@@ -55,15 +55,16 @@ trait PersonDao {
    * @param id Person's numeric id (as assigned by the db).
    * @return Some(Person), if found; else None.
    */
-  def prFindById(id: Long): Option[Person] = {
+  def prFindById(id: Long, withCo: Boolean = false): Option[Person] = {
 
     implicit val loc = VL("Person.findById")
 
     vld {
       DB.withConnection("s2") {
         implicit connection =>
-          SQL("select " + prSelectFields + " from person " +
-            " where id = {id} and company_id IS NOT NULL").on('id -> id).as(prSimple.singleOpt)
+          SQL("select " + prSelectFields + " from person where id = {id} " +
+            (withCo ? " and company_id IS NOT NULL " | "")
+            ).on('id -> id).as(prSimple.singleOpt)
       }
     }.info.fold(e => None, s => s)
   }
@@ -173,7 +174,7 @@ trait PersonDao {
    */
   def prInsert(person: Person, companyId: Long, createdBy: Long): Option[Long] = {
 
-    implicit val loc = VL("Person.insert")
+    implicit val loc = VL("Person.prInsert")
 
     val result = vld {
       DB.withConnection("s2") {
@@ -221,7 +222,7 @@ trait PersonDao {
    */
   def prUpdate(id: Long, person: Person, companyId: Long, roleId: Long,  updatedBy: Long) = {
 
-    implicit val loc = VL("Person.update")
+    implicit val loc = VL("Person.prUpdate")
 
     val result = vld {
 
@@ -238,7 +239,7 @@ trait PersonDao {
             """
         ).on(
           'id             -> id,
-          'companyId      -> (if (companyId != -1) companyId else person.companyId),
+          'companyId      -> Some((if (companyId != -1) companyId else person.companyId)),
           'roleId         -> (if (roleId != -1 ) roleId else person.roleId),
           'firstName      -> person.firstName,
           'lastName       -> person.lastName,

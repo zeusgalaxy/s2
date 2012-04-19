@@ -111,7 +111,6 @@ package object security {
    */
   def withSession[A](ctx: CtxRqst[A], r: PlainResult): PlainResult = {
     val u = ctx.context.user
-    //    val ss = ctx.request.session + ("id" -> u.map(_.id.toString).getOrElse(""))
     val ss = ("id" -> u.map(_.id.toString).getOrElse(""))
     Logger.debug("in withSession, on page " + ctx.request.path + ", the user is: " + ctx.context.user.toString)
     r.withSession(ss) // TODO -- Figure out what really should be attached to session here

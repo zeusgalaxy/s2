@@ -1,4 +1,4 @@
-package test
+package test.controllers
 
 import utils._
 import org.specs2.mutable._

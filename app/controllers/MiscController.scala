@@ -70,7 +70,7 @@ class MiscController extends Controller
    */
   def userEdit(id: Long) = IfCanUpdate(tgUser) {
     implicit request =>
-      prFindById(id).map(user => {
+      prFindById(id, true).map(user => {
         Ok(html.userEdit(this, id, personForm.fill(user)) )
       }).getOrElse(Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred.")))
   }
@@ -87,7 +87,7 @@ class MiscController extends Controller
             id,
             person,
             // Control the companyId and roleId values here based on user rights
-            if (request.isFiltered) request.context.user.get.companyId else person.companyId,
+            if (request.isFiltered) request.context.user.get.companyId.get else person.companyId.get,
             if (request.canCreate(security.tgUser)) request.context.user.get.roleId else person.roleId,
             request.context.user.get.id
           )
@@ -120,7 +120,7 @@ class MiscController extends Controller
           prInsert(
               person,
               // If isFiltered put the admin user's company_id into the case class to be added
-              if (request.isFiltered) request.context.user.get.companyId else person.companyId,
+              if (request.isFiltered) request.context.user.get.companyId.get else person.companyId.get,
               request.context.user.get.id
           )  match {               // (companyId = adminUser.get.companyId, roleId = adminUser.get.roleId),
             case Some(u) =>
