@@ -13,8 +13,8 @@ import scalaz.{Node => _, _}
 object TestData {
 
   val testSqlStmts =
-    """
 
+"""
 delete from rights where role_id = (select id from role where name = 'netpulse-test-a');
 delete from rights where role_id = (select id from role where name = 'netpulse-test-b');
 delete from exerciser_profile where client_login = 's2-a';
@@ -70,51 +70,7 @@ insert into exerciser_profile set person_id = (select id from person where porta
 client_login = 's2-b', client_password = '55', weight = 180,
 gender = 'M', date_of_birth = '1970-03-01', pic = 55, vt_token = null, vt_token_secret = null,
 vt_user_id = '', vt_status = 0, home_club_id = 99, created_at = now(), updated_at = 0, created_by = 0, updated_by = null;
-
-
-    """
-
-  // Seed Data
-  val seedSqlStmts = """
-    insert into company set id=2, name='Netpulse', phone ='', fax ='', email='support@netpulse.com', url='www.netpulse.com', created_at=now(),
-    created_by=8234, company_type_id=1, address_id=56390;
-
-    insert into company set id=81, name='LifeFitness', phone='', fax='', email='support@lifefitness.com', url='www.lifefitness.com', created_at=now(),
-    created_by=8234, company_type_id=2, address_id=56390;
-
-    # NP Admin and Lifefitness Roles
-    insert into role set id=1, name='npAdmin',  role_group=1, created_at=now(), created_by=8234;
-    insert into role set id=2, name='npUser',   role_group=1, created_at=now(), created_by=8234;
-    insert into role set id=3, name='oemAdmin', role_group=2, created_at=now(), created_by=8234;
-    insert into role set id=4, name='oemUser',  role_group=1, created_at=now(), created_by=8234;
-    insert into role set id=5, name='exerciser',role_group=100, created_at=now(), created_by=8234;
-
-    # Basic targets
-    insert into target set name='user',       created_at=now(), created_by=8234;
-    insert into target set name='roleSetup',  created_at=now(), created_by=8234;
-    insert into target set name='reportWorkoutLocation', created_at=now(), created_by=8234;
-
-    # Rights for NP Admin
-    insert into rights set c=1, r=1, u=1, d=1, filter=0, created_at=now(), created_by=8234, role_id=1 target_id=1;
-    insert into rights set c=1, r=1, u=1, d=1, filter=0, created_at=now(), created_by=8234, role_id=2 target_id=2;
-    insert into rights set c=1, r=1, u=1, d=1, filter=0, created_at=now(), created_by=8234, role_id=1 target_id=3;
-
-    # Rights for Lifefitness Roles
-    insert into rights (c, r, u, d, filter, created_at, created_by, role_id, target_id)
-      select 1, 1, 1, 1, 1, now(), 8234, id, col2 from role join
-      (select id as col2 from target where name ='user') u where name='oemAdmin';
-
-    insert into rights (c, r, u, d, filter, created_at, created_by, role_id, target_id)
-      select 1, 1, 1, 1, 1, now(), 8234, id, col2 from role join
-      (select id as col2 from target where name ='roleSetup') u where name='oemAdmin';
-
-    insert into rights (c, r, u, d, filter, created_at, created_by, role_id, target_id)
-      select 1, 1, 1, 1, 1, now(), 8234, id, col2 from role join
-      (select id as col2 from target where name ='reportWorkoutLocations') u where name='oemAdmin';
-
-  """
-
-
+"""
 
   def setup(sql: String): Boolean = {
 
