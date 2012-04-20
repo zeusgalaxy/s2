@@ -81,23 +81,19 @@ class MiscController extends Controller
    */
   def userEditSubmit(id: Long ) = IfCanUpdate(tgUser) {
     implicit request => {
+      /**
+       * KGS - TODO: For filtered users, confirm that the company id in the form is the correct value,
+       * thus preventing malicious alterations. Same with role for non-admin users.
+       */
       personForm.bindFromRequest.fold(
         formErrors => BadRequest(html.userEdit(this, id, formErrors)),
         person =>
-          prUpdate(
-            id,
-            person,
-            // Control the companyId and roleId values here based on user rights
-            if (request.isFiltered) request.context.user.get.companyId.get else person.companyId.get,
-            if (request.canCreate(security.tgUser)) request.context.user.get.roleId else person.roleId,
-            request.context.user.get.id
-          )
-        match {
-          case 1 =>
-            Redirect(routes.MiscController.userList()).flashing("success" -> ("User: " + person.email + " updated."))
-          case _ =>
-            Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred. Make sure the email address is unique."))
-        }
+          prUpdate(id, person, request.context.user.get.id) match {
+            case 1 =>
+              Redirect(routes.MiscController.userList()).flashing("success" -> ("User: " + person.email + " updated."))
+            case _ =>
+              Redirect(routes.MiscController.userList()).flashing("failure" -> ("An error occurred. Make sure the email address is unique."))
+          }
       )
     }
   }
@@ -114,16 +110,16 @@ class MiscController extends Controller
    */
   def userAddSubmit() = IfCanUpdate(tgUser) {
     implicit request => {
+
+      /**
+       * KGS - TODO: For filtered users, confirm that the company id in the form is the correct value,
+       * thus preventing malicious alterations. Same with role for non-admin users.
+       */
       personForm.bindFromRequest.fold(
         formErrors => BadRequest(html.userEdit(this, -1, formErrors)),
         person => {
           Logger.debug("UserAddSubmit to be add: "+person)
-          prInsert(
-              person,
-              // If isFiltered put the admin user's company_id into the case class to be added
-              if (request.isFiltered) request.context.user.get.companyId.get else person.companyId.get,
-              request.context.user.get.id
-          )  match {               // (companyId = adminUser.get.companyId, roleId = adminUser.get.roleId),
+          prInsert(person, request.context.user.get.id) match {
             case Some(u) =>
               Redirect(routes.MiscController.userList()).flashing("success" -> ("User " + person.portalLogin+ " added."))
             case _ =>
@@ -143,7 +139,8 @@ class MiscController extends Controller
     implicit request =>
       Ok(html.userList(this,
         // If the user is filtered pass Person.list their company info to limit their access here.
-        prList(page = page, orderBy = orderBy, userFilter = ("%" + filter + "%"),  companyFilter = if (!request.isFiltered) "" else request.context.user.get.companyId.toString  ),
+        prList(page = page, orderBy = orderBy, userFilter = ("%" + filter + "%"),
+          companyFilter = if (!request.isFiltered) "" else request.context.user.get.companyId.getOrElse("").toString  ),
         orderBy, filter
       ))
   }

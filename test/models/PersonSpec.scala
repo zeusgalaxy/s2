@@ -48,11 +48,11 @@ object PersonSpec extends Specification {
          * existing test person(s) then Add a test user
          */
         var pGet = pDao.prFindByLogin(fakePerson.portalLogin)
-        if (pGet != None) pDao.prHardDelete(pGet.get.id, fpID)
+        if (pGet != None) pDao.prDelete(pGet.get.id, fpID)
         var pGet1 = pDao.prFindByLogin(fakePerson2.portalLogin)
-        if (pGet1 != None) pDao.prHardDelete(pGet1.get.id, fpID)
+        if (pGet1 != None) pDao.prDelete(pGet1.get.id, fpID)
 
-        val pAdd = pDao.prInsert(fakePerson, fakePerson.companyId.get, 8234)
+        val pAdd = pDao.prInsert(fakePerson, 8234)
         if (devMode) println("pAdd = " + pAdd.toString)
         // Cannot add or update a child row: a foreign key constraint fails (`s2`.`person`, CONSTRAINT `company_person_fk` FOREIGN KEY (`company_id`) REFERENCES `company` (`id`))
         pAdd.get must be_>(-1L)
@@ -99,7 +99,7 @@ object PersonSpec extends Specification {
         if (devMode) println("p1up = " + p1up.toString)
         p1up.get.firstName mustEqual fakePerson.firstName
 
-        val p2up = pDao.prUpdate(p1up.get.id, fakePerson2, fakePerson2.companyId.get, fakePerson2.roleId, fpID )
+        val p2up = pDao.prUpdate(p1up.get.id, fakePerson2, fpID )
         if (devMode) println("p2up = " + p2up.toString)
         p2up mustEqual (1L)
 
@@ -116,7 +116,7 @@ object PersonSpec extends Specification {
          */
         val p1del = pDao.prFindByLogin(fakePerson2.portalLogin)
         if (devMode) println("p1del = " + p1del.toString)
-        val delcnt = pDao.prHardDelete(p1del.get.id, fpID)
+        val delcnt = pDao.prDelete(p1del.get.id, fpID)
         delcnt mustEqual(1L)
 
         val p2del = pDao.prFindByLogin(fakePerson.portalLogin)

@@ -124,7 +124,7 @@ trait PersonDao {
    * @param pageSize Number of users per page
    * @param orderBy firstName for sorting
    * @param userFilter Filter applied on the firstName column
-   * @return a list of users to display a page with
+   * @return List of users to display a page with
    */
   def prList(page: Int = 0, pageSize: Int = 15, orderBy: Int = 1, userFilter: String = "%", companyFilter: String): Page[Person] = {
 
@@ -160,17 +160,14 @@ trait PersonDao {
     }.error.fold(e => Page(Seq(), Seq(), 0, 0, 0), s => s)
   }
 
-
   /**
    * Insert a new Person.
    *
    * @param person The person values.
-   * @param companyId Override the company id in the person object. This is passed in here so the controller
-   *                  can decide if the user should be allowed to add users not in their company.
    * @param createdBy the person ID of the user making this change.
    *@return Optional Long ID
    */
-  def prInsert(person: Person, companyId: Long, createdBy: Long): Option[Long] = {
+  def prInsert(person: Person, createdBy: Long): Option[Long] = {
 
     implicit val loc = VL("PersonDao.prInsert")
 
@@ -187,7 +184,7 @@ trait PersonDao {
 
             """
           ).on(
-            'companyId      -> companyId,
+            'companyId      -> person.companyId,
             'roleId         -> person.roleId,
             'firstName      -> person.firstName,
             'lastName       -> person.lastName,
@@ -212,13 +209,10 @@ trait PersonDao {
    *
    * @param id The person id
    * @param person, The person values from the Person class.
-   * @param companyId Allows the caller (controller) to override the companyId coming from the edit form for
-   *                  security reasons.
-   * @param roleId override the roleId for security reasons.
    * @param updatedBy, The person ID of the user updating this record.
-   * @return int the number of rows updated
+   * @return Number of rows updated
    */
-  def prUpdate(id: Long, person: Person, companyId: Long, roleId: Long,  updatedBy: Long) = {
+  def prUpdate(id: Long, person: Person, updatedBy: Long): Int = {
 
     implicit val loc = VL("PersonDao.prUpdate")
 
@@ -237,8 +231,8 @@ trait PersonDao {
             """
         ).on(
           'id             -> id,
-          'companyId      -> Some((if (companyId != -1) companyId else person.companyId)),
-          'roleId         -> (if (roleId != -1 ) roleId else person.roleId),
+          'companyId      -> person.companyId,
+          'roleId         -> person.roleId,
           'firstName      -> person.firstName,
           'lastName       -> person.lastName,
           'portalLogin    -> person.portalLogin,
@@ -248,40 +242,21 @@ trait PersonDao {
           'updatedBy      -> updatedBy
         ).executeUpdate()
       }
-    }.error.fold(e => None, s => s)
+    }.error.fold(e => 0, s => s)
     Logger.debug("update :"+result)
     result
   }
 
   /**
-   * Delete a person by setting their status to 3.
-   *
-   * @param id Id to delete.
-   * @return int, number of rows affected - should be 1
-   */
-  def prDelete(id: Long, updatedBy: Long) = {
-
-    implicit val loc = VL("PersonDao.prDelete")
-
-    vld {
-      DB.withConnection("s2") {
-        implicit connection =>
-          SQL("update person set active_status = 3, status_dt=NOW(), updated_at=now(), updated_by={updatedBy} where id = {id}").
-            on('id -> id, 'updatedBy -> updatedBy).executeUpdate()
-      }
-    }.error.fold(e => None, s => s)
-  }
-
-  /**
-   * Delete person permanently and completely - see delete also
+   * Delete person permanently and completely
    *
    * @param id Id of the person to delete.
    * @param updatedBy person ID of the user performing this operation
-   * @return int, number of rows affected - should be 1
+   * @return Number of rows affected - should be 1
    */
-  def prHardDelete(id: Long, updatedBy: Long) = {
+  def prDelete(id: Long, updatedBy: Long): Int = {
 
-    implicit val loc = VL("PersonDao.prHardDelete")
+    implicit val loc = VL("PersonDao.prDelete")
 
     vld {
       DB.withConnection("s2") {
@@ -291,7 +266,7 @@ trait PersonDao {
             on('id -> id).executeUpdate()
         }
       }
-    }.error.fold(e => None, s => s)
+    }.error.fold(e => 0, s => s)
   }
 
 }

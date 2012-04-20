@@ -22,7 +22,7 @@ class ReportController extends Controller {
           page = page,
           orderBy = orderBy,
           // If this is not a netpulse user limit their company selection here
-          filter = if (!request.isFiltered) filter else request.context.user.get.companyId.toString,
+          filter = if (!request.isFiltered) filter else request.context.user.get.companyId.getOrElse("").toString,
           startDate = startDate,
           endDate = endDate)
 
