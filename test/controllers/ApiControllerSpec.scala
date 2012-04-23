@@ -11,7 +11,7 @@ object ApiControllerSpec extends Specification {
   val id = org.joda.time.DateTime.now.getMillis.toString.takeRight(10)
   val pwd = id
   val email = "kgs" + id + "@stross.com"
-  val channel = (Math.random * 100).round
+  val channel = (scala.math.random * 100).round
 
   "The API" should {
     "make all of its calls properly" in {
