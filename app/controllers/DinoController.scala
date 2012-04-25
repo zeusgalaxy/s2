@@ -10,6 +10,7 @@ import play.api.Play.current
 import security._
 import utils._
 import models._
+import services._
 import play.api.Logger
 
 object DinoController extends DinoController

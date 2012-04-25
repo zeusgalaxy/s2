@@ -7,10 +7,12 @@ import security._
 import views._
 import utils._
 import models._
+import services._
 import play.api.Logger
 import scala.xml._
 import scalaz._
 import Scalaz._
+import services.Gigya
 
 object ApiController extends ApiController
                         with VirtualTrainer
