@@ -4,6 +4,7 @@
 
 # Application status
 GET     /status                             controllers.StatusController.status()
+GET     /s2/status                          controllers.StatusController.status()
 
 # Authentication
 GET     /login                              controllers.AuthController.promptLogin(page ?= "")
