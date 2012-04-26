@@ -12,7 +12,7 @@ import mocks.VirtualTrainerMocks._
 
 object VirtualTrainerSpec extends Specification {
 
-  val channel = (Math.random * 100).round
+  val channel = (scala.math.random * 100).round
 
   "VirtualTrainer" should {
 
