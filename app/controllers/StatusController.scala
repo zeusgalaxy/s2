@@ -20,5 +20,5 @@ object StatusController extends Controller with StatusDao {
    * in the controller
    * @return
    */
-  def status = Action { Ok(if (checkAppStatus) "**** ok ****" else "**** fail ****" ) }
+  def status = Action { Ok(if (checkAppStatus) "**** ok ****\n" else "**** fail ****\n" ) }
 }
