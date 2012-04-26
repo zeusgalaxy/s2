@@ -5,7 +5,7 @@ import PlayProject._
 object ApplicationBuild extends Build {
 
   val appName = "s2"
-  val appVersion = "1.0.19"
+  val appVersion = "1.0.20"
 
   // Only compile the bootstrap bootstrap.less file and any other *.less file in the stylesheets directory
   def customLessEntryPoints(base: File): PathFinder = (
