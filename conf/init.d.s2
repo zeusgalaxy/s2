@@ -5,7 +5,7 @@
 #
 S2PATH=/mnt/s2
 S2USER=jetty
-PIDFILE=/var/run/s2.pid
+PIDFILE=$S2PATH/RUNNING_PID
 
 start() {
     if [ ! -f $PIDFILE ]; then
