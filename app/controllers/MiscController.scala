@@ -12,15 +12,19 @@ import models._
 import security._
 import org.joda.time.DateTime
 
+
 object MiscController extends MiscController
-                        with CompanyDao
-                        with PersonDao
-                        with RoleDao
+                         with CompanyDao
+                         with PersonDao
+                         with RoleDao
 
 class MiscController extends Controller
                         with CompanyDao
                         with PersonDao
-                        with RoleDao {
+                        with RoleDao
+                        with StatusDao {
+
+
 
   def helloForA = IfCanRead(tgTestA) {
     implicit request =>
@@ -45,8 +49,6 @@ class MiscController extends Controller
       Ok(html.index("This is the main page parameter: " ))
     }
   }
-
-
 
   /** This is a special form to user for user case class editing since we don't want to use
    * the full User case class.

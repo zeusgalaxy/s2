@@ -2,6 +2,9 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
+# Application status
+GET     /status                             controllers.StatusController.status()
+
 # Authentication
 GET     /login                              controllers.AuthController.promptLogin(page ?= "")
 POST    /login                              controllers.AuthController.attemptLogin(page ?= "")
