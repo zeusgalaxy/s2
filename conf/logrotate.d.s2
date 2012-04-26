@@ -1,0 +1,7 @@
+/mnt/s2/logs/application.log {
+   rotate 30
+   daily
+   postrotate
+      service s2 restart >/dev/null
+   endscript
+}
