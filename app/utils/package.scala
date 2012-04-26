@@ -260,7 +260,7 @@ package object utils {
      * @param msg The text that is to be added to the list of failure strings.
      * @return This validation, so operations can be strung together.
      */
-    def add(k: String, msg: String): Validation[NonEmptyList[String], T] = {
+    def logMsg(k: String, msg: String): Validation[NonEmptyList[String], T] = {
       // Ignore the syntax highlight, below; IntelliJ is confused.
       if (v.isFailure) (v <* ("Additional info: " + k + ": " + msg).failNel[T]) else v
     }

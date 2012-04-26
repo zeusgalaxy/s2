@@ -249,14 +249,14 @@ trait VirtualTrainer {
            */
             regResult <- vld(vtDoRegister(rBody))
             status <- tst(regResult)(_.status == 200).
-              add("vt register result status", regResult.status.toString).
-              add("body sent", rBody).
-              add("response received", regResult.toString).error
+              logMsg("vt register result status", regResult.status.toString).
+              logMsg("body sent", rBody).
+              logMsg("response received", regResult.toString).error
 
-            regXml <- vld(regResult.xml.get).add("regResult", regResult.toString())
-            vtUid <- vld((regXml \\ "userId" head).text).add("regXml", regXml.toString())
-            vtNickname <- vld((regXml \\ "nickName" head).text).add("regXml", regXml.toString())
-            vtUser <- vld(VtUser(regXml)).add("regXml", regXml.toString())
+            regXml <- vld(regResult.xml.get).logMsg("regResult", regResult.toString())
+            vtUid <- vld((regXml \\ "userId" head).text).logMsg("regXml", regXml.toString())
+            vtNickname <- vld((regXml \\ "nickName" head).text).logMsg("regXml", regXml.toString())
+            vtUser <- vld(VtUser(regXml)).logMsg("regXml", regXml.toString())
 
             /**
              * Third step is to link our account with their account.
@@ -265,7 +265,7 @@ trait VirtualTrainer {
 
           } yield vtUser
 
-        result.add("Result", "Failure").error.fold(e => Left(apiVtRegistrationOtherError), s => Right(s))
+        result.logMsg("Result", "Failure").error.fold(e => Left(apiVtRegistrationOtherError), s => Right(s))
     }
   }
 
@@ -282,8 +282,8 @@ trait VirtualTrainer {
     (for {
       linkResult <- vld(vtDoLink(npLogin, vtUid))
       status <- tst(linkResult)(_.status == 200).
-        add("vt link external account result status", linkResult.status.toString).
-        add("response", linkResult.toString).error
+        logMsg("vt link external account result status", linkResult.status.toString).
+        logMsg("response", linkResult.toString).error
     } yield true).error
   }
 
@@ -305,20 +305,20 @@ trait VirtualTrainer {
       lBody <- vld(vtLoginBody(emailOrNickname, vtPassword))
       loginResult <- vld(vtDoLogin(lBody))
       status <- tst(loginResult)(_.status == 200).
-        add("vt login result status", loginResult.status.toString).
-        add("response", loginResult.toString).error
+        logMsg("vt login result status", loginResult.status.toString).
+        logMsg("response", loginResult.toString).error
       hdr <- loginResult.header("Authorization").toSuccess("Authorization header not found").liftFailNel
 
       token <- vld({
         val tEx(_, t) = tEx.findFirstIn(hdr).get;
         t
-      }).add("Auth header", hdr)
+      }).logMsg("Auth header", hdr)
 
       secret <- vld({
         val tsEx(_, s) = tsEx.findFirstIn(hdr).get;
         s
-      }).add("Auth header", hdr)
-      id <- vld((loginResult.xml.get \\ "userId" head).text).add("vt login xml", loginResult.xml.get.toString())
+      }).logMsg("Auth header", hdr)
+      id <- vld((loginResult.xml.get \\ "userId" head).text).logMsg("vt login xml", loginResult.xml.get.toString())
 
     } yield (id, token, secret)).error
   }
@@ -338,7 +338,7 @@ trait VirtualTrainer {
     (for {
       logoutResult <- vld(vtDoLogout(token, tokenSecret))
       status <- tst(logoutResult)(_.status == 200).
-        add("vt logout result status", logoutResult.status.toString).error
+        logMsg("vt logout result status", logoutResult.status.toString).error
 
     } yield true).error
   }
@@ -356,8 +356,8 @@ trait VirtualTrainer {
 
     (for {
       ppResult <- vld(vtDoPredefineds(token, tokenSecret))
-      status <- tst(ppResult)(_.status == 200).add("vt result status", ppResult.status.toString)
-      segs <- vld(ppResult.xml.get \\ "workoutSegments").add("pp result xml", ppResult.xml.get.toString())
+      status <- tst(ppResult)(_.status == 200).logMsg("vt result status", ppResult.status.toString)
+      segs <- vld(ppResult.xml.get \\ "workoutSegments").logMsg("pp result xml", ppResult.xml.get.toString())
 
     } yield segs.withFilter(s => (s \\ "deviceType").exists {
         _.text == model
@@ -379,7 +379,7 @@ trait VirtualTrainer {
 
     (for {
       ppResult <- vld(vtDoWorkouts(token, tokenSecret))
-      status <- tst(ppResult)(_.status == 200).add("vt result status", ppResult.status.toString)
+      status <- tst(ppResult)(_.status == 200).logMsg("vt result status", ppResult.status.toString)
       segs <- vld(ppResult.xml.get \\ "workoutSegments")
     } yield segs.withFilter(s => (s \\ "deviceType").exists {
         _.text == model

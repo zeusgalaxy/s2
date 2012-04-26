@@ -115,7 +115,7 @@ class DinoController extends Controller {
           val cnt = pvmInsert(~request.body.asXml).getOrThrow
           Ok("PageView load succeeded with " + cnt.toString + "inserts")
         }
-      }.add("request body", request.body.toString).error.
+      }.logMsg("request body", request.body.toString).error.
         fold(e => InternalServerError("PageView load failed. Errors: " + e.list.mkString(", ")), s => s)
     }
   }
@@ -145,7 +145,7 @@ class DinoController extends Controller {
 
       // either error code or object encapsulating vt user
       val rVal: Either[Int, VtUser] = (for {
-        code <- tst((oldXml \\ "response" \ "@code").text)(_ == "0", "oldXml response code != 0").add("oldXml", oldXml.text)
+        code <- tst((oldXml \\ "response" \ "@code").text)(_ == "0", "oldXml response code != 0").logMsg("oldXml", oldXml.text)
         vtUser <- vld(vtRegister(rp))
       } yield {
         vtUser

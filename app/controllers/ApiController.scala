@@ -292,7 +292,7 @@ class ApiController extends Controller {
 
       val gigyaResp = ggCall(method, request.queryString)
       val ourResp = tst(gigyaResp)(_.getErrorCode == 0).
-        add("gigya response log", gigyaResp.getLog).error.
+        logMsg("gigya response log", gigyaResp.getLog).error.
         fold(e => Ok(gigyaResp.getResponseText), s => Ok(gigyaResp.getResponseText))
       //      ourResp.withHeaders() // TODO - Can we get the gigya headers some how and use their content-type?
       ourResp
