@@ -82,6 +82,6 @@ vt_user_id = '', vt_status = 0, home_club_id = 99, created_at = now(), updated_a
           sql.split(";").map(_.trim).filter(!_.isEmpty).foreach(SQL(_).execute)
         }
       }
-    }.error.fold(e => {println(e.toString()); false}, s => true)
+    }.logError.fold(e => {println(e.toString()); false}, s => true)
   }
 }

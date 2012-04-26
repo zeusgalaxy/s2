@@ -65,7 +65,7 @@ trait PersonDao {
           SQL("select " + prSelectFields + " from person where id = {id} ").
             on('id -> id).as(prSimple.singleOpt)
       }
-    }.info.fold(e => None, s => s)
+    }.logInfo.fold(e => None, s => s)
   }
 
   /**Retrieves a person from the database using their portal login identifier.
@@ -84,7 +84,7 @@ trait PersonDao {
             " where portal_login = {login} ").
             on('login -> login).as(prSimple.singleOpt)
       }
-    }.info.fold(e => {println (e.toString()); None}, s => s)
+    }.logInfo.fold(e => {println (e.toString()); None}, s => s)
   }
 
   /**
@@ -109,7 +109,7 @@ trait PersonDao {
             'password -> Blowfish.encrypt(password)
           ).as(prSimple.singleOpt)
       }
-    }.error.fold(e => None, s => s match {
+    }.logError.fold(e => None, s => s match {
       case None =>
         Logger.info("No (active) match found in db for login " + login + " and password " + password + " in Person.authenticate")
         None
@@ -157,7 +157,7 @@ trait PersonDao {
 
           Page(p, Seq(), page, offset, totalRows)
       }
-    }.error.fold(e => Page(Seq(), Seq(), 0, 0, 0), s => s)
+    }.logError.fold(e => Page(Seq(), Seq(), 0, 0, 0), s => s)
   }
 
   /**
@@ -196,7 +196,7 @@ trait PersonDao {
           ).executeInsert()
         }
       }
-    }.error.fold(e => None, s => s)
+    }.logError.fold(e => None, s => s)
     Logger.debug("Inserted ID : " + result)
     result //  you can println your vld left side (with the error part) by calling the "either" method to turn it into an Either and access it as a "left"
   }
@@ -242,7 +242,7 @@ trait PersonDao {
           'updatedBy      -> updatedBy
         ).executeUpdate()
       }
-    }.error.fold(e => 0, s => s)
+    }.logError.fold(e => 0, s => s)
     Logger.debug("update :"+result)
     result
   }
@@ -266,7 +266,7 @@ trait PersonDao {
             on('id -> id).executeUpdate()
         }
       }
-    }.error.fold(e => 0, s => s)
+    }.logError.fold(e => 0, s => s)
   }
 
 }

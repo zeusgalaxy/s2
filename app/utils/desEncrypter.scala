@@ -14,7 +14,7 @@ import play.api.Logger
 
 
 /** Digest encrypt the specified string. Can not be decrypted later. Used for comparison.
- * 
+ *
  *  This interoperates with the web password on Dino. It does not work with the MD5 Digest passwords
  *  Be very careful about the charset. If they are different on Dino or here then the interop won't
  *  work!
@@ -26,7 +26,7 @@ object Blowfish {
   implicit val loc = VL("desEncrypter.Blowfish")
 
   /** encrypt a passed in string with a blowfish cipher.
-   * 
+   *
    * @param encryptMe string to encrypt
    * @return encrypted string or empty string on error.
    */
@@ -39,7 +39,7 @@ object Blowfish {
       val encoding = cipher.doFinal(encryptMe.getBytes("UTF-8"))
       val n = new BigInt(new java.math.BigInteger(encoding))
       n.toString(16)
-    }.error.fold(e => "", s => s)
+    }.logError.fold(e => "", s => s)
   }
 }
 
@@ -80,7 +80,7 @@ class DesEncrypter ( passPhrase: String ) {
 
     ecipher.init(Cipher.ENCRYPT_MODE, key, paramSpec)
     dcipher.init(Cipher.DECRYPT_MODE, key, paramSpec)
-  }.error
+  }.logError
 
   /** encrypt the passed string
    *
@@ -93,7 +93,7 @@ class DesEncrypter ( passPhrase: String ) {
       var enc: Array[Byte] = ecipher.doFinal(utf8)
 
       Base64.encode(enc)
-    }.error.fold(e => "", s => s)
+    }.logError.fold(e => "", s => s)
 
   /** decrypt the passed string
    *
@@ -106,6 +106,6 @@ class DesEncrypter ( passPhrase: String ) {
       var utf8: Array[Byte] = dcipher.doFinal(dec)
 
       new String(utf8, "UTF8")
-    }.error.fold(e => "", s => s)
+    }.logError.fold(e => "", s => s)
 
 }

@@ -21,7 +21,7 @@ trait StatusDao {
 
     vld {
         DB.withConnection(db) { implicit connection => SQL("Select 1").execute() }
-    }.error.fold(e => false, s => s )
+    }.logError.fold(e => false, s => s )
   }
 
 }

@@ -1,4 +1,4 @@
-package utils
+package services
 
 import scalaz.{Node => _, Logger => _, _}
 import Scalaz._

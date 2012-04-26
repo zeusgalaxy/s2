@@ -43,7 +43,7 @@ trait CompanyDao {
           SQL("select id, name from company order by name").
           as(coReportBasic *).map(c => c.id.toString -> c.name)
       }
-    }.error.fold(e => Seq(), s => s )
+    }.logError.fold(e => Seq(), s => s )
   }
 
 }

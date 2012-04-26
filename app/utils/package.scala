@@ -242,7 +242,7 @@ package object utils {
      * @param src The source code location associated with this validation block.
      * @return A property formatted failure string, suitable for logging.
      */
-    def logTxt(src: String) =
+    def createLogTxt(src: String) =
       "\t" + src + "\t" + v.fold(e => e.list.mkString(", "), s => "") + "\t"
 
     /**Retrieves the success value, or throws an error if a failure. This is intended to be used within
@@ -260,7 +260,7 @@ package object utils {
      * @param msg The text that is to be added to the list of failure strings.
      * @return This validation, so operations can be strung together.
      */
-    def add(k: String, msg: String): Validation[NonEmptyList[String], T] = {
+    def addLogMsg(k: String, msg: String): Validation[NonEmptyList[String], T] = {
       // Ignore the syntax highlight, below; IntelliJ is confused.
       if (v.isFailure) (v <* ("Additional info: " + k + ": " + msg).failNel[T]) else v
     }
@@ -271,8 +271,8 @@ package object utils {
      * @param src A textual description of where the operation is coming from in the source code.
      * @return This validation, so operations can be chained together.
      */
-    def trace(implicit src: VL): Validation[NonEmptyList[String], T] = {
-      if (v.isFailure) Logger.trace("TRACE" + logTxt(src))
+    def logTrace(implicit src: VL): Validation[NonEmptyList[String], T] = {
+      if (v.isFailure) Logger.trace("TRACE" + createLogTxt(src))
       v
     }
 
@@ -283,8 +283,8 @@ package object utils {
      * @param src A textual description of where the operation is coming from in the source code.
      * @return This validation, so operations can be chained together.
      */
-    def debug(implicit src: VL): Validation[NonEmptyList[String], T] = {
-      if (v.isFailure) Logger.debug("DEBUG" + logTxt(src))
+    def logDebug(implicit src: VL): Validation[NonEmptyList[String], T] = {
+      if (v.isFailure) Logger.debug("DEBUG" + createLogTxt(src))
       v
     }
 
@@ -295,8 +295,8 @@ package object utils {
      * @param src A textual description of where the operation is coming from in the source code.
      * @return This validation, so operations can be chained together.
      */
-    def info(implicit src: VL): Validation[NonEmptyList[String], T] = {
-      if (v.isFailure) Logger.info("INFO" + logTxt(src))
+    def logInfo(implicit src: VL): Validation[NonEmptyList[String], T] = {
+      if (v.isFailure) Logger.info("INFO" + createLogTxt(src))
       v
     }
 
@@ -307,8 +307,8 @@ package object utils {
      * @param src A textual description of where the operation is coming from in the source code.
      * @return This validation, so operations can be chained together.
      */
-    def warn(implicit src: VL): Validation[NonEmptyList[String], T] = {
-      if (v.isFailure) Logger.warn("WARN" + logTxt(src))
+    def logWarn(implicit src: VL): Validation[NonEmptyList[String], T] = {
+      if (v.isFailure) Logger.warn("WARN" + createLogTxt(src))
       v
     }
 
@@ -319,8 +319,8 @@ package object utils {
      * @param src A textual description of where the operation is coming from in the source code.
      * @return This validation, so operations can be chained together.
      */
-    def error(implicit src: VL): Validation[NonEmptyList[String], T] = {
-      if (v.isFailure) Logger.error("ERROR" + logTxt(src))
+    def logError(implicit src: VL): Validation[NonEmptyList[String], T] = {
+      if (v.isFailure) Logger.error("ERROR" + createLogTxt(src))
       v
     }
   }

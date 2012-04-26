@@ -53,7 +53,7 @@ trait RoleDao {
             """
           ).on('name -> roleName).as(rlSimple.singleOpt)
       }
-    }.info.fold(e => None, s => s)
+    }.logInfo.fold(e => None, s => s)
   }
 
   /** find a role name from its ID
@@ -73,7 +73,7 @@ trait RoleDao {
             """
           ).on('id -> roleId).as(rlSimple.singleOpt)
       }
-    }.info.fold(e => None, s => s)
+    }.logInfo.fold(e => None, s => s)
   }
 
   /** return the list of roles for a given role_group
@@ -96,7 +96,7 @@ trait RoleDao {
                 "select * from role" + whereStr
               ).on('roleGroup -> r.group).as (rlSimple *)
           }
-        }.info.fold(e => Seq(), s => s)
+        }.logInfo.fold(e => Seq(), s => s)
       case _ => Seq()
     }
 

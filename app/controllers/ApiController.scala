@@ -7,10 +7,12 @@ import security._
 import views._
 import utils._
 import models._
+import services._
 import play.api.Logger
 import scala.xml._
 import scalaz._
 import Scalaz._
+import services.Gigya
 
 object ApiController extends ApiController
                         with VirtualTrainer
@@ -68,7 +70,7 @@ class ApiController extends Controller {
 
         } yield vtAsApiResult(vtPredefinedPresets, vtWorkouts)
 
-      finalResult.error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
+      finalResult.logError.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
 
   /**Establishes an active session for a Netpulse user that has a Virtual Trainer account, and for whom
@@ -109,7 +111,7 @@ class ApiController extends Controller {
 
         } yield vtAsApiResult(vtPredefinedPresets, vtWorkouts)
 
-      finalResult.error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
+      finalResult.logError.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
 
   /**Terminates any active session between a Netpulse user and their Virtual Trainer account.
@@ -134,7 +136,7 @@ class ApiController extends Controller {
 
         } yield <api error={apiNoError.toString}/>
 
-      finalResult.error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
+      finalResult.logError.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
 
   /**Registers an existing exerciser with Virtual Trainer. This call is used instead of
@@ -160,7 +162,7 @@ class ApiController extends Controller {
         vtUser <- vld(vtRegister(rp))
       } yield {
         vtUser
-      }).error.fold(e => Left(apiGeneralError), s => s)
+      }).logError.fold(e => Left(apiGeneralError), s => s)
 
       (rVal match {
 
@@ -177,7 +179,7 @@ class ApiController extends Controller {
             vtPredefinedPresets <- vtPredefinedPresets(vtToken, vtTokenSecret, model)
 
           } yield vtAsApiResult(vtPredefinedPresets)
-      }).error.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
+      }).logError.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
   }
 
   /**Retrieves supplemental status information for a given exerciser.
@@ -244,7 +246,7 @@ class ApiController extends Controller {
 
         exSetSavedChannels(npLogin, locationId, chList)
 
-      }.error.fold(e => false, s => s)
+      }.logError.fold(e => false, s => s)
 
       finalResult ? Ok(<api error={apiNoError.toString}></api>) |
         Ok(<api error={apiGeneralError.toString}></api>)
@@ -290,7 +292,7 @@ class ApiController extends Controller {
 
       val gigyaResp = ggCall(method, request.queryString)
       val ourResp = tst(gigyaResp)(_.getErrorCode == 0).
-        add("gigya response log", gigyaResp.getLog).error.
+        addLogMsg("gigya response log", gigyaResp.getLog).logError.
         fold(e => Ok(gigyaResp.getResponseText), s => Ok(gigyaResp.getResponseText))
       //      ourResp.withHeaders() // TODO - Can we get the gigya headers some how and use their content-type?
       ourResp

@@ -1,6 +1,7 @@
 package test.controllers
 
 import utils._
+import services._
 import org.specs2.mutable._
 
 import play.api.test._

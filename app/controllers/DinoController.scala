@@ -10,6 +10,7 @@ import play.api.Play.current
 import security._
 import utils._
 import models._
+import services._
 import play.api.Logger
 
 object DinoController extends DinoController
@@ -65,7 +66,7 @@ class DinoController extends Controller {
         case "DELETE" => newRequest.delete().await(dinoTimeout).get
         case m => throw new Exception("Unexpected method in Dino.forward: " + m)
       }
-    }.error
+    }.logError
   }
 
   /** Sends a request to Dino for processing, without allowing any additional processing on the
@@ -114,7 +115,7 @@ class DinoController extends Controller {
           val cnt = pvmInsert(~request.body.asXml).getOrThrow
           Ok("PageView load succeeded with " + cnt.toString + "inserts")
         }
-      }.add("request body", request.body.toString).error.
+      }.addLogMsg("request body", request.body.toString).logError.
         fold(e => InternalServerError("PageView load failed. Errors: " + e.list.mkString(", ")), s => s)
     }
   }
@@ -139,16 +140,16 @@ class DinoController extends Controller {
       implicit val loc = VL("DinoWrapper.register")
 
       val rp = VtRegistrationParams(request)
-      val oldXml = forward(request).flatMap { r => vld(r.xml) }.error |
+      val oldXml = forward(request).flatMap { r => vld(r.xml) }.logError |
         <response code="2" desc="Unable to register. An error occurred when forwarding registration to Dino."></response>
 
       // either error code or object encapsulating vt user
       val rVal: Either[Int, VtUser] = (for {
-        code <- tst((oldXml \\ "response" \ "@code").text)(_ == "0", "oldXml response code != 0").add("oldXml", oldXml.text)
+        code <- tst((oldXml \\ "response" \ "@code").text)(_ == "0", "oldXml response code != 0").addLogMsg("oldXml", oldXml.text)
         vtUser <- vld(vtRegister(rp))
       } yield {
         vtUser
-      }).error.fold(e => Left(apiGeneralError), s => s)
+      }).logError.fold(e => Left(apiGeneralError), s => s)
 
       val finalResult = rVal match {
 
@@ -170,7 +171,7 @@ class DinoController extends Controller {
 
       val gigyaUid = request.queryString.get("gigya_uid")
       if (gigyaUid.isDefined) exSetGigyaUid(rp.npLogin, gigyaUid.get(0))
-      finalResult.error.fold(e => Ok(e.list.mkString(", ")), s => Ok(s))
+      finalResult.logError.fold(e => Ok(e.list.mkString(", ")), s => Ok(s))
   }
 
   /** Logs a user in to a session with Netpulse (via Dino), and retrieves an appropriate set
@@ -208,11 +209,11 @@ class DinoController extends Controller {
               vtWorkouts <- vtWorkouts(ex.get.vtToken, ex.get.vtTokenSecret, model)
 
             } yield vtInsertIntoXml(oldXml, "response", vtPredefinedPresets, vtWorkouts)
-          }.error.toOption.getOrElse(XmlMutator(oldXml).add("response", <api error={apiGeneralError.toString}/>))
+          }.logError.toOption.getOrElse(XmlMutator(oldXml).add("response", <api error={apiGeneralError.toString}/>))
 
           case _ => XmlMutator(oldXml).add("response", <api error={apiNoError.toString}/>)
         }
-      }).error.fold(e => <response desc="Login failed." code="5">
+      }).logError.fold(e => <response desc="Login failed." code="5">
         {e.list.mkString(", ")}
       </response>, s => s)
 

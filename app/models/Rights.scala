@@ -54,7 +54,7 @@ trait RightsDao {
                 'targetName -> t.t).
                 as(rtSimple.singleOpt)
           }
-        }.info.fold(e => noRights, s => s.getOrElse(noRights))
+        }.logInfo.fold(e => noRights, s => s.getOrElse(noRights))
       }
       case _ => noRights
     }

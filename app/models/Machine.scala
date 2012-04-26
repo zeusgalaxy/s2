@@ -51,7 +51,7 @@ trait MachineDao {
         implicit connection =>
           SQL("select * from machine where id = {id}").on('id -> id).as(mchBasic.singleOpt)
       }
-    }.info.fold(e => None, s => s)
+    }.logInfo.fold(e => None, s => s)
   }
 
   /** Retrieves basic machine object along with its associated equipment information, if available.
@@ -70,7 +70,7 @@ trait MachineDao {
           SQL("select * from machine m join equipment e on m.equipment_id = e.id where m.id = {id}").
             on('id -> id).as(mchWithEquip.singleOpt)
       }
-    }.info.fold(e => None, s => s)
+    }.logInfo.fold(e => None, s => s)
   }
 }
 
