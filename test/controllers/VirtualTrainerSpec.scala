@@ -11,12 +11,10 @@ import play.api.test.Helpers._
 import models.{EquipmentDao, Equipment, MachineDao, MachineBasic}
 import play.api.libs.ws.WS
 import xml.Elem
+import java.lang.Exception
 
 object VirtualTrainerSpec extends Specification {
 
-  val id = org.joda.time.DateTime.now.getMillis.toString.takeRight(10)
-  val pwd = id
-  val email = "kgs" + id + "@stross.com"
   val channel = (Math.random * 100).round
 
   trait FakeMachineDao extends MachineDao with EquipmentDao {
@@ -32,20 +30,22 @@ object VirtualTrainerSpec extends Specification {
     override def header(key: String) = headers.get(key)
   }
 
-  val vtr = FakeVtResponse()
-  val vtrValidateFound = FakeVtResponse(status = 500)
-  val vtrValidateNotFound = FakeVtResponse(status = 200)
-  val vtrValidateError = FakeVtResponse(status = 404)
+  val vtrOk = FakeVtResponse()
+  val vtrOkRegistration = FakeVtResponse(xml = Some(VirtualTrainerData.registerXml))
 
   class FakeDinoController extends DinoController
                           with VirtualTrainer
                           with ExerciserDao
-                          with MachineDao
+                          with FakeMachineDao
                           with EquipmentDao
                           with PageViewDao
 
-  case class FakeVirtualTrainer(validate: VtResponse = vtr, register: VtResponse = vtr, login: VtResponse = vtr,
-                logout: VtResponse = vtr, link: VtResponse = vtr, predefineds: VtResponse = vtr, workouts: VtResponse = vtr)
+  class SemiRealVirtualTrainer extends VirtualTrainer with FakeMachineDao with EquipmentDao
+
+  case class FakeVirtualTrainer(validate: VtResponse = vtrOk, register: VtResponse = vtrOk,
+                                login: VtResponse = vtrOk, logout: VtResponse = vtrOk,
+                                link: VtResponse = vtrOk, predefineds: VtResponse = vtrOk,
+                                workouts: VtResponse = vtrOk)
         extends VirtualTrainer with FakeMachineDao with EquipmentDao {
 
     override def vtDoValidate(rBody: String) = validate
@@ -57,20 +57,66 @@ object VirtualTrainerSpec extends Specification {
     override def vtDoWorkouts(token: String, tokenSecret: String) = workouts
   }
 
-  val vtrRegParams = VtRegistrationParams(npLogin = "5103369779", email = "123@netpulse.com", dob = "01021963",
-          machineId = "1070", gender = "M", weight = "180", vtNickname = "usertest", vtPassword = "5103369779")
+  case class VtVarData(id: String = org.joda.time.DateTime.now.getMillis.toString.takeRight(10)) {
+    def pwd = id
+    def email = "kgs" + id + "@stross.com"
+  }
+
+  def vtrRegParams(d: VtVarData) = VtRegistrationParams(npLogin = d.id, email = d.email, dob = "01021963",
+          machineId = "1070", gender = "M", weight = "180", vtNickname = d.id, vtPassword = d.id)
 
   "VirtualTrainer" should {
+
     "Handle all possibilities when validating prior to registration" in {
 
       running(FakeApplication()) {
-        val result = FakeVirtualTrainer(validate = FakeVtResponse(status = 500)).vtRegister(vtrRegParams)
-        result must equalTo(Left(apiVtRegistrationUserExists))
+        FakeVirtualTrainer(validate = FakeVtResponse(status = 500)).vtRegister(vtrRegParams(VtVarData())) must
+          equalTo(Left(apiVtRegistrationUserExists))
 
-//        val result2 = FakeVirtualTrainer(register = FakeVtResponse(xml = Some(<weird></weird>))).vtRegister(vtrRegParams)
-//        result2 must equalTo(Left(apiVtRegistrationUserExists))
+        FakeVirtualTrainer(validate = FakeVtResponse(status = 404)).vtRegister(vtrRegParams(VtVarData())) must
+          equalTo(Left(apiVtRegistrationOtherError))
+
+        FakeVirtualTrainer(register = vtrOkRegistration).vtRegister(vtrRegParams(VtVarData())).isRight must equalTo(true)
       }
     }
+
+    "Make the individual calls to the real Virtual Trainer web service successfully" in {
+
+      running(FakeApplication()) {
+
+        val srvt = new SemiRealVirtualTrainer()
+        val vData = VtVarData()
+        val regBody = srvt.vtRegisterBody(vtrRegParams(vData)).toOption.getOrElse("body not created")
+        val loginBody = srvt.vtLoginBody(vData.id, vData.pwd)
+
+        srvt.vtDoValidate(regBody).status must equalTo(200)
+
+        val regResult = srvt.vtDoRegister(regBody)
+        regResult.status must equalTo(200)
+        val vtUid = regResult.xml.map { x => (x \\ "userId").head.text}.getOrElse("0")
+        vtUid must not equalTo("0")
+
+        srvt.vtDoLink(vData.id, vtUid).status must equalTo(200)
+
+        val loginResult = srvt.vtDoLogin(loginBody)
+        loginResult.status must equalTo(200)
+
+        val tEx = """(.*oauth_token=\")([^\"]*).*""".r
+        val tsEx = """(.*oauth_token_secret=\")([^\"]*).*""".r
+
+        val hdr = loginResult.header("Authorization")
+        val tEx(_, vtToken) = tEx.findFirstIn(hdr.getOrElse("")).getOrElse("")
+        val tsEx(_, vtSecret) = tsEx.findFirstIn(hdr.getOrElse("")).getOrElse("")
+
+        vtToken must not equalTo("")
+        vtSecret must not equalTo("")
+
+        srvt.vtDoLogout(vtToken, vtSecret).status must equalTo(200)
+      }
+    }
+
+
+
 //    "make all of its calls properly" in {
 //
 //      running(FakeApplication()) {

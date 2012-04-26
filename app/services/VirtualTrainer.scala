@@ -65,7 +65,7 @@ trait VirtualTrainer {
    * @param rp Registration param values, enapsulated into a single abstraction
    * @return ValidationNEL with error messages if problems, else stringified JSON with the registration params needed by VT
    */
-  private def vtRegisterBody(rp: VtRegistrationParams): ValidationNEL[String, String] = {
+  def vtRegisterBody(rp: VtRegistrationParams): ValidationNEL[String, String] = {
 
     implicit val loc = VL("VT.registerBody")
 
@@ -96,7 +96,7 @@ trait VirtualTrainer {
    * @param vtUid Virtual Trainer user id representing this exerciser
    * @return Stringified JSON with the link body needed by VT
    */
-  private def vtLinkBody(npLogin: String, vtUid: String) = {
+  def vtLinkBody(npLogin: String, vtUid: String) = {
     stringify(JsObject(List(
       "externalUserId" -> JsString(npLogin),
       "vtUserId" -> JsString(vtUid),
@@ -110,7 +110,7 @@ trait VirtualTrainer {
    * @param password Exerciser's password with VirtualTrainer
    * @return Stringified JSON with the login body needed by VT
    */
-  private def vtLoginBody(emailOrLogin: String, password: String) = {
+  def vtLoginBody(emailOrLogin: String, password: String) = {
     stringify(JsObject(List(
       "username" -> JsString(b64Enc.encode(emailOrLogin.getBytes("UTF-8"))),
       "password" -> JsString(b64Enc.encode(password.getBytes("UTF-8")))
