@@ -57,10 +57,10 @@ object WorkoutLocation {
 
   val tot2_parse = {
     get[java.math.BigDecimal]("newReg") ~
-      get[java.math.BigDecimal]("totReg")  
+      get[java.math.BigDecimal]("totReg")
   }
 
-  
+
   def total ( p1: Any, p2: Any ): WorkoutLocation = {
     p1 match {
       case (screens:Long)~(woCnt:BigDecimal)~(woReg:BigDecimal)~(woPercReg:BigDecimal)~(woPerScreen:BigDecimal)~(woScreenDay:BigDecimal)~(durAvg:BigDecimal)~(durTot:BigDecimal) =>
@@ -69,7 +69,7 @@ object WorkoutLocation {
         }
     }
   }
-  
+
   // -- Queries
 
 
@@ -87,7 +87,7 @@ object WorkoutLocation {
            filter: String = "%", startDate: String = "0", endDate: String = "0"): Option[Page[WorkoutLocation]] = {
 
     implicit val loc = VL("WorkoutLocation.list")
-    
+
     val offset = pageSize * page
 
     val sDate = dateToInt(startDate, 0)
@@ -202,7 +202,7 @@ object WorkoutLocation {
           Page(woL, Seq(comboTotal), page, offset, totalRows)
       }
 
-    }.error.fold(e => None, page => Some(page) )
+    }.logError.fold(e => None, page => Some(page) )
 
   }
 

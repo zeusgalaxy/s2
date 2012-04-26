@@ -87,7 +87,7 @@ trait VirtualTrainer {
       ))
       Logger.debug("VT registerBody json = " + stringify(json))
       stringify(json)
-    }.error
+    }.logError
   }
 
   /**Builds the JSON link_external_user body that will be passed to the VirtualTrainer servers.
@@ -228,8 +228,8 @@ trait VirtualTrainer {
      * First, we must validate with Virtual Trainer, to find out whether or not this user is
      * already registered with them.
      */
-      rBody <- vtRegisterBody(rp).error.toOption
-      valResult <- vld(vtDoValidate(rBody)).error.toOption
+      rBody <- vtRegisterBody(rp).logError.toOption
+      valResult <- vld(vtDoValidate(rBody)).logError.toOption
       valStatus = valResult.status
 
     } yield {
@@ -249,14 +249,14 @@ trait VirtualTrainer {
            */
             regResult <- vld(vtDoRegister(rBody))
             status <- tst(regResult)(_.status == 200).
-              logMsg("vt register result status", regResult.status.toString).
-              logMsg("body sent", rBody).
-              logMsg("response received", regResult.toString).error
+              addLogMsg("vt register result status", regResult.status.toString).
+              addLogMsg("body sent", rBody).
+              addLogMsg("response received", regResult.toString).logError
 
-            regXml <- vld(regResult.xml.get).logMsg("regResult", regResult.toString())
-            vtUid <- vld((regXml \\ "userId" head).text).logMsg("regXml", regXml.toString())
-            vtNickname <- vld((regXml \\ "nickName" head).text).logMsg("regXml", regXml.toString())
-            vtUser <- vld(VtUser(regXml)).logMsg("regXml", regXml.toString())
+            regXml <- vld(regResult.xml.get).addLogMsg("regResult", regResult.toString())
+            vtUid <- vld((regXml \\ "userId" head).text).addLogMsg("regXml", regXml.toString())
+            vtNickname <- vld((regXml \\ "nickName" head).text).addLogMsg("regXml", regXml.toString())
+            vtUser <- vld(VtUser(regXml)).addLogMsg("regXml", regXml.toString())
 
             /**
              * Third step is to link our account with their account.
@@ -265,7 +265,7 @@ trait VirtualTrainer {
 
           } yield vtUser
 
-        result.logMsg("Result", "Failure").error.fold(e => Left(apiVtRegistrationOtherError), s => Right(s))
+        result.addLogMsg("Result", "Failure").logError.fold(e => Left(apiVtRegistrationOtherError), s => Right(s))
     }
   }
 
@@ -282,9 +282,9 @@ trait VirtualTrainer {
     (for {
       linkResult <- vld(vtDoLink(npLogin, vtUid))
       status <- tst(linkResult)(_.status == 200).
-        logMsg("vt link external account result status", linkResult.status.toString).
-        logMsg("response", linkResult.toString).error
-    } yield true).error
+        addLogMsg("vt link external account result status", linkResult.status.toString).
+        addLogMsg("response", linkResult.toString).logError
+    } yield true).logError
   }
 
   /**Manages the process of logging a given Netpulse user into Virtual Trainer. Once logged in, the system
@@ -305,22 +305,22 @@ trait VirtualTrainer {
       lBody <- vld(vtLoginBody(emailOrNickname, vtPassword))
       loginResult <- vld(vtDoLogin(lBody))
       status <- tst(loginResult)(_.status == 200).
-        logMsg("vt login result status", loginResult.status.toString).
-        logMsg("response", loginResult.toString).error
+        addLogMsg("vt login result status", loginResult.status.toString).
+        addLogMsg("response", loginResult.toString).logError
       hdr <- loginResult.header("Authorization").toSuccess("Authorization header not found").liftFailNel
 
       token <- vld({
         val tEx(_, t) = tEx.findFirstIn(hdr).get;
         t
-      }).logMsg("Auth header", hdr)
+      }).addLogMsg("Auth header", hdr)
 
       secret <- vld({
         val tsEx(_, s) = tsEx.findFirstIn(hdr).get;
         s
-      }).logMsg("Auth header", hdr)
-      id <- vld((loginResult.xml.get \\ "userId" head).text).logMsg("vt login xml", loginResult.xml.get.toString())
+      }).addLogMsg("Auth header", hdr)
+      id <- vld((loginResult.xml.get \\ "userId" head).text).addLogMsg("vt login xml", loginResult.xml.get.toString())
 
-    } yield (id, token, secret)).error
+    } yield (id, token, secret)).logError
   }
 
   /**Manages the process of logging an exerciser out of their currently active session with Virtual Trainer.
@@ -338,9 +338,9 @@ trait VirtualTrainer {
     (for {
       logoutResult <- vld(vtDoLogout(token, tokenSecret))
       status <- tst(logoutResult)(_.status == 200).
-        logMsg("vt logout result status", logoutResult.status.toString).error
+        addLogMsg("vt logout result status", logoutResult.status.toString).logError
 
-    } yield true).error
+    } yield true).logError
   }
 
   /**Returns all Virtual Trainer predefined presets for the given exerciser session (represented by the Virtual
@@ -356,14 +356,14 @@ trait VirtualTrainer {
 
     (for {
       ppResult <- vld(vtDoPredefineds(token, tokenSecret))
-      status <- tst(ppResult)(_.status == 200).logMsg("vt result status", ppResult.status.toString)
-      segs <- vld(ppResult.xml.get \\ "workoutSegments").logMsg("pp result xml", ppResult.xml.get.toString())
+      status <- tst(ppResult)(_.status == 200).addLogMsg("vt result status", ppResult.status.toString)
+      segs <- vld(ppResult.xml.get \\ "workoutSegments").addLogMsg("pp result xml", ppResult.xml.get.toString())
 
     } yield segs.withFilter(s => (s \\ "deviceType").exists {
         _.text == model
       }).map {
         s => s
-      }).error
+      }).logError
   }
 
   /**Returns all Virtual Trainer workouts for the given exerciser session (represented by the Virtual
@@ -379,13 +379,13 @@ trait VirtualTrainer {
 
     (for {
       ppResult <- vld(vtDoWorkouts(token, tokenSecret))
-      status <- tst(ppResult)(_.status == 200).logMsg("vt result status", ppResult.status.toString)
+      status <- tst(ppResult)(_.status == 200).addLogMsg("vt result status", ppResult.status.toString)
       segs <- vld(ppResult.xml.get \\ "workoutSegments")
     } yield segs.withFilter(s => (s \\ "deviceType").exists {
         _.text == model
       }).map {
         s => s
-      }).error
+      }).logError
   }
 
   /**Utility function that accepts XML of predefined_presets and workouts, and inserts those

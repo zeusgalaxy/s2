@@ -92,7 +92,7 @@ trait ExerciserDao {
           SQL("select "+exSelectFields+" , location.name from exerciser left join location on (exerciser.location_id = location.id)" +
             " where id = {id}").on('id -> dbId).as(exSimple.singleOpt)
       }
-    }.info.fold(e => None, s => s)
+    }.logInfo.fold(e => None, s => s)
   }
 
   /** Retrieves an exerciser from the database using the identifier they log in with.
@@ -110,7 +110,7 @@ trait ExerciserDao {
           SQL("select"+exSelectFields+" , location.name from exerciser left join location on (exerciser.location_id = location.id)" +
             " where login = {login}").on('login -> login).as(exSimple.singleOpt)
       }
-    }.info.fold(e => None, s => s)
+    }.logInfo.fold(e => None, s => s)
   }
 
   /** Retrieves exerciser id based on their login. This mapping from login to id occurs frequently, as the client
@@ -131,7 +131,7 @@ trait ExerciserDao {
           .on('login -> login)
           .as((get[Int]("exerciser_profile.person_id")).singleOpt)
       }
-    }.info.fold(e => None, s => s)
+    }.logInfo.fold(e => None, s => s)
   }
 
   /** Retrieves any previously saved "favorite channels" for a given exerciser at a given club location.
@@ -156,7 +156,7 @@ trait ExerciserDao {
               'locationId -> locationId)
           .as((get[Long]("club_exerciser_channel.tv_channel_id"))*)
       }
-    }.info.fold(e => Nil, s => s)
+    }.logInfo.fold(e => Nil, s => s)
   }
 
   /** Saves "favorite channels" for a given exerciser at a given club location. The list of
@@ -211,7 +211,7 @@ trait ExerciserDao {
             ).executeUpdate()
           }
       }
-    }.info.fold(e => false, s => true)
+    }.logInfo.fold(e => false, s => true)
   }
 
   /** Updates the Virtual Trainer fields in the exerciser record with the values provided by the
@@ -248,7 +248,7 @@ trait ExerciserDao {
             'vtStatus -> vtStatusLoggedIn
           ).executeUpdate()
       }
-    }.info.fold(e => false, s => true)
+    }.logInfo.fold(e => false, s => true)
   }
 
   /** Clears the Virtual Trainer token fields in the exerciser record to reflect the fact that they
@@ -279,7 +279,7 @@ trait ExerciserDao {
             'vtStatus -> vtStatusLinked
           ).executeUpdate()
       }
-    }.info.fold(e => false, s => true)
+    }.logInfo.fold(e => false, s => true)
   }
 
   /** Sets the gigya user id so that we know that we have already established the link
@@ -307,7 +307,7 @@ trait ExerciserDao {
             'gigyaUid -> gigyaUid
           ).executeUpdate()
       }
-    }.info.fold(e => false, s => true)
+    }.logInfo.fold(e => false, s => true)
   }
 
   /** Sets the "show_profile_pic" option in the exerciser record.
@@ -334,5 +334,5 @@ trait ExerciserDao {
             'showPic -> (show ? 1 | 0)
           ).executeUpdate()
       }
-    }.info.fold(e => false, s => true)
+    }.logInfo.fold(e => false, s => true)
   }}
