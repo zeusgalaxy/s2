@@ -16,6 +16,14 @@
         if (typeof(npfunctions) == 'undefined') {
             npfunctions = {};
         }
+        if (typeof(getServerLocation) == 'undefined') {
+        	getServerLocation = function() {
+        		if (typeof(loc) == 'undefined') {
+                    loc = parseURL(window.location);
+        		}
+        		return loc.protocol + '://' + loc.host + (parseInt(loc.port) > 0 ? ':' + loc.port : '') + '/';
+        	}
+        }
 
         //Parses a URL into discrete components
         function parseURL(url) {
@@ -47,33 +55,57 @@
             };
         };
 
+        // Proces the response object from Gigya API call, and either write it to disk
+        // so that the main webview in the client can process, or display (for debugging)
+        function processResponse(response) {
+            var json = JSON.stringify(response);
+            var cookies = document.cookie;
+            if (typeof(npfunctions.writeToFile) == 'function') {
+                // Write the data to the filesystem for later retrieval
+                npfunctions.writeToFile('/tmp/gigya.json', json);
+                npfunctions.writeToFile('/tmp/gigya.cookies', cookies);
+
+            } else {
+                $('body').append(
+                        '<h1>Response</h1>\n' +
+                                json +
+                                '<br /><h1>Cookies</h1>' +
+                                cookies
+                );
+            }
+            // Append "done" status and refresh page to notify client
+            // that the information is ready
+            window.location.href += '&status=done'
+        };
+        
         $(document).ready(function() {
             var loc = parseURL(window.location);
             if (typeof(loc.params.status) == 'undefined' || loc.params.status != 'done') {
-                // Initial access to this redirected page.  Get the user info and
-                // save it to disk
-                gigya.socialize.getUserInfo({
-                    callback: function(response) {
-                        var json = JSON.stringify(response);
-                        var cookies = document.cookie;
-                        if (typeof(npfunctions.writeToFile) == 'function') {
-                            // Write the data to the filesystem for later retrieval
-                            npfunctions.writeToFile('/tmp/gigya.json', json);
-                            npfunctions.writeToFile('/tmp/gigya.cookies', cookies);
+            	/* 
+            	 * Prior to 2012-04-20, Gigya Javascript API for login/addConnection
+            	 * redirected to the URL, BUT DID NOT append the user info to the URL
+            	 * as documented.  The workaround was to explicitly call gigya.socialize.getUserInfo()
+            	 * and save that to disk to be read by the main window of the client.
+            	 *
+            	 * Sometime on/after 2012-04-20, the login/addConnection was changed to
+            	 * update the redirectURL with the user info as part of the query 
+            	 * string.  Unfortunately, gigya.socialize.getUserInfo() no longer has sufficient  
+            	 * data to retrieve the user's info.  So instead of using the Javascrip API,
+            	 * use the REST API.
+            	 */
+            	if (true) { 
+            		$.getJSON(
+            			getServerLocation() + 's2/gigyaProxy/getUserInfo?uid=' + loc.params.UID,
+            			processResponse
+            		);
 
-                        } else {
-                            $('body').append(
-                                    '<h1>Response</h1>\n' +
-                                            json +
-                                            '<br /><h1>Cookies</h1>' +
-                                            cookies
-                            );
-                        }
-                        // Append "done" status and refresh page to notify client
-                        // that the information is ready
-                        window.location.href += '&status=done'
-                    }
-                });
+            	} else {
+	            	// Initial access to this redirected page.  Get the user info and
+	                // save it to disk
+	                gigya.socialize.getUserInfo({
+	                    callback: processResponse
+	                });
+            	}
             }
         });
 

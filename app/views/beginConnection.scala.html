@@ -5,9 +5,6 @@
     <!-- <script type="text/javascript" src="http://ec2.netpulse.ws/js/jquery-1.4.4.min.js"></script> -->
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
     <script type="text/javascript">
-        /* AUTHORIZATION: -------------------------------- */
-        // Authorization sub-routine to regain js control.
-
         /*
         * For testing outside of QT
         */
@@ -45,6 +42,33 @@
             };
         };
 
+        /* AUTHORIZATION: -------------------------------- */
+        // Authorization sub-routine to regain js control.
+        var auth = {
+       		APIKey : '2_7kdDan99DJTVE_z9QKYSno1AvTyz8h5bM9UiEfq_HaTfQgIeeCmRY7wvf11WJhcz', // Netpulse production
+//       	APIKey : '2_yM8ACPAsEmp9GNWZaf9pms70VCJ317NzLHdkDRNHsAwIgLFrt1xKmOjmqt1lnTS1', // Gigya Test
+       	    provider : 'facebook',
+       	    params : {
+       	    	authFlow : 'redirect',
+       	    	lang : 'en',
+       	    	cid : 'login'
+       	    },
+       	    
+       	    getParams : function() {
+       	    	return {
+       	    		provider : this.provider,
+       	    		redirectURL : loc.protocol + '://' + loc.hostname
+       	    	        + (parseInt(loc.port) > 0 ? ':' + loc.port : '')
+       	    	        + loc.path.replace('beginLogin', 'endGigya')
+       	    	        + '?provider=' + this.provider,
+       	    	    authFlow : this.params.authFlow,
+       	    	    context : this.params.context,
+       	    	    lang : this.params.lang,
+       	    	    cid : this
+       	    	};
+       	    }
+        
+        }
         // Authorization routine constructor.
         function authorize(provider) { // Used in Login & Registration.
             var auth = this;
@@ -68,7 +92,8 @@
                 provider: (provider ? provider : auth.provider),
                 redirectURL: redirectURL + '?provider=' + auth.provider,
                 authFlow:'redirect',
-                context: auth
+                context: auth,
+                lang: lang 
             };
             return(auth);
         };
@@ -94,14 +119,20 @@
     </script>
 
     <script type="text/javascript">
-        var provider = 'facebook';  // Default
-        var skin = 'none';
         var loc = parseURL(window.location);
         if (loc.params.provider) {
-            provider = loc.params.provider;
+            auth.params.provider = loc.params.provider;
         }
         if (loc.params.skin) {
-            skin = loc.params.skin;
+        	auth.params.cid = 'login.' + loc.params.skin;
+        }
+        if (loc.params.lang) {
+        	auth.params.lang = loc.params.lang;
+        }
+
+       function onGigyaServiceReady(serviceName) {
+           console.log(auth.getParams());
+    	   gigya.socialize.addConnection(auth.getParams());
         }
 
         $(document).ready(function() {
@@ -109,7 +140,14 @@
                 npfunctions.remove_file('/tmp/gigya.json');
                 npfunctions.remove_file('/tmp/gigya.cookies');
             }
-            var authorizeFacebook = new authorize(provider).setup().addConnection();
+//            var authorizeFacebook = new authorize(provider).setup().addConnection();
+            
+            // Load the Gigya API with global config
+            var s = document.createElement('script');
+            s.type = 'text/javascript';
+            s.src = 'https://cdns.gigya.com/js/socialize.js?apiKey=' + auth.APIKey + '&lang=' + auth.params.lang;
+            s.text = '{ lang : "' + auth.params.lang + '"}';
+            document.getElementsByTagName('head')[0].appendChild(s);
         });
     </script>
 </head>

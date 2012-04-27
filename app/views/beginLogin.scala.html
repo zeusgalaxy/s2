@@ -5,46 +5,70 @@
     <!-- <script type="text/javascript" src="http://ec2.netpulse.ws/js/jquery-1.4.4.min.js"></script> -->
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
     <script type="text/javascript">
+	    /*
+	     * For testing outside of QT
+	     */
+	     if (typeof(npfunctions) == 'undefined') {
+	         npfunctions = {};
+	     }
+	
+	     // Parses a URL into discrete components
+	     function parseURL(url) {
+	         var a =  document.createElement('a');
+	         a.href = url;
+	         return {
+	             source: url,
+	             protocol: a.protocol.replace(':',''),
+	             host: a.host,
+	             hostname: a.hostname,
+	             port: a.port,
+	             query: a.search,
+	             params: (function(){
+	                 var ret = {},
+	                         seg = a.search.replace(/^\?/,'').split('&'),
+	                         len = seg.length, i = 0, s;
+	                 for (;i<len;i++) {
+	                     if (!seg[i]) { continue; }
+	                     s = seg[i].split('=');
+	                     ret[s[0]] = s[1];
+	                 }
+	                 return ret;
+	             })(),
+	             file: (a.pathname.match(/\/([^\/?#]+)$/i) || [,''])[1],
+	             hash: a.hash.replace('#',''),
+	             path: a.pathname.replace(/^([^\/])/,'/$1'),
+	             relative: (a.href.match(/tps?:\/\/[^\/]+(.+)/) || [,''])[1],
+	             segments: a.pathname.replace(/^\//,'').split('/')
+	         };
+	     };
+
         /* AUTHORIZATION: -------------------------------- */
         // Authorization sub-routine to regain js control.
-
-        /*
-        * For testing outside of QT
-        */
-        if (typeof(npfunctions) == 'undefined') {
-            npfunctions = {};
+        var auth = {
+       		APIKey : '2_7kdDan99DJTVE_z9QKYSno1AvTyz8h5bM9UiEfq_HaTfQgIeeCmRY7wvf11WJhcz', // Netpulse production
+//       	APIKey : '2_yM8ACPAsEmp9GNWZaf9pms70VCJ317NzLHdkDRNHsAwIgLFrt1xKmOjmqt1lnTS1', // Gigya Test
+       	    provider : 'facebook',
+       	    params : {
+       	    	authFlow : 'redirect',
+       	    	lang : 'en',
+       	    	cid : 'login'
+       	    },
+       	    
+       	    getParams : function() {
+       	    	return {
+       	    		provider : this.provider,
+       	    		redirectURL : loc.protocol + '://' + loc.hostname
+       	    	        + (parseInt(loc.port) > 0 ? ':' + loc.port : '')
+       	    	        + loc.path.replace('beginLogin', 'endGigya')
+       	    	        + '?provider=' + this.provider,
+       	    	    authFlow : this.params.authFlow,
+       	    	    context : this.params.context,
+       	    	    lang : this.params.lang,
+       	    	    cid : this
+       	    	};
+       	    }
+        
         }
-
-        // Parses a URL into discrete components
-        function parseURL(url) {
-            var a =  document.createElement('a');
-            a.href = url;
-            return {
-                source: url,
-                protocol: a.protocol.replace(':',''),
-                host: a.host,
-                hostname: a.hostname,
-                port: a.port,
-                query: a.search,
-                params: (function(){
-                    var ret = {},
-                            seg = a.search.replace(/^\?/,'').split('&'),
-                            len = seg.length, i = 0, s;
-                    for (;i<len;i++) {
-                        if (!seg[i]) { continue; }
-                        s = seg[i].split('=');
-                        ret[s[0]] = s[1];
-                    }
-                    return ret;
-                })(),
-                file: (a.pathname.match(/\/([^\/?#]+)$/i) || [,''])[1],
-                hash: a.hash.replace('#',''),
-                path: a.pathname.replace(/^([^\/])/,'/$1'),
-                relative: (a.href.match(/tps?:\/\/[^\/]+(.+)/) || [,''])[1],
-                segments: a.pathname.replace(/^\//,'').split('/')
-            };
-        };
-
         // Authorization routine constructor.
         function authorize(provider) { // Used in Login & Registration.
             var auth = this;
@@ -68,7 +92,8 @@
                 provider: (provider ? provider : auth.provider),
                 redirectURL: redirectURL + '?provider=' + auth.provider,
                 authFlow:'redirect',
-                context: auth
+                context: auth,
+                lang: lang 
             };
             return(auth);
         };
@@ -94,22 +119,35 @@
     </script>
 
     <script type="text/javascript">
-        var provider = 'facebook';  // Default
-        var skin = 'none';
         var loc = parseURL(window.location);
         if (loc.params.provider) {
-            provider = loc.params.provider;
+            auth.params.provider = loc.params.provider;
         }
         if (loc.params.skin) {
-            skin = loc.params.skin;
+        	auth.params.cid = 'login.' + loc.params.skin;
+        }
+        if (loc.params.lang) {
+        	auth.params.lang = loc.params.lang;
         }
 
+       function onGigyaServiceReady(serviceName) {
+           console.log(auth.getParams());
+    	   gigya.socialize.login(auth.getParams());
+       }
+       
         $(document).ready(function() {
             if (typeof(npfunctions.remove_file) == 'function') {
                 npfunctions.remove_file('/tmp/gigya.json');
                 npfunctions.remove_file('/tmp/gigya.cookies');
             }
-            var authorizeFacebook = new authorize(provider).setup().login();
+//            var authorizeFacebook = new authorize(provider).setup().login();
+            
+            // Load the Gigya API with global config
+            var s = document.createElement('script');
+            s.type = 'text/javascript';
+            s.src = 'https://cdns.gigya.com/js/socialize.js?apiKey=' + auth.APIKey + '&lang=' + auth.params.lang;
+            s.text = '{ lang : "' + auth.params.lang + '"}';
+            document.getElementsByTagName('head')[0].appendChild(s);
         });
     </script>
 </head>
