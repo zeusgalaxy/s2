@@ -4,7 +4,9 @@
 
 # Application status
 GET     /status                             controllers.StatusController.status()
+GET     /s2/status                             controllers.StatusController.status()
 GET     /vtTimingTest                       controllers.StatusController.vtTimingTest(num:Int ?= 10)
+GET     /s2/vtTimingTest                       controllers.StatusController.vtTimingTest(num:Int ?= 10)
 
 # Authentication
 GET     /login                              controllers.AuthController.promptLogin(page ?= "")
