@@ -64,7 +64,7 @@
        	    	    authFlow : this.params.authFlow,
        	    	    context : this.params.context,
        	    	    lang : this.params.lang,
-       	    	    cid : this
+       	    	    cid : this.params.cid
        	    	};
        	    }
         
@@ -98,6 +98,7 @@
             return(auth);
         };
 
+/*  
         // Authorization sub-routine for login.
         // Override if different from default
         authorize.prototype.login = function () {
@@ -114,7 +115,7 @@
             });
             return (auth);
         };
-
+ */
         /* END AUTHORIZATION: General ----------------------------- */
     </script>
 
@@ -145,7 +146,17 @@
             // Load the Gigya API with global config
             var s = document.createElement('script');
             s.type = 'text/javascript';
-            s.src = 'https://cdns.gigya.com/js/socialize.js?apiKey=' + auth.APIKey + '&lang=' + auth.params.lang;
+            var lang = auth.params.lang;
+            // Convert Gigya language values to 3rd-party supported values
+            switch (auth.params.lang) {
+            case 'en':
+                lang = 'en-US';
+                break;
+            case 'ja':
+                lang = 'ja-JP';
+                break;
+            }
+            s.src = 'https://cdns.gigya.com/js/socialize.js?apiKey=' + auth.APIKey + '&lang=' + lang;
             s.text = '{ lang : "' + auth.params.lang + '"}';
             document.getElementsByTagName('head')[0].appendChild(s);
         });
