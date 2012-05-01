@@ -171,6 +171,13 @@ class DinoController extends Controller {
 
       val gigyaUid = request.queryString.get("gigya_uid")
       if (gigyaUid.isDefined) exSetGigyaUid(rp.npLogin, gigyaUid.get(0))
+
+      /**
+       * Lastly, try to notify the s2 database about this new exerciser so that the two
+       * databases are sync'd up.
+       */
+      exAddToS2(rp.npLogin)
+
       finalResult.logError.fold(e => Ok(e.list.mkString(", ")), s => Ok(s))
   }
 
