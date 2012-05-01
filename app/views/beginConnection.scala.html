@@ -5,12 +5,9 @@
     <!-- <script type="text/javascript" src="http://ec2.netpulse.ws/js/jquery-1.4.4.min.js"></script> -->
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
     <script type="text/javascript">
-        /* AUTHORIZATION: -------------------------------- */
-        // Authorization sub-routine to regain js control.
-
         /*
-        * For testing outside of QT
-        */
+         * For testing outside of QT
+         */
         if (typeof(npfunctions) == 'undefined') {
             npfunctions = {};
         }
@@ -45,6 +42,51 @@
             };
         };
 
+        function createCookie(name,value,days,path,domain) {
+            var expires = "";
+            if (days) {
+                var date = new Date();
+                date.setTime(date.getTime()+(days*24*60*60*1000));
+                expires = "; expires="+date.toGMTString();
+            }
+            if (path)
+                path = "; path=" + path;
+            else 
+                path = "";
+            if (domain)
+                domain = "; domain=" + domain;
+            else domain = "";
+            document.cookie = name+"="+value+expires+path+domain;
+        };
+        
+        /* AUTHORIZATION: -------------------------------- */
+        // Authorization sub-routine to regain js control.
+        var auth = {
+       		APIKey : '2_7kdDan99DJTVE_z9QKYSno1AvTyz8h5bM9UiEfq_HaTfQgIeeCmRY7wvf11WJhcz', // Netpulse production
+//       	APIKey : '2_yM8ACPAsEmp9GNWZaf9pms70VCJ317NzLHdkDRNHsAwIgLFrt1xKmOjmqt1lnTS1', // Gigya Test
+       	    provider : 'facebook',
+       	    params : {
+       	    	authFlow : 'redirect',
+//       	    	lang : 'en',
+       	    	cid : 'addConnection'
+       	    },
+       	    
+       	    getParams : function() {
+       	    	return {
+       	    		provider : this.provider,
+       	    		redirectURL : loc.protocol + '://' + loc.hostname
+       	    	        + (parseInt(loc.port) > 0 ? ':' + loc.port : '')
+       	    	        + loc.path.replace('beginConnection', 'endGigya')
+       	    	        + '?provider=' + this.provider,
+       	    	    authFlow : this.params.authFlow,
+       	    	    context : this.params.context,
+//       	    	    lang : this.params.lang,
+       	    	    cid : this.params.cid
+       	    	};
+       	    }
+        
+        }
+
         // Authorization routine constructor.
         function authorize(provider) { // Used in Login & Registration.
             var auth = this;
@@ -68,11 +110,13 @@
                 provider: (provider ? provider : auth.provider),
                 redirectURL: redirectURL + '?provider=' + auth.provider,
                 authFlow:'redirect',
-                context: auth
+                context: auth,
+//                lang: lang 
             };
             return(auth);
         };
 
+/*
         //Authorization sub-routine for addConnection.
         //Override if different from default
         authorize.prototype.addConnection = function() {
@@ -89,27 +133,75 @@
             });
             return(auth);
         };
-
+ */
         /* END AUTHORIZATION: General ----------------------------- */
     </script>
 
     <script type="text/javascript">
-        var provider = 'facebook';  // Default
-        var skin = 'none';
         var loc = parseURL(window.location);
         if (loc.params.provider) {
-            provider = loc.params.provider;
+            auth.params.provider = loc.params.provider;
         }
         if (loc.params.skin) {
-            skin = loc.params.skin;
+        	auth.params.cid = 'addConnection.' + loc.params.skin;
         }
+        if (loc.params.lang) {
+        	auth.params.lang = loc.params.lang;
+        }
+
+        function onGigyaServiceReady(serviceName) {
+        	// Call REST API to retrieve cookies, signature, and signatureTimestamp
+            $.getJSON(
+                loc.protocol + '://' + loc.hostname + (parseInt(loc.port) > 0 ? ':' + loc.port : '')
+                    + '/s2/gigyaProxy/notifyLogin?siteUID=' + loc.params.uid,
+                restAPICallback
+    		);
+        }
+        
+        function restAPICallback(response) {
+        	console.log(response);
+        	// Set up the Cookies
+        	createCookie(response.cookieName,response.cookieValue,null,response.cookiePath,response.cookieDomain);
+        	
+        	// Execute Javascript API to notifyLogin() and addConnection()
+        	gigya.socialize.notifyLogin({
+        		siteUID : response.UID,
+        		UIDTimestamp : response.signatureTimestamp,
+        		UIDSig : response.UIDSignature,
+        		callback : function(response) {
+                    console.log(response);
+                    gigya.socialize.addConnection(auth.getParams());
+         		} 
+         	});
+       }
 
         $(document).ready(function() {
             if (typeof(npfunctions.remove_file) == 'function') {
                 npfunctions.remove_file('/tmp/gigya.json');
                 npfunctions.remove_file('/tmp/gigya.cookies');
             }
-            var authorizeFacebook = new authorize(provider).setup().addConnection();
+//            var authorizeFacebook = new authorize(provider).setup().addConnection();
+            
+            // Load the Gigya API with global config
+            var s = document.createElement('script');
+            s.type = 'text/javascript';
+            var lang = auth.params.lang;
+            // Convert Gigya language values to 3rd-party supported values
+            switch (auth.params.lang) {
+            case 'en':
+                lang = 'en-US';
+                break;
+            case 'ja':
+            	lang = 'ja-JP';
+            	break;
+            }
+            s.src = 'https://cdns.gigya.com/js/socialize.js?apiKey=' + auth.APIKey + '&lang=' + lang;
+            var globalConf = {
+            	lang : auth.params.lang,
+//            	connectWithoutLoginBehavior : "loginExistingUser"
+            }
+            s.text = JSON.stringify(globalConf);
+            document.getElementsByTagName('head')[0].appendChild(s);
         });
     </script>
 </head>
