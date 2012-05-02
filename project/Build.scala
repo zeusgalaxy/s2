@@ -25,6 +25,7 @@ object ApplicationBuild extends Build {
 
   val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
     lessEntryPoints <<= baseDirectory(customLessEntryPoints),
-    ebeanEnabled := false
+    ebeanEnabled := false,
+    testOptions in Test += Tests.Argument("junitxml", "console")
   )
 }
