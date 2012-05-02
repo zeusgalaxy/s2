@@ -365,7 +365,7 @@ trait ExerciserDao {
    */
   def exAddToS2(npLogin: String): Boolean = {
 
-    implicit val loc = VL("ExerciserDao.setShowProfilePic")
+    implicit val loc = VL("ExerciserDao.exAddToS2")
 
     vld {
       val ex = exFindByLogin(npLogin).get
@@ -390,8 +390,8 @@ trait ExerciserDao {
           SQL(
             """
               insert into exerciser_profile
-              set person_id = {pId}, client_login = {clientLogin}, clientPassword = {clientPassword},
-              weight = {weight}, gender = {gender}, date_of_birth = {dateOfBirth}, pic = {pic},
+              set person_id = {pId}, client_login = {clientLogin}, client_password = {clientPassword},
+              weight = {weight}, gender = {theGender}, date_of_birth = {dateOfBirth}, pic = {pic},
               vt_user_id = {vtUserId}, vt_token = {vtToken}, vt_token_secret = {vtTokenSecret}, vt_status = {vtStatus},
               home_club_id = {homeClubId}, created_at = now(),
               created_by = 0
@@ -401,13 +401,14 @@ trait ExerciserDao {
             'clientLogin -> npLogin,
             'clientPassword -> ex.pic.toString,
             'weight -> ex.weight,
-            'gender -> ex.genderStr,
-            'dateOfBirth -> ex.dob.toString(DateTimeFormat.forPattern("YYYY-MM-DD")),
+            'theGender -> ex.genderStr.toString,
+            'dateOfBirth -> ex.dob.toString(DateTimeFormat.forPattern("YYYY-MM-dd")),
             'pic -> ex.pic,
             'vtUserId -> ex.vtUserId,
             'vtToken -> ex.vtToken,
             'vtTokenSecret -> ex.vtTokenSecret,
-            'vtStatus -> ex.vtStatus
+            'vtStatus -> ex.vtStatus,
+            'homeClubId -> ex.homeClubId.getOrElse(null)
           ).executeUpdate()
 
           SQL(
@@ -418,18 +419,9 @@ trait ExerciserDao {
             """
           ).on(
             'exId -> ex.dbId,
-            's2Id -> pid,
-            'clientPassword -> ex.pic.toString,
-            'weight -> ex.weight,
-            'gender -> ex.genderStr,
-            'dateOfBirth -> ex.dob.toString(DateTimeFormat.forPattern("YYYY-MM-DD")),
-            'pic -> ex.pic,
-            'vtUserId -> ex.vtUserId,
-            'vtToken -> ex.vtToken,
-            'vtTokenSecret -> ex.vtTokenSecret,
-            'vtStatus -> ex.vtStatus
+            's2Id -> pid
           ).executeUpdate()
       }
-    }.logInfo.fold(e => false, s => true)
+    }.logError.fold(e => false, s => true)
   }
 }
