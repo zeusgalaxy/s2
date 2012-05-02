@@ -42,9 +42,18 @@ object StatusController extends Controller with StatusDao {
     val nums = scala.collection.mutable.ArraySeq(0, 0, 0, 0, 0)
     val durs = scala.collection.mutable.ArraySeq(0L, 0L, 0L, 0L, 0L)
     val errs = scala.collection.mutable.ArraySeq(0, 0, 0, 0, 0)
+    val mins = scala.collection.mutable.ArraySeq(0L, 0L, 0L, 0L, 0L)
+    val maxs = scala.collection.mutable.ArraySeq(0L, 0L, 0L, 0L, 0L)
 
     val srvt = new SemiRealVirtualTrainer()
 
+    def setTimes(i: Int, d: Long) {
+      durs(i) += d
+      mins(i) = (d < mins(i) || mins(i) == 0L) ? d | mins(i)
+      maxs(i) = (d > maxs(i)) ? d | maxs(i)
+    }
+
+    val start = DateTime.now
     for (i <- (0 until num)) {
 
       val vData = VtVarData()
@@ -53,7 +62,7 @@ object StatusController extends Controller with StatusDao {
       nums(validate) += 1
       var start = DateTime.now.getMillis
       val valResult = srvt.vtDoValidate(regBody)
-      durs(validate) += DateTime.now.getMillis - start + 1L
+      setTimes(validate, DateTime.now.getMillis - start + 1L)
 
       valResult.status match {
         case s if (s != 200) => errs(validate) += 1
@@ -62,7 +71,7 @@ object StatusController extends Controller with StatusDao {
           nums(register) += 1
           start = DateTime.now.getMillis
           val regResult = srvt.vtDoRegister(regBody)
-          durs(register) += DateTime.now.getMillis - start + 1L
+          setTimes(register, DateTime.now.getMillis - start + 1L)
 
           regResult.status match {
             case s if (s != 200) => errs(register) += 1
@@ -74,7 +83,7 @@ object StatusController extends Controller with StatusDao {
               nums(link) += 1
               start = DateTime.now.getMillis
               val linkResult = srvt.vtDoLink(vData.id, vtUid)
-              durs(link) += DateTime.now.getMillis - start + 1L
+              setTimes(link, DateTime.now.getMillis - start + 1L)
 
               linkResult.status match {
                 case s if (s != 200) => errs(link) += 1
@@ -84,7 +93,7 @@ object StatusController extends Controller with StatusDao {
                   nums(login) += 1
                   start = DateTime.now.getMillis
                   val loginResult = srvt.vtDoLogin(loginBody)
-                  durs(login) += DateTime.now.getMillis - start + 1L
+                  setTimes(login, DateTime.now.getMillis - start + 1L)
 
                   loginResult.status match {
                     case s if (s != 200) => errs(login) += 1
@@ -100,7 +109,7 @@ object StatusController extends Controller with StatusDao {
                       nums(logout) += 1
                       start = DateTime.now.getMillis
                       val logoutResult = srvt.vtDoLogout(vtToken, vtSecret)
-                      durs(logout) += DateTime.now.getMillis - start + 1L
+                      setTimes(logout, DateTime.now.getMillis - start + 1L)
 
                       logoutResult.status match {
                         case s if (s != 200) => errs(logout) += 1
@@ -121,16 +130,19 @@ object StatusController extends Controller with StatusDao {
     )
 
     val result = new StringBuffer
-    result.append("Validate: %d calls, %f seconds avg duration, %d calls failed\n".
-      format(nums(validate), avgs(validate) / 1000d, errs(validate)))
-    result.append("Register: %d calls, %f seconds avg duration, %d calls failed\n".
-      format(nums(register), avgs(register) / 1000d, errs(register)))
-    result.append("Link: %d calls, %f seconds avg duration, %d calls failed\n".
-      format(nums(link), avgs(link) / 1000d, errs(link)))
-    result.append("Login: %d calls, %f seconds avg duration, %d calls failed\n".
-      format(nums(login), avgs(login) / 1000d, errs(login)))
-    result.append("Logout: %d calls, %f seconds avg duration, %d calls failed\n".
-      format(nums(logout), avgs(logout) / 1000d, errs(logout)))
+
+    def writeResult(i: Int, s: String) {
+      result.append("%s: %d calls, %f seconds avg duration, %f min, %f max, %d calls failed\n".
+        format(s, nums(i), avgs(i) / 1000d, mins(i) / 1000d, maxs(i) / 1000d, errs(i)))
+    }
+
+    result.append("Tests started at %s\n".format(start))
+    writeResult(validate, "Validate")
+    writeResult(register, "Register")
+    writeResult(link, "Link")
+    writeResult(login, "Login")
+    writeResult(logout, "Logout")
+    result.append("Tests ended at %s\n".format(org.joda.time.DateTime.now))
     Ok(result.toString)
   }
 }
