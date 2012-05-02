@@ -29,7 +29,7 @@
     </appender>
 
     <logger name="play" level="ERROR" />
-    <logger name="application" level="ERROR" />
+    <logger name="application" level="WARN" />
 
     <root level="ERROR">
         <appender-ref ref="STDOUT" />
@@ -38,7 +38,10 @@
      
     <!-- https://github.com/qos-ch/logback-extensions/wiki/Loggly -->
     <appender name="logglyAppender" class="ch.qos.logback.ext.loggly.LogglyAppender">
-        <inputKey>5df51c89-800a-4d62-bb07-e9aa74a74812</inputKey> 
+        <!-- dev <inputKey>5df51c89-800a-4d62-bb07-e9aa74a74812</inputKey> -->
+        <inputKey>0c46e10d-fc7f-42ef-81c1-2cec46c660b3</inputKey>
+        <!-- STG <inputKey>24c0a930-cfe2-4474-a117-9cf7dbe6b9cc</inputKey> -->
+        <!-- Prd <inputKey>9da86fa2-3c70-4d35-88eb-33379f391e5e</inputKey> -->
         <layout class="ch.qos.logback.ext.json.classic.JsonLayout">
              <jsonFormatter class="ch.qos.logback.ext.jackson.JacksonJsonFormatter">
               <!-- prettyPrint is probably ok in dev, but usually not ideal in production: -->
@@ -49,7 +52,7 @@
         </layout>
     </appender>
    
-    <root level="ERROR">
+    <root level="WARN">
         <appender-ref ref="logglyAppender" />
     </root>
     

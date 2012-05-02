@@ -5,6 +5,7 @@ import play.api.mvc._
 import play.api.Play.current
 import org.joda.time._
 
+import views._
 import models.StatusDao
 import mocks.VirtualTrainerMocks._
 import mocks.VirtualTrainerMocks.FakeVirtualTrainer._
@@ -24,8 +25,10 @@ object StatusController extends Controller with StatusDao {
    * @return
    */
   def status = Action {
-    Ok("Version: " + current.configuration.getString("appVersion").
-      getOrElse("") + " : " + (if (checkAppStatus) "**** ok ****\n" else "**** fail ****\n"))
+    val s: String = "Version: " + current.configuration.getString("appVersion").
+      getOrElse("") + "\n" + (if (checkAppStatus) "**** ok ****\n" else "**** fail ****\n")
+    play.api.Logger.warn(s)
+    Ok(html.status(s))
   }
 
   def vtTimingTest(num: Int) = Action {
