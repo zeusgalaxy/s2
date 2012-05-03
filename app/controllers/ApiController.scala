@@ -215,14 +215,14 @@ class ApiController extends Controller {
 
       implicit val loc = VL("Api.getChannels")
       val channels = exGetSavedChannels(npLogin, locationId)
-      Ok(<api error={apiNoError.toString}>
+      Ok(scala.xml.Utility.trim(<api error={apiNoError.toString}>
         <channels>
           {for (ch <- channels) yield
           <channel>
             {ch}
           </channel>}
         </channels>
-      </api>)
+      </api>))
   }
 
   /**Saves a list of "favorite" tv channels

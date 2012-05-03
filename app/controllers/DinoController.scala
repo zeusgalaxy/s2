@@ -32,7 +32,7 @@ class DinoController extends Controller {
   lazy val dinoTimeout = current.configuration.getString("dino.timeout").getOrElse(throw new Exception("dino.timeout not in configuration")).toInt
 
   /** Forwards a request received by S2 on to Dino for processing. This method is used instead
-   * of DinoWrapper.passthru for those cases where S2 needs to perform additional processing
+   * of DinoController.passthru for those cases where S2 needs to perform additional processing
    * on the response before returning it to the caller.
    *
    * @param request The API request that was received by S2.
@@ -41,7 +41,7 @@ class DinoController extends Controller {
    */
   def forward(request: Request[AnyContent]): ValidationNEL[String, play.api.libs.ws.Response] = {
 
-    implicit val loc = VL("DinoWrapper.forward")
+    implicit val loc = VL("DinoController.forward")
 
     vld {
 
@@ -71,7 +71,7 @@ class DinoController extends Controller {
 
   /** Sends a request to Dino for processing, without allowing any additional processing on the
    * response that comes back. If additional processing is required (i.e., the call is "wrapped,")
-   * use DinoWrapper.forward instead.
+   * use DinoController.forward instead.
    *
    * @return HTTP response type 200 (ok) with the Dino response body, else the http response type
    * 500 (internal server error) with the error text as the body.
@@ -98,7 +98,7 @@ class DinoController extends Controller {
 
     implicit request => {
 
-      implicit val loc = VL("DinoWrapper.pageView")
+      implicit val loc = VL("DinoController.pageView")
 
       vld {
 
@@ -137,7 +137,7 @@ class DinoController extends Controller {
   def n5iRegister = Unrestricted {
     implicit request =>
 
-      implicit val loc = VL("DinoWrapper.register")
+      implicit val loc = VL("DinoController.n5iRegister")
 
       val rp = VtRegistrationParams(request)
       val oldXml = forward(request).flatMap { r => vld(r.xml) }.logError |
@@ -178,7 +178,9 @@ class DinoController extends Controller {
        */
       exAddToS2(rp.npLogin)
 
-      finalResult.logError.fold(e => Ok(e.list.mkString(", ")), s => Ok(s))
+//      finalResult.logError.fold(e => Ok(e.list.mkString(", ")), s => Ok(s))
+      finalResult.logError.fold(e => Ok(XmlMutator(oldXml).
+        add("response", <api error={apiGeneralError.toString}></api>)), s => Ok(s))
   }
 
   /** Logs a user in to a session with Netpulse (via Dino), and retrieves an appropriate set
@@ -196,7 +198,7 @@ class DinoController extends Controller {
    */
   def n5iLogin(npLogin: String, machineId: Long) = Unrestricted {
     implicit request =>
-      implicit val loc = VL("ApiWrapper.login")
+      implicit val loc = VL("DinoController.n5iLogin")
 
       val ex: Option[Exerciser] = exFindByLogin(npLogin)
 
