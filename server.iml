@@ -69,6 +69,7 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="sbt-libs" level="project" />
   </component>
 </module>
 

@@ -1,0 +1,45 @@
+<component name="libraryTable">
+  <library name="sbt-libs">
+    <CLASSES>
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/actions_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/api_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/cache_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/classfile_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/classpath_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/collections_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/commons-codec-1.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/commons-httpclient-3.1.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/commons-logging-1.0.4.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/compile_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/compiler-interface-bin-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/compiler-interface-bin-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/compiler-interface-bin-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/compiler-interface-bin-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/compiler-interface-src-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/completion_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/control_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/incremental-compiler_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/io_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/ivy-2.2.0.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/ivy_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/jline-0.9.94.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/jsch-0.1.31.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/launcher-interface_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/logging_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/main_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/persist_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/process_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/run_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/sbinary_2.9.0-0.4.0.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/sbt_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/task-system_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/tasks_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/test-interface-0.5.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/testing_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/tracking_2.9.1-0.11.2.jar!/" />
+      <root url="jar://$PLAY$/framework/sbt/boot/scala-2.9.1/org.scala-tools.sbt/sbt/0.11.2/interface-0.11.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
