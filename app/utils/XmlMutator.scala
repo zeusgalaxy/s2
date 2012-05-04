@@ -19,5 +19,6 @@ case class XmlMutator(oldXml: Node) {
     }
   }
   def add(targetElem: String, newChild: Elem): Node =
-    xml.Utility.trim(new RuleTransformer(new AddChildrenTo(targetElem, newChild)).transform(oldXml).head)
+    new RuleTransformer(new AddChildrenTo(targetElem, newChild)).transform(oldXml).head
+//    xml.Utility.trim(new RuleTransformer(new AddChildrenTo(targetElem, newChild)).transform(oldXml).head)
 }

@@ -26,25 +26,13 @@ case class Exerciser(dbId: Long, login: String, email: String, pic: Int,
   def insertStatus(x: Node, parent: String) = {
     XmlMutator(x).add(parent,
       <exerciser>
-        <email>
-          {email}
-        </email>
-        <showProfilePic>
-          {(showProfilePic ? 1 | 0)}
-        </showProfilePic>
-        <virtualTrainerStatus>
-          {vtStatus.toString}
-        </virtualTrainerStatus>
-        <gigyaUserId>
-          {gigyaUid}
-        </gigyaUserId>
+        <email>{email}</email>
+        <showProfilePic>{(showProfilePic ? 1 | 0)}</showProfilePic>
+        <virtualTrainerStatus>{vtStatus.toString}</virtualTrainerStatus>
+        <gigyaUserId>{gigyaUid}</gigyaUserId>
         <homeClub>
-          <id>
-            {homeClubId.getOrElse("").toString}
-          </id>
-          <name>
-            {homeClubName.getOrElse("")}
-          </name>
+          <id>{homeClubId.getOrElse("").toString}</id>
+          <name>{homeClubName.getOrElse("")}</name>
         </homeClub>
       </exerciser>
     )
