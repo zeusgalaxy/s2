@@ -168,6 +168,17 @@ package object utils {
     }
   }
 
+  def safely[E,T](body: => T, err: E): ValidationNEL[E, T] = {
+
+    try {
+      val res = body
+      res.successNel[E]
+    } catch {
+      case e => err.failNel[T]
+    }
+  }
+
+
   /**Executes a give block of code and returns the result as a ValidationNEL success if no problems, otherwise
    * as a failure. The value of using this "wrapper" function is that it automatically catches any exceptions
    * that may be thrown, and transforms them into Validation failures.

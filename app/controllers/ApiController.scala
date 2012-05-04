@@ -15,20 +15,21 @@ import Scalaz._
 import services.Gigya
 
 object ApiController extends ApiController
-                        with VirtualTrainer
-                        with ExerciserDao
-                        with MachineDao
-                        with EquipmentDao
-                        with Gigya
+with VirtualTrainer
+with ExerciserDao
+with MachineDao
+with EquipmentDao
+with Gigya
+
 /**
  * Controller for general server API functions.
  */
 class ApiController extends Controller {
-  this: Controller  with VirtualTrainer
-                    with ExerciserDao
-                    with MachineDao
-                    with EquipmentDao
-                    with Gigya =>
+  this: Controller with VirtualTrainer
+    with ExerciserDao
+    with MachineDao
+    with EquipmentDao
+    with Gigya =>
 
   /**Links a Netpulse user with their Virtual Trainer account in those situations where the
    * exerciser had created the Virtual Trainer account prior to creating their Netpulse account. The
@@ -155,31 +156,23 @@ class ApiController extends Controller {
 
       implicit val loc = VL("Api.vtRegister")
 
-      // either error code or object encapsulating vt user
-      val rVal: Either[Int, VtUser] = (for {
-        ex: Exerciser <- vld(exFindByLogin(npLogin).get)
-        rp <- vld(VtRegistrationParams(ex, machineId))
-        vtUser <- vld(vtRegister(rp))
-      } yield {
-        vtUser
-      }).logError.fold(e => Left(apiGeneralError), s => s)
+      (for {
+        ex: Exerciser <- safely[ApiError, Exerciser](exFindByLogin(npLogin).get, ApiError(apiGeneralError))
+        rp <- safely[ApiError, VtRegistrationParams](VtRegistrationParams(ex, machineId), ApiError(apiGeneralError))
+        vtUser <- vtRegister(rp)
+        vtAuth <- safely[ApiError, (String, String, String)](vtLogin(vtUser.vtNickname, vtUser.vtNickname).
+          toOption.get, ApiError(apiGeneralError))
+        (vtUid, vtToken, vtTokenSecret) = vtAuth
+        updResult <- safely[ApiError, Boolean](exLoginVt(npLogin, vtUid, vtToken, vtTokenSecret), ApiError(apiGeneralError))
+        model <- safely[ApiError, String]({
+          mchGetWithEquip(machineId).flatMap(_._2.map(e => e.model.toString))
+        }.get, ApiError(apiGeneralError))
 
-      (rVal match {
+        vtPredefinedPresets <- safely[ApiError, NodeSeq](vtPredefinedPresets(vtToken, vtTokenSecret, model).toOption.get,
+          ApiError(apiGeneralError))
 
-        case Left(err) =>
-          vld(<api error={err.toString}></api>)
-        case Right(vtUser) =>
-          for {
-            vtAuth <- vtLogin(vtUser.vtNickname, vtUser.vtNickname)
-            (vtUid, vtToken, vtTokenSecret) = vtAuth
-            updResult <- vld(exLoginVt(npLogin, vtUid, vtToken, vtTokenSecret))
-            model <- mchGetWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
-              toSuccess(NonEmptyList("Unable to rtrv mach/equip/model"))
-
-            vtPredefinedPresets <- vtPredefinedPresets(vtToken, vtTokenSecret, model)
-
-          } yield vtAsApiResult(vtPredefinedPresets)
-      }).logError.fold(e => Ok(<api error={apiGeneralError.toString}/>), s => Ok(s))
+      } yield vtAsApiResult(vtPredefinedPresets)).
+        fold(e => Ok(<api error={e.head.code.toString}/>), s => Ok(s))
   }
 
   /**Retrieves supplemental status information for a given exerciser.
