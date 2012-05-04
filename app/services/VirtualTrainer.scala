@@ -230,13 +230,13 @@ trait VirtualTrainer {
      */
       rBody <- safely[ApiError, String](this.vtRegisterBody(rp).toOption.get, ApiError(apiVtRegistrationUnableToGetStatus))
       valStatus <- safely[ApiError, Int](this.vtDoValidate(rBody).status, ApiError(apiVtRegistrationUnableToGetStatus))
-      ok1 <- if(valStatus == 500) ApiError(apiVtRegistrationUserExists).failNel[Boolean] else true.successNel[ApiError]
+      ok1 <- if(valStatus == 500) ApiError(apiVtRegistrationUserExists).failNel else true.success
       ok2 <- if (valStatus != 200) {
         Logger.debug("vtRegister got status %d back from vtDoValidate call".format(valStatus))
-        ApiError(apiVtRegistrationOtherError).failNel[Boolean]
-      } else true.successNel[ApiError]
+        ApiError(apiVtRegistrationOtherError).failNel
+      } else true.success
       regResult <- safely[ApiError, VtResponse](vtDoRegister(rBody), ApiError(apiVtRegistrationOtherError))
-      ok3 <- if (regResult.status != 200) ApiError(apiVtRegistrationOtherError).failNel[Boolean] else true.successNel[ApiError]
+      ok3 <- if (regResult.status != 200) ApiError(apiVtRegistrationOtherError).failNel else true.success
       regXml <- safely[ApiError, Elem](regResult.xml.get, ApiError(apiVtRegistrationOtherError))
       vtUid <- safely[ApiError, String]({(regXml \\ "userId" head).text}, ApiError(apiVtRegistrationOtherError))
       vtNickname <- safely[ApiError, String]({(regXml \\ "nickName" head).text}, ApiError(apiVtRegistrationOtherError))

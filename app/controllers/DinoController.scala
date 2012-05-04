@@ -146,7 +146,7 @@ class DinoController extends Controller {
 
       val extendedXml = (for {
         code <- safely[ApiError,String]({(dinoXml \\ "response" \ "@code").text}, ApiError(apiGeneralError))
-        ok1 <- if (code != "0") ApiError(apiGeneralError).failNel[Boolean] else true.successNel[ApiError]
+        ok1 <- if (code != "0") ApiError(apiGeneralError).failNel else true.success
         vtUser <- vtRegister(rp)
 
         vtAuth <- safely[ApiError, (String, String, String)](vtLogin(vtUser.vtNickname, vtUser.vtNickname).
@@ -174,55 +174,6 @@ class DinoController extends Controller {
       extendedXml.fold(e => Ok(XmlMutator(dinoXml).
         add("response", <api error={e.head.code.toString}></api>)), s => Ok(s))
   }
-
-//  def n5iRegister = Unrestricted {
-//    implicit request =>
-//
-//      implicit val loc = VL("DinoController.n5iRegister")
-//
-//      val rp = VtRegistrationParams(request)
-//      val oldXml = forward(request).flatMap { r => vld(r.xml) }.logError |
-//        <response code="2" desc="Unable to register. An error occurred when forwarding registration to Dino."></response>
-//
-//      // either error code or object encapsulating vt user
-//      val rVal: Either[Int, VtUser] = (for {
-//        code <- tst((oldXml \\ "response" \ "@code").text)(_ == "0", "oldXml response code != 0").addLogMsg("oldXml", oldXml.text)
-//        vtUser <- vld(vtRegister(rp))
-//      } yield {
-//        vtUser
-//      }).logError.fold(e => Left(apiGeneralError), s => s)
-//
-//      val finalResult = rVal match {
-//
-//        case Left(err) =>
-//          vld(XmlMutator(oldXml).add("response", <api error={err.toString}></api>))
-//        case Right(vtUser) =>
-//          for {
-//            vtAuth <- vtLogin(vtUser.vtNickname, vtUser.vtNickname)
-//            (vtUid, vtToken, vtTokenSecret) = vtAuth
-//            updResult <- vld(exLoginVt(rp.npLogin, vtUid, vtToken, vtTokenSecret))
-//            machineId <- vld(rp.machineId.toLong)
-//            model <- mchGetWithEquip(machineId).flatMap(_._2.map(e => e.model.toString)).
-//              toSuccess(NonEmptyList("Unable to rtrv mach/equip/model"))
-//
-//            vtPredefinedPresets <- vtPredefinedPresets(vtToken, vtTokenSecret, model)
-//
-//          } yield vtInsertIntoXml(oldXml, "response", vtPredefinedPresets)
-//      }
-//
-//      val gigyaUid = request.queryString.get("gigya_uid")
-//      if (gigyaUid.isDefined) exSetGigyaUid(rp.npLogin, gigyaUid.get(0))
-//
-//      /**
-//       * Lastly, try to notify the s2 database about this new exerciser so that the two
-//       * databases are sync'd up.
-//       */
-//      exAddToS2(rp.npLogin)
-//
-////      finalResult.logError.fold(e => Ok(e.list.mkString(", ")), s => Ok(s))
-//      finalResult.logError.fold(e => Ok(XmlMutator(oldXml).
-//        add("response", <api error={apiGeneralError.toString}></api>)), s => Ok(s))
-//  }
 
   /** Logs a user in to a session with Netpulse (via Dino), and retrieves an appropriate set
    * of predefined_presets and/or workouts from Virtual Trainer.
