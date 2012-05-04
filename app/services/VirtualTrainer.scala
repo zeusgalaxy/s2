@@ -228,19 +228,19 @@ trait VirtualTrainer {
      * First, we must validate with Virtual Trainer, to find out whether or not this user is
      * already registered with them.
      */
-      rBody <- safely[ApiError, String](this.vtRegisterBody(rp).toOption.get, ApiError(apiVtRegistrationUnableToGetStatus))
-      valStatus <- safely[ApiError, Int](this.vtDoValidate(rBody).status, ApiError(apiVtRegistrationUnableToGetStatus))
+      rBody <- safely(this.vtRegisterBody(rp).toOption.get, ApiError(apiVtRegistrationUnableToGetStatus))
+      valStatus <- safely(this.vtDoValidate(rBody).status, ApiError(apiVtRegistrationUnableToGetStatus))
       ok1 <- if(valStatus == 500) ApiError(apiVtRegistrationUserExists).failNel else true.success
       ok2 <- if (valStatus != 200) {
         Logger.debug("vtRegister got status %d back from vtDoValidate call".format(valStatus))
         ApiError(apiVtRegistrationOtherError).failNel
       } else true.success
-      regResult <- safely[ApiError, VtResponse](vtDoRegister(rBody), ApiError(apiVtRegistrationOtherError))
+      regResult <- safely(vtDoRegister(rBody), ApiError(apiVtRegistrationOtherError))
       ok3 <- if (regResult.status != 200) ApiError(apiVtRegistrationOtherError).failNel else true.success
-      regXml <- safely[ApiError, Elem](regResult.xml.get, ApiError(apiVtRegistrationOtherError))
-      vtUid <- safely[ApiError, String]({(regXml \\ "userId" head).text}, ApiError(apiVtRegistrationOtherError))
-      vtNickname <- safely[ApiError, String]({(regXml \\ "nickName" head).text}, ApiError(apiVtRegistrationOtherError))
-      vtUser <- safely[ApiError, VtUser](VtUser(regXml), ApiError(apiVtRegistrationOtherError))
+      regXml <- safely(regResult.xml.get, ApiError(apiVtRegistrationOtherError))
+      vtUid <- safely({(regXml \\ "userId" head).text}, ApiError(apiVtRegistrationOtherError))
+      vtNickname <- safely({(regXml \\ "nickName" head).text}, ApiError(apiVtRegistrationOtherError))
+      vtUser <- safely(VtUser(regXml), ApiError(apiVtRegistrationOtherError))
 
     } yield vtUser
   }

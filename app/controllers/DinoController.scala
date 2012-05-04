@@ -145,19 +145,19 @@ class DinoController extends Controller {
         <response code="2" desc="Unable to register. An error occurred when forwarding registration to Dino."></response>
 
       val extendedXml = (for {
-        code <- safely[ApiError,String]({(dinoXml \\ "response" \ "@code").text}, ApiError(apiGeneralError))
+        code <- safely({(dinoXml \\ "response" \ "@code").text}, ApiError(apiGeneralError))
         ok1 <- if (code != "0") ApiError(apiGeneralError).failNel else true.success
         vtUser <- vtRegister(rp)
 
-        vtAuth <- safely[ApiError, (String, String, String)](vtLogin(vtUser.vtNickname, vtUser.vtNickname).
+        vtAuth <- safely(vtLogin(vtUser.vtNickname, vtUser.vtNickname).
           toOption.get, ApiError(apiGeneralError))
         (vtUid, vtToken, vtTokenSecret) = vtAuth
-        updResult <- safely[ApiError, Boolean](exLoginVt(rp.npLogin, vtUid, vtToken, vtTokenSecret), ApiError(apiGeneralError))
-        model <- safely[ApiError, String]({
+        updResult <- safely(exLoginVt(rp.npLogin, vtUid, vtToken, vtTokenSecret), ApiError(apiGeneralError))
+        model <- safely({
           mchGetWithEquip(rp.machineId.toLong).flatMap(_._2.map(e => e.model.toString))
         }.get, ApiError(apiGeneralError))
 
-        vtPredefinedPresets <- safely[ApiError, NodeSeq](vtPredefinedPresets(vtToken, vtTokenSecret, model).toOption.get,
+        vtPredefinedPresets <- safely(vtPredefinedPresets(vtToken, vtTokenSecret, model).toOption.get,
           ApiError(apiGeneralError))
 
       } yield vtInsertIntoXml(dinoXml, "response", vtPredefinedPresets))
