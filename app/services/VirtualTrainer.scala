@@ -1,6 +1,6 @@
 package services
 
-import scalaz.{Node => _, Logger => _, _}
+import scalaz.{Node => _, Logger => _, Scalaz, _}
 import Scalaz._
 
 import models._
@@ -218,55 +218,31 @@ trait VirtualTrainer {
    * @param rp RegParams object populated with the registration values needed by Virtual Trainer
    * @return Either an error code if problems (Left), or a VtUser if successful (Right)
    */
-  def vtRegister(rp: VtRegistrationParams): Either[Int, VtUser] = {
+  def vtRegister(rp: VtRegistrationParams): ValidationNEL[ApiError, VtUser] = {
 
-    implicit val loc = VL("VT.register")
+    implicit val loc = VL("VirtualTrainer.vtRegister")
 
-    val rVal: Option[(String, Int)] = for {
+    for {
 
     /**
      * First, we must validate with Virtual Trainer, to find out whether or not this user is
      * already registered with them.
      */
-      rBody <- vtRegisterBody(rp).logError.toOption
-      valResult <- vld(vtDoValidate(rBody)).logError.toOption
-      valStatus = valResult.status
+      rBody <- safely[ApiError, String](this.vtRegisterBody(rp).toOption.get, ApiError(apiVtRegistrationUnableToGetStatus))
+      valStatus <- safely[ApiError, Int](this.vtDoValidate(rBody).status, ApiError(apiVtRegistrationUnableToGetStatus))
+      ok1 <- if(valStatus == 500) ApiError(apiVtRegistrationUserExists).failNel[Boolean] else true.successNel[ApiError]
+      ok2 <- if (valStatus != 200) {
+        Logger.debug("vtRegister got status %d back from vtDoValidate call".format(valStatus))
+        ApiError(apiVtRegistrationOtherError).failNel[Boolean]
+      } else true.successNel[ApiError]
+      regResult <- safely[ApiError, VtResponse](vtDoRegister(rBody), ApiError(apiVtRegistrationOtherError))
+      ok3 <- if (regResult.status != 200) ApiError(apiVtRegistrationOtherError).failNel[Boolean] else true.successNel[ApiError]
+      regXml <- safely[ApiError, Elem](regResult.xml.get, ApiError(apiVtRegistrationOtherError))
+      vtUid <- safely[ApiError, String]({(regXml \\ "userId" head).text}, ApiError(apiVtRegistrationOtherError))
+      vtNickname <- safely[ApiError, String]({(regXml \\ "nickName" head).text}, ApiError(apiVtRegistrationOtherError))
+      vtUser <- safely[ApiError, VtUser](VtUser(regXml), ApiError(apiVtRegistrationOtherError))
 
-    } yield {
-      (rBody, valStatus)
-    }
-
-    rVal match {
-      case None => Left(apiVtRegistrationUnableToGetStatus)
-      case Some((_, status)) if (status == 500) => Left(apiVtRegistrationUserExists)
-      case Some((_, status)) if (status != 200) => Left(apiVtRegistrationOtherError)
-      case Some((rBody, _)) =>
-        val result: Validation[NonEmptyList[String], VtUser] =
-          for {
-          /**
-           * Second step is the actual registration, provided they were not already registered
-           * with VirtualTrainer.
-           */
-            regResult <- vld(vtDoRegister(rBody))
-            status <- tst(regResult)(_.status == 200).
-              addLogMsg("vt register result status", regResult.status.toString).
-              addLogMsg("body sent", rBody).
-              addLogMsg("response received", regResult.toString).logError
-
-            regXml <- vld(regResult.xml.get).addLogMsg("regResult", regResult.toString())
-            vtUid <- vld((regXml \\ "userId" head).text).addLogMsg("regXml", regXml.toString())
-            vtNickname <- vld((regXml \\ "nickName" head).text).addLogMsg("regXml", regXml.toString())
-            vtUser <- vld(VtUser(regXml)).addLogMsg("regXml", regXml.toString())
-
-            /**
-             * Third step is to link our account with their account.
-             */
-            linkResult <- vtLink(rp.npLogin, vtUid)
-
-          } yield vtUser
-
-        result.addLogMsg("Result", "Failure").logError.fold(e => Left(apiVtRegistrationOtherError), s => Right(s))
-    }
+    } yield vtUser
   }
 
   /**Manages the process of linking a given Netpulse user to a given Virtual Trainer account.

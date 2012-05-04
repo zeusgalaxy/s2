@@ -9,6 +9,9 @@ import org.specs2.mutable._
 import play.api.test._
 import play.api.test.Helpers._
 import mocks.VirtualTrainerMocks._
+import org.specs2.internal.scalaz.NonEmptyList
+import scalaz._
+import Scalaz._
 
 object VirtualTrainerSpec extends Specification {
 
@@ -19,13 +22,16 @@ object VirtualTrainerSpec extends Specification {
     "Handle all possibilities when validating prior to registration" in {
 
       running(FakeApplication()) {
-        FakeVirtualTrainer(validate = FakeVtResponse(status = 500)).vtRegister(vtrRegParams(VtVarData())) must
-          equalTo(Left(apiVtRegistrationUserExists))
+        FakeVirtualTrainer(validate = FakeVtResponse(status = 500)).
+          vtRegister(vtrRegParams(VtVarData())).fold(e => e.head.code, s => -1) must
+          equalTo(apiVtRegistrationUserExists)
+//          equalTo(Failure(NonEmptyList(ApiError(apiVtRegistrationUserExists))))
 
-        FakeVirtualTrainer(validate = FakeVtResponse(status = 404)).vtRegister(vtrRegParams(VtVarData())) must
-          equalTo(Left(apiVtRegistrationOtherError))
+        FakeVirtualTrainer(validate = FakeVtResponse(status = 404)).
+          vtRegister(vtrRegParams(VtVarData())).fold(e => e.head.code, s => -1) must
+          equalTo(apiVtRegistrationOtherError)
 
-        FakeVirtualTrainer(register = vtrOkRegistration).vtRegister(vtrRegParams(VtVarData())).isRight must equalTo(true)
+        FakeVirtualTrainer(register = vtrOkRegistration).vtRegister(vtrRegParams(VtVarData())).isSuccess must equalTo(true)
       }
     }
 

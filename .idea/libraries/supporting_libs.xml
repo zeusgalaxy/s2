@@ -35,6 +35,7 @@
       <root url="file://$PLAY$/framework/src/play-test/src/main/scala" />
       <root url="file://$PLAY$/framework/src/templates/src/main/scala" />
       <root url="file://$PLAY$/framework/src/sbt-plugin/src/main/scala" />
+      <root url="jar://$PLAY$/repository/cache/org.scalaz/scalaz-core_2.9.1/srcs/scalaz-core_2.9.1-6.0.4-sources.jar!/" />
     </SOURCES>
   </library>
 </component>
