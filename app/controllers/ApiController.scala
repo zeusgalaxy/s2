@@ -157,18 +157,18 @@ class ApiController extends Controller {
       implicit val loc = VL("Api.vtRegister")
 
       (for {
-        ex: Exerciser <- safely[ApiError, Exerciser](exFindByLogin(npLogin).get, ApiError(apiGeneralError))
-        rp <- safely[ApiError, VtRegistrationParams](VtRegistrationParams(ex, machineId), ApiError(apiGeneralError))
+        ex: Exerciser <- safely(exFindByLogin(npLogin).get, ApiError(apiGeneralError))
+        rp <- safely(VtRegistrationParams(ex, machineId), ApiError(apiGeneralError))
         vtUser <- vtRegister(rp)
-        vtAuth <- safely[ApiError, (String, String, String)](vtLogin(vtUser.vtNickname, vtUser.vtNickname).
+        vtAuth <- safely(vtLogin(vtUser.vtNickname, vtUser.vtNickname).
           toOption.get, ApiError(apiGeneralError))
         (vtUid, vtToken, vtTokenSecret) = vtAuth
-        updResult <- safely[ApiError, Boolean](exLoginVt(npLogin, vtUid, vtToken, vtTokenSecret), ApiError(apiGeneralError))
-        model <- safely[ApiError, String]({
+        updResult <- safely(exLoginVt(npLogin, vtUid, vtToken, vtTokenSecret), ApiError(apiGeneralError))
+        model <- safely({
           mchGetWithEquip(machineId).flatMap(_._2.map(e => e.model.toString))
         }.get, ApiError(apiGeneralError))
 
-        vtPredefinedPresets <- safely[ApiError, NodeSeq](vtPredefinedPresets(vtToken, vtTokenSecret, model).toOption.get,
+        vtPredefinedPresets <- safely(vtPredefinedPresets(vtToken, vtTokenSecret, model).toOption.get,
           ApiError(apiGeneralError))
 
       } yield vtAsApiResult(vtPredefinedPresets)).
